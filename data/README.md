@@ -1,0 +1,1 @@
+Put or symlink outputted results from [pathogendb-comparison](https://github.com/powerpak/pathogendb-comparison) into this directory—e.g., a `.heatmap.json` file from the **heatmap** task.

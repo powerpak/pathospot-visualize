@@ -1,0 +1,1 @@
+(window || global).HClust = require('./hclust/src');
