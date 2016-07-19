@@ -14,7 +14,7 @@ Apache and PHP. Could be readily hosted in a [Minerva](http://hpc.mssm.edu/) www
 
 ### Configuration
 
-
+Copy `example.include.php` to `include.php` and edit the stubs to include extra HTML, CSS, or JS in the visualizations. This could be used to theme the pages or integrate them into another website.
 
 ## Visualizations
 
