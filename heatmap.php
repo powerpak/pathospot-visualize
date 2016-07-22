@@ -1,20 +1,18 @@
 <!DOCTYPE html>
+<html>
 <?php
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
 ?>
-<html>
 
 <head>
   
-<meta charset="utf-8">
+<meta charset="utf-8" />
 <title>Surveillance Isolates - Heatmap</title>
-<style>
-@import url(css/d3-tip.css);
-@import url(css/rangeslider.css);
-@import url(css/select2.css);
-@import url(css/style.css);
-</style>
+<link href="css/d3-tip.css" rel="stylesheet" />
+<link href="css/rangeslider.css" rel="stylesheet" />
+<link href="css/select2.css" rel="stylesheet" />
+<link href="css/style.css" rel="stylesheet" />
 
 <script src="js/underscore-min.js"></script>
 <script src="js/jquery.min.js"></script>
