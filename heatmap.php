@@ -137,6 +137,13 @@ $(function() {
   var db = (getURLParameter('db') || $('#db').val()).replace(/\W+/g, '');
   $('#db').val(db);
   document.title = $('#db > option[value="'+ db +'"]').text() + ' - Heatmap';
+  
+  // Setup the slider and bind it to changing the disabled input
+  $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
+    polyfill: false,
+    onSlide: function(position, value) { $('#snps-num').val(value); },
+    onSlideEnd: function(position, value) { $('#snps-num').change(); }
+  });
 
   d3.json("data/" + db + ".heatmap.json", function(assemblies) {
 
@@ -625,13 +632,6 @@ $(function() {
     // ************************* BIND UI EVENTS -> CALLBACKS *******************************
     
     $('#db').on('change', function() { window.location.search = '?db=' + $(this).val(); });
-      
-    // Allow the slider to change the SNP threshold input
-    $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
-      polyfill: false,
-      onSlide: function(position, value) { $('#snps-num').val(value); },
-      onSlideEnd: function(position, value) { $('#snps-num').change(); }
-    });
     
     var mlsts = _.reject(_.map(_.pluck(nodes, 'mlst_subtype'), function(v) { return parseInt(v, 10); }), _.isNaN);
     _.each(_.sortBy(_.uniq(mlsts)), function(mlst) { 
