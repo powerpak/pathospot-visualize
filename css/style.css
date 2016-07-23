@@ -99,12 +99,27 @@ text.axis-label {
 .cell {
   stroke-width: 2px;
 }
+.cell.clickable {
+  cursor: pointer;
+}
+.cell.active.clickable {
+  stroke: rgba(255, 255, 255, 1);
+}
+.cell.active.clickable.same-pt {
+  stroke-width: 3px;
+}
 
 .bg {
   fill: none;
 }
 .selected {
   fill: rgba(0, 0, 0, 0.07);
+}
+
+.selected-cell {
+  stroke: #000;
+  stroke-width: 4px;
+  fill: none;
 }
 
 /**** select2 customization ****/
@@ -218,3 +233,26 @@ text.axis-label {
   text-align: right;
   opacity: 0.5;
 }
+
+.d3-tip a:link, .d3-tip a:visited {
+  color: white;
+  text-decoration: none;
+}
+.d3-tip.show-more a:link, .d3-tip.show-more a:visited {
+  color: #9CD6F7;
+}
+.d3-tip a:hover, .d3-tip a:active {
+  text-decoration: underline;
+}
+.d3-tip .more {
+  margin-top: 0.5em;
+  text-align: center;
+}
+.d3-tip .more a:link {
+  margin-left: 0.5em;
+}
+.more .instructions {
+  font-style: italic;
+}
+.more .instructions, .show-more .more .links { display: inline; }
+.show-more .more .instructions, .more .links { display: none; }

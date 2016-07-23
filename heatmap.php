@@ -406,16 +406,20 @@ $(function() {
       return null;
     }
     function cellPadding(d) {
-      if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return 1.5;  }
+      if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return 1.5; }
       return 0.5;
+    }
+    function cellClickable(d) {
+      return d.z < z.domain()[0] && d.x != d.y;
     }
     
     // background and axis/table labels
-    
+        
     svg.append("rect")
         .attr("class", "background")
         .attr("width", width)
-        .attr("height", height);
+        .attr("height", height)
+    var rowsColsG = svg.append("g").attr("class", "rows-cols");
         
     svg.append("text")
         .attr("class", "axis-label")
@@ -423,7 +427,7 @@ $(function() {
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "end")
-        .text("Anon Pt ID")
+        .text("Anon Pt ID");
     
     svg.append("text")
         .attr("class", "axis-label")
@@ -431,7 +435,7 @@ $(function() {
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
-        .text("Unit")
+        .text("Unit");
         
     svg.append("text")
         .attr("class", "axis-label")
@@ -439,7 +443,7 @@ $(function() {
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
-        .text("Order Date")
+        .text("Order Date");
         
     svg.append("text")
         .attr("class", "axis-label")
@@ -447,7 +451,7 @@ $(function() {
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
-        .text("MLST")
+        .text("MLST");
         
     svg.append("text")
         .attr("class", "axis-label")
@@ -455,12 +459,16 @@ $(function() {
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
-        .text("Isolate ID")
+        .text("Isolate ID");
+    
+    var selectedCellReticle = svg.append("rect")
+        .attr("class", "selected-cell")
+        .attr("visibility", "hidden");
         
     // functions for updating rows/columns of the heatmap
 
     function updateColumns(matrix) {
-      var column = svg.selectAll("g.column")
+      var column = rowsColsG.selectAll("g.column")
           .data(matrix, columnKeying);
 
       var columnEnter = column.enter().append("g")
@@ -489,7 +497,7 @@ $(function() {
     }
 
     function updateRows(matrix) {
-      var row = svg.selectAll("g.row")
+      var row = rowsColsG.selectAll("g.row")
           .data(matrix, columnKeying);
         
       var rowEnter = row.enter().append("g")
@@ -561,6 +569,7 @@ $(function() {
             contig_N50_format: 'contig N50',
             contig_maxlength_format: 'longest contig'
           },
+          snp_url = 'data/' + assemblies.out_dir + '/' + nodes[d.y].name + '/' + nodes[d.y].name + '_' + nodes[d.x].name + '.snv.bed',
           html = '<table class="link-info">'
           + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + d.z + '</span> SNPs</th></tr>';
       
@@ -568,11 +577,17 @@ $(function() {
         var val1 = nodes[d.y][k],
             val2 = nodes[d.x][k];
         html += '<tr><td class="row-label">' + label + '</td>';
+        if (LINKABLE && LINKABLE[k]) {
+          val1 = '<a target="_blank" href="' + LINKABLE[k].replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';
+          val2 = '<a target="_blank" href="' + LINKABLE[k].replace('%s', encodeURIComponent(val2)) + '">' + val2 + '</a>';
+        }
         if (val1 == val2) { html += '<td class="same" colspan=2>' + val1 + '</td></tr>'; }
         else { html += '<td>' + val1 + '</td><td>' + val2 + '</td></tr>'; }
       });
       
-      html += '</table>';
+      html += '</table><div class="more"><span class="instructions">click for links</span><span class="links">Open: ';
+      html += '<a href="' + snp_url + '" target="_blank">SNP track</a> <a href="data/" target="_blank">mummerplot</a>'
+      html += '</span></div>'
       return html;
     }
     
@@ -580,23 +595,42 @@ $(function() {
         .attr('class', 'd3-tip')
         .offset([-10, 0])
         .html(tipHtml);
+    var selectedCell = null; 
     
     svg.call(tip);
+    svg.on("click", function() { deselectCell(); tip.hide(); });
 
     function updateRowCells(rowData) {
       var cell = d3.select(this).selectAll("rect")
           .data(_.filter(rowData, function(d) { return d.z < MAX_SNP_THRESHOLD; }), cellKeying);
+      deselectCell();
+      tip.hide();
     
       var cellEnter = cell.enter().append("rect")
           .attr("class", "cell")
+          .classed("same-pt", function(d) { return nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID; })
           .attr("x", function(d) { return x(d.x) + cellPadding(d); })
           .attr("y", function(d) { return cellPadding(d); })
           .style("stroke", cellStrokeColor)
           .attr("fill", cellColor)
           .attr("opacity", 0)       // All cells start out transparent and fade in
-          .on("mouseover", function(d) { if (d.z < z.domain()[0] && d.x != d.y) { tip.show(d); mouseover(d); } })
-          .on("mouseout", function(d) { tip.hide(d); mouseout(d); })
-        
+          .on("mouseover", function(d) { 
+            if (!cellClickable(d)) { return; }
+            if (!selectedCell) { tip.show(d); }
+            mouseover(d);
+          })
+          .on("click", function(d) { 
+            if (selectedCell !== this && cellClickable(d)) { selectCell(d, this); tip.show(d); }
+            else { deselectCell(); tip.hide(d); }
+            d3.event.stopPropagation();
+          })
+          .on("mouseout", function(d) { 
+            if (!selectedCell) { tip.hide(d); } 
+            mouseout(d);
+          })
+      
+      cell.merge(cellEnter).classed("clickable", cellClickable);
+      
       cell.merge(cellEnter).transition().duration(TRANSITION_DURATION).delay(function(d) { return x(d.x) * 1; })
           .attr("x", function(d) { return x(d.x) + cellPadding(d); })
           .attr("width", function(d) { return x.bandwidth() - cellPadding(d) * 2; })
@@ -613,22 +647,37 @@ $(function() {
     function mouseover(p) {
       d3.selectAll(".row").classed("active", function(d) { return d.y == p.y || d.y == p.x; });
       d3.selectAll(".column").classed("active", function(d) { return d.y == p.x || d.y == p.y; });
+      d3.selectAll(".cell").classed("active", function(d) { return d.y == p.y && d.x == p.x; });
     }
 
     function mouseout() {
       d3.selectAll(".active").classed("active", false);
     }
     
+    function selectCell(d, elem) {
+      selectedCell = elem;
+      selectedCellReticle
+          .attr("x", x(d.x) - 1)
+          .attr("y", x(d.y) - 1)
+          .attr("width", x.bandwidth() + 2)
+          .attr("height", x.bandwidth() + 2)
+          .attr("visibility", "visible");
+      tip.attr('class', tip.attr('class').replace(/\s+show-more(\s)+/g, '$1') + ' show-more');
+    }
+    
+    function deselectCell() {
+      selectedCell = null;
+      selectedCellReticle.attr("visibility", "hidden");
+      tip.attr('class', tip.attr('class').replace(/\s+show-more(\s)+/g, '$1'));
+    }
+    
     function interruptAllTransitions() {
       svg.selectAll("*").interrupt();
     }
-
-    d3.select("#order").on("change", function() {
-      reorder();
-    });
     
     // ************************* BIND UI EVENTS -> CALLBACKS *******************************
     
+    $("#order").on("change", function() { reorder(); });
     $('#db').on('change', function() { window.location.search = '?db=' + $(this).val(); });
     
     var mlsts = _.reject(_.map(_.pluck(nodes, 'mlst_subtype'), function(v) { return parseInt(v, 10); }), _.isNaN);
