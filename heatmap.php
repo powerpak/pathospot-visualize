@@ -39,6 +39,12 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
         <option value="cdiff">C. difficile SNP distances</option>
       </select>
     </label>
+    <label class="widget">
+      <span class="widget-label">Similarity threshold</span>
+      <input id="snps-num" name="snps_num" type="text" size="3" value="10" disabled />
+      <span class="units">SNPs</span>
+      <input id="snps" name="snps" class="range" type="range" min="1" step="1"/>
+    </label>
     <div class="clear"></div>
     <label class="widget" id="filter-cont">
       <span class="widget-label">Merging &amp; prefiltering</span>
@@ -53,12 +59,6 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
     </label>
     <div class="clear"></div>
     <label class="widget">
-      <span class="widget-label">Similarity threshold</span>
-      <input id="snps-num" name="snps_num" type="text" size="3" value="10" disabled />
-      <span class="units">SNPs</span>
-      <input id="snps" name="snps" class="range" type="range" min="1" step="1"/>
-    </label>
-    <label class="widget">
       <span class="widget-label">Order rows/columns</span>
       <select id="order">
         <option value="groupOrder">by clustering order</option>
@@ -67,6 +67,10 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
         <option value="collection_unit">by Collection Unit</option>
         <option value="mlst_subtype">by MLST Subtype</option>
       </select>
+    </label>
+    <label id="cluster-legend" class="widget">
+      <span class="num-clusters">N</span> clusters detected
+      <span id="cluster-list"></span>
     </label>
     <div class="clear"></div>
     <label>Filter by specimen order dates</label>
@@ -150,7 +154,7 @@ $(function() {
         n = nodes.length,
         idealBandWidth = Math.max(width / n, 16),
         filteredDomain = [],
-        fullMatrix, visibleNodes;
+        fullMatrix, visibleNodes, filteredClusters;
   
     // **************************  LOAD AND SETUP DATA STRUCTURES *****************************
   
@@ -158,8 +162,9 @@ $(function() {
     // `nodes`: the full list of nodes
     // `fullMatrix`: the full distance matrix
     // `visibleNodes`: which nodes should show up in the daterange selector and in the matrix based on `filters`
+    // `filteredClusters`: the clusters that were detected in `visibleNodes`
     // 
-    // `filters` is an object with the following possible keys:
+    // The parameter `filters` is an object with the following possible keys:
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
     //   `mlsts: ['1', '4', ...]` will show only nodes that have these mlst_subtypes
@@ -257,9 +262,9 @@ $(function() {
         // Find all clusters with diameter below the snpThreshold with >1 children
         allClusters = _.filter(allClusters.cut(snpThreshold), function(clust) { return clust.children; });
         // Sort them by size, in descending order
-        allClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
+        filteredClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
         // then annotate the nodes with the # of the cluster they are in
-        _.each(allClusters, function(clust, i) {
+        _.each(filteredClusters, function(clust, i) {
           _.each(clust.index, function(leaf) { visibleNodes[leaf.index].group = i; });
         });
       }
@@ -675,6 +680,21 @@ $(function() {
       svg.selectAll("*").interrupt();
     }
     
+    // ******************************* CLUSTER LEGEND **************************************
+    
+    var clusterLegend = d3.select("#cluster-legend");
+    function updateClusters(clusters) {
+      clusterLegend.style('display', 'inline');
+      clusterLegend.select('.num-clusters').text(clusters.length);
+      var clusterList = clusterLegend.select('#cluster-list').selectAll('span').data(clusters);
+      var clusterEnter = clusterList.enter().append('span');
+      clusterList.merge(clusterEnter)
+          .style("background-color", function(d, i) { return c(i); } )
+          .text(function(d) { return d.index.length; });
+      clusterList.exit().remove();
+    }
+    updateClusters(filteredClusters);
+    
     // ************************* BIND UI EVENTS -> CALLBACKS *******************************
     
     $("#order").on("change", function() { reorder(); });
@@ -729,6 +749,7 @@ $(function() {
     
       reorder();
       updateNodes(visibleNodes);
+      updateClusters(filteredClusters);
     }
   
     // kick off an initial data update to setup the UI

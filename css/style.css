@@ -43,6 +43,28 @@ svg {
   width: 100px;
 }
 
+#cluster-legend {
+  display: none;
+  line-height: 24px;
+}
+
+#cluster-list {
+  margin-left: 5px;
+  position: relative;
+  top: -1px;
+}
+
+#cluster-list span {
+  color: white;
+  display: inline-block;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  margin-right: 3px;
+  text-align: center;
+}
+
 .background {
   fill: #eee;
 }
