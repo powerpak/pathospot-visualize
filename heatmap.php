@@ -4,7 +4,6 @@
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
 ?>
-
 <head>
   
 <meta charset="utf-8" />
@@ -21,6 +20,10 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 <script src="js/rangeslider.min.js" charset="utf-8"></script>
 <script src="js/select2.min.js" charset="utf-8"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
+<?php
+if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
+else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
+?>
 
 <?php includeAfterHead(); ?>
 
@@ -110,8 +113,11 @@ function getFilters() {
   };
 }
 
-Array.prototype.rotate = function(n) {
-  return this.slice(n, this.length).concat(this.slice(0, n));
+Array.prototype.swap = function (x, y) {
+  var b = this[x];
+  this[x] = this[y];
+  this[y] = b;
+  return this;
 }
 
 $(function() { 
@@ -128,7 +134,7 @@ $(function() {
   
   var x = d3.scaleBand().range([0, width]),
       z = d3.scaleLinear().domain([DEFAULT_SNP_THRESHOLD + 1, 0]).clamp(true),
-      c = d3.scaleOrdinal(d3.schemeCategory10.rotate(3)).domain(d3.range(10));
+      c = d3.scaleOrdinal(d3.schemeCategory10.swap(0, 3)).domain(d3.range(10));
 
   var svg = d3.select("body").append("svg")
       .attr("width", width + margin.left + margin.right)
@@ -574,25 +580,31 @@ $(function() {
             contig_N50_format: 'contig N50',
             contig_maxlength_format: 'longest contig'
           },
-          snp_url = 'data/' + assemblies.out_dir + '/' + nodes[d.y].name + '/' + nodes[d.y].name + '_' + nodes[d.x].name + '.snv.bed',
+          snvs_url = assemblies.out_dir + '/' + nodes[d.y].name + '/' + nodes[d.y].name + '_' + nodes[d.x].name + '.snv.bed',
           html = '<table class="link-info">'
           + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + d.z + '</span> SNPs</th></tr>';
       
       _.each(tipRows, function(label, k) {
         var val1 = nodes[d.y][k],
-            val2 = nodes[d.x][k];
+            val2 = nodes[d.x][k],
+            link;
         html += '<tr><td class="row-label">' + label + '</td>';
-        if (LINKABLE && LINKABLE[k]) {
-          val1 = '<a target="_blank" href="' + LINKABLE[k].replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';
-          val2 = '<a target="_blank" href="' + LINKABLE[k].replace('%s', encodeURIComponent(val2)) + '">' + val2 + '</a>';
+        if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
+          val1 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';
+          val2 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val2)) + '">' + val2 + '</a>';
         }
         if (val1 == val2) { html += '<td class="same" colspan=2>' + val1 + '</td></tr>'; }
         else { html += '<td>' + val1 + '</td><td>' + val2 + '</td></tr>'; }
       });
       
       html += '</table><div class="more"><span class="instructions">click for links</span><span class="links">Open: ';
-      html += '<a href="' + snp_url + '" target="_blank">SNP track</a> <a href="data/" target="_blank">mummerplot</a>'
-      html += '</span></div>'
+      snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
+      if (IGB_DIR && CHROMOZOOM_URL && TRACKS_DIR) {
+        snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[d.y].name) + '&customTracks=' + snvs_url;
+        snvs_url += '';
+      }
+      html += '<a href="' + snvs_url + '" target="_blank">SNP track</a> <a href="javascript:alert(\'coming soon\')">mummerplot</a>';
+      html += '</span></div>';
       return html;
     }
     
