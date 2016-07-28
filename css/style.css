@@ -217,6 +217,7 @@ text.axis-label {
 .link-info {
   border-bottom: 1px solid white;
   border-collapse: collapse;
+  margin-bottom: 0.5em;
 }
 
 .link-info th, .link-info td {
@@ -225,6 +226,14 @@ text.axis-label {
 
 .link-info th {
   border-bottom: 1px solid white;
+}
+.link-info th.dist {
+  text-align: center;
+}
+
+.link-info tr.merge td:not(:empty) {
+  font-style: italic;
+  background-color: #666;
 }
 
 .link-info td.same {
@@ -266,8 +275,8 @@ text.axis-label {
 .d3-tip a:hover, .d3-tip a:active {
   text-decoration: underline;
 }
+
 .d3-tip .more {
-  margin-top: 0.5em;
   text-align: center;
 }
 .d3-tip .more a:link {
@@ -278,3 +287,10 @@ text.axis-label {
 }
 .more .instructions, .show-more .more .links { display: inline; }
 .show-more .more .instructions, .more .links { display: none; }
+
+.d3-tip .merge-warn {
+  text-align: center;
+  font-size: 80%;
+  color: #aaa;
+  margin-bottom: 0.5em;
+}

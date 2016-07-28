@@ -199,7 +199,7 @@ $(function() {
           node.contig_N50_format = numberWithCommas(node.contig_N50);
           node.contig_maxlength_format = numberWithCommas(node.contig_maxlength);
         }
-        matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0}; });
+        matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0, origZ: null}; });
         matrix[i].y = i;
       });
 
@@ -241,11 +241,13 @@ $(function() {
         _.each(samePtClusters, function(clust) {
           // reduce matrix rows/columns into the parent node's
           _.each(_.range(n), function(i) {
+            matrix[clust[0]][i].origZ = matrix[clust[0]][i].z;
+            matrix[i][clust[0]].origZ = matrix[i][clust[0]].z;
             matrix[clust[0]][i].z = _.min(_.map(_.pick(matrix, clust), function(row) { return row[i].z; }));
             matrix[i][clust[0]].z = _.min(_.map(_.pick(matrix[i], clust), function(cell) { return cell.z; }));
           });
           // mark the parent/child nodes so they can be drawn differently
-          nodes[clust[0]].samePtMergeParent = true;
+          nodes[clust[0]].samePtMergeParent = clust;
           _.each(_.rest(clust), function(i) { nodes[i].samePtMergeChild = true; });
         });
       }
@@ -580,13 +582,34 @@ $(function() {
             contig_N50_format: 'contig N50',
             contig_maxlength_format: 'longest contig'
           },
-          snvs_url = assemblies.out_dir + '/' + nodes[d.y].name + '/' + nodes[d.y].name + '_' + nodes[d.x].name + '.snv.bed',
+          ixLeft = d.y,  // node index for left side of tooltip table
+          ixRight = d.x, // "" for right side
+          leftClust = nodes[ixLeft].samePtMergeParent,
+          rightClust = nodes[ixRight].samePtMergeParent,
           html = '<table class="link-info">'
-          + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + d.z + '</span> SNPs</th></tr>';
+          + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + d.z + '</span> SNPs</th></tr>',
+          snvs_url;
+      
+      // For each side of the tooltip table, if it is a merged isolate, display info for the *closest* isolate.
+      if (leftClust) {
+        ixLeft = _.first(_.sortBy(leftClust, function(i) { 
+          var cell = fullMatrix[i][d.x];
+          return cell.origZ !== null ? cell.origZ : cell.z; 
+        }));
+      }
+      if (rightClust) {
+        ixRight = _.first(_.sortBy(rightClust, function(i) { 
+          var cell = fullMatrix[d.y][i];
+          return cell.origZ !== null ? cell.origZ : cell.z;
+        }));
+      }
+      if (leftClust || rightClust) {
+        html += '<tr class="merge"><td/><td>' + (leftClust ? 'MERGED' : '') + '</td><td>' + (rightClust ? 'MERGED' : '') + '</td></tr>';
+      }
       
       _.each(tipRows, function(label, k) {
-        var val1 = nodes[d.y][k],
-            val2 = nodes[d.x][k],
+        var val1 = nodes[ixLeft][k],
+            val2 = nodes[ixRight][k],
             link;
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
@@ -597,10 +620,13 @@ $(function() {
         else { html += '<td>' + val1 + '</td><td>' + val2 + '</td></tr>'; }
       });
       
-      html += '</table><div class="more"><span class="instructions">click for links</span><span class="links">Open: ';
+      html += '</table>'
+      if (leftClust || rightClust) { html += '<div class="merge-warn">For merged isolates, closest isolate is shown.</div>'; }
+      html += '<div class="more"><span class="instructions">click for links</span><span class="links">Open: ';
+      snvs_url = assemblies.out_dir + '/' + nodes[ixLeft].name + '/' + nodes[ixLeft].name + '_' + nodes[ixRight].name + '.snv.bed',
       snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
       if (IGB_DIR && CHROMOZOOM_URL && TRACKS_DIR) {
-        snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[d.y].name) + '&customTracks=' + snvs_url;
+        snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[ixLeft].name) + '&customTracks=' + snvs_url;
         snvs_url += '';
       }
       html += '<a href="' + snvs_url + '" target="_blank">SNP track</a> <a href="javascript:alert(\'coming soon\')">mummerplot</a>';
