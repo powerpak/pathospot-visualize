@@ -56,7 +56,9 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
           <option value="mergeSamePt" selected>Merge similar specimens from same patient</option>
           <option value="clustersOnly">Only show putative transmissions (≥1 link to another patient)</option>
         </optgroup>
-        <optgroup label="Filter by MLST" id="mlst">
+        <optgroup label="Filter by unit" id="units">
+        </optgroup>
+        <optgroup label="Filter by MLST" id="mlsts">
         </optgroup>
       </select>
     </label>
@@ -105,11 +107,13 @@ function numberWithCommas(x) {
 
 function getFilters() {
   var filters = $('#filter').val(),
-    mlstFilters = _.filter(filters, function(v) { return (/^MLST:/).test(v); });
+    mlstFilters = _.filter(filters, function(v) { return (/^MLST:/).test(v); }),
+    unitFilters = _.filter(filters, function(v) { return (/^Unit:/).test(v); });
   return {
     mergeSamePt: _.contains(filters, 'mergeSamePt'), 
     clustersOnly: _.contains(filters, 'clustersOnly'),
-    mlsts: _.map(mlstFilters, function(v) { return v.split(':')[1]; })
+    mlsts: _.map(mlstFilters, function(v) { return v.split(':')[1]; }),
+    units: _.map(unitFilters, function(v) { return v.split(':')[1]; })
   };
 }
 
@@ -259,6 +263,9 @@ $(function() {
       }
       if (filters.mlsts && filters.mlsts.length) {
         visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters.mlsts, node.mlst_subtype); }); 
+      }
+      if (filters.units && filters.units.length) {
+        visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters.units, node.collection_unit); }); 
       }
     
       if (visibleNodes.length) {
@@ -740,7 +747,11 @@ $(function() {
     
     var mlsts = _.reject(_.map(_.pluck(nodes, 'mlst_subtype'), function(v) { return parseInt(v, 10); }), _.isNaN);
     _.each(_.sortBy(_.uniq(mlsts)), function(mlst) { 
-      $('#mlst').append('<option value="MLST:' + mlst + '">MLST: ' + mlst + '</option>'); 
+      $('#mlsts').append('<option value="MLST:' + mlst + '">MLST: ' + mlst + '</option>'); 
+    });
+    var units = _.pluck(nodes, 'collection_unit');
+    _.each(_.sortBy(_.compact(_.uniq(units))), function(unit) { 
+      $('#units').append('<option value="Unit:' + unit + '">Unit: ' + unit + '</option>'); 
     });
     $('#filter').select2({placeholder: "Click to add/remove filters"})
     $('#filter-cont .select2-selection').append(
