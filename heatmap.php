@@ -84,14 +84,23 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
 
 <script type="text/javascript">
 
+var ANON = getURLParameter('anon');
+
 function fixUnit(unit) {
   if (unit) {
     unit = unit.replace(/EMERGENCY DEPARTMENT/, 'ED');
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
     unit = unit.replace(/^FPA.*/, 'FPA');
+    if (ANON) { unit = rot13(unit); }
   }
   return unit;
+}
+
+function formatDate(d) {
+  if (!d) { return ''; }
+  d = new Date(d);
+  return d.getFullYear() + '-' + ("0" + (d.getMonth() + 1)).slice(-2) + '-' + ("0" + d.getDate()).slice(-2);
 }
 
 // one-liner from http://stackoverflow.com/questions/11582512/how-to-get-url-parameters-with-javascript/11582513
@@ -103,6 +112,10 @@ function getURLParameter(name) {
 
 function numberWithCommas(x) {
   return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function rot13(s) {
+  return s.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});
 }
 
 function getFilters() {
@@ -134,7 +147,8 @@ $(function() {
       sliderHeight = 80,
       DEFAULT_SNP_THRESHOLD = parseInt($('#snps-num').val(), 10),
       MAX_SNP_THRESHOLD = 100,
-      TRANSITION_DURATION = 1000;
+      TRANSITION_DURATION = 1000,
+      PREPROCESS_FIELDS = {collection_unit: fixUnit, ordered: formatDate};
   
   var x = d3.scaleBand().range([0, width]),
       z = d3.scaleLinear().domain([DEFAULT_SNP_THRESHOLD + 1, 0]).clamp(true),
@@ -164,6 +178,7 @@ $(function() {
         n = nodes.length,
         idealBandWidth = Math.max(width / n, 16),
         filteredDomain = [],
+        rand20 = Math.floor(Math.random() * 20),
         fullMatrix, visibleNodes, filteredClusters;
   
     // **************************  LOAD AND SETUP DATA STRUCTURES *****************************
@@ -197,6 +212,7 @@ $(function() {
           node.ordered = null;
           if ((/\d{4}-\d{2}-\d{2}/).test(node.order_date) && node.order_date > '1901-00-00') { 
             node.ordered = new Date(node.order_date);
+            if (ANON) { node.ordered = node.ordered.setMonth(node.ordered.getMonth() + rand20 + 10); }
           }
         }
         if (_.isUndefined(node.contig_N50_format)) {
@@ -546,7 +562,7 @@ $(function() {
           .attr("y", idealBandWidth / 2)
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
-          .text(function(d) { return nodes[d.y].order_date; });
+          .text(function(d) { return formatDate(nodes[d.y].ordered); });
       rowEnter.append("text")
           .attr("class", "mlst")
           .attr("x", width + 130)
@@ -581,7 +597,7 @@ $(function() {
       var tipRows = {
             eRAP_ID: "Anon Pt ID",
             collection_unit: "Unit",
-            order_date: "Order Date",
+            ordered: "Order Date",
             mlst_subtype: "MLST", 
             isolate_ID: "Isolate ID",
             assembly_ID: "Assembly ID",
@@ -618,6 +634,7 @@ $(function() {
         var val1 = nodes[ixLeft][k],
             val2 = nodes[ixRight][k],
             link;
+        if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[k]) { val1 = PREPROCESS_FIELDS[k](val1); val2 = PREPROCESS_FIELDS[k](val2); }
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
           val1 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';

@@ -63,6 +63,7 @@ svg {
   line-height: 20px;
   margin-right: 3px;
   text-align: center;
+  -webkit-print-color-adjust: exact;
 }
 
 .background {
