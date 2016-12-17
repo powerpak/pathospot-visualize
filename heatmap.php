@@ -146,7 +146,7 @@ $(function() {
     .append("g")
       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     
-  var db = (getURLParameter('db') || $('#db').val()).replace(/\W+/g, '');
+  var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
   $('#db').val(db);
   document.title = $('#db > option[value="'+ db +'"]').text() + ' - Heatmap';
   
