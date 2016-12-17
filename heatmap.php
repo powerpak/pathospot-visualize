@@ -5,6 +5,7 @@ if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE_
 else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 $data_files = glob(dirname(__FILE__).'/data/*.heatmap.json');
+date_default_timezone_set('America/New_York');
 ?>
 <head>
   
