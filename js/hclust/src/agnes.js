@@ -11,12 +11,13 @@ var Cluster = require('./Cluster');
  * @returns {number}
  */
 function simpleLink(cluster1, cluster2, disFun) {
-    var m = 10e100;
-    for (var i = 0; i < cluster1.length; i++)
+    var m = Infinity;
+    for (var i = 0; i < cluster1.length; i++) {
         for (var j = i; j < cluster2.length; j++) {
             var d = disFun(cluster1[i], cluster2[j]);
             m = Math.min(d,m);
         }
+    }
     return m;
 }
 
@@ -28,11 +29,12 @@ function simpleLink(cluster1, cluster2, disFun) {
  */
 function completeLink(cluster1, cluster2, disFun) {
     var m = -1;
-    for (var i = 0; i < cluster1.length; i++)
+    for (var i = 0; i < cluster1.length; i++) {
         for (var j = i; j < cluster2.length; j++) {
             var d = disFun(cluster1[i], cluster2[j]);
             m = Math.max(d,m);
         }
+    }
     return m;
 }
 
@@ -44,9 +46,11 @@ function completeLink(cluster1, cluster2, disFun) {
  */
 function averageLink(cluster1, cluster2, disFun) {
     var m = 0;
-    for (var i = 0; i < cluster1.length; i++)
-        for (var j = 0; j < cluster2.length; j++)
+    for (var i = 0; i < cluster1.length; i++) {
+        for (var j = 0; j < cluster2.length; j++) {
             m += disFun(cluster1[i], cluster2[j]);
+        }
+    }
     return m / (cluster1.length * cluster2.length);
 }
 
@@ -146,9 +150,10 @@ function agnes(data, options) {
         throw new TypeError('Undefined kind of similarity');
 
     var list = new Array(len);
-    for (var i = 0; i < data.length; i++)
+    for (var i = 0; i < data.length; i++) {
         list[i] = new ClusterLeaf(i);
-    var min  = 10e5,
+    }
+    var min  = Infinity,
         d = {},
         dis = 0;
 
@@ -156,8 +161,8 @@ function agnes(data, options) {
 
         // calculates the minimum distance
         d = {};
-        min = 10e5;
-        for (var j = 0; j < list.length; j++)
+        min = Infinity;
+        for (var j = 0; j < list.length; j++) {
             for (var k = j + 1; k < list.length; k++) {
                 var fData, sData;
                 if (list[j] instanceof ClusterLeaf)
@@ -183,9 +188,11 @@ function agnes(data, options) {
                 }
                 min = Math.min(dis, min);
             }
+        }
 
         // cluster dots
         var dmin = d[min.toFixed(4)];
+        if (dmin.length == 6) { console.log(JSON.stringify(dmin)); } //FIXME
         var clustered = new Array(dmin.length);
         var aux,
             count = 0;

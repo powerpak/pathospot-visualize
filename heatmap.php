@@ -3,6 +3,8 @@
 <?php
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
+
+$data_files = glob(dirname(__FILE__).'/data/*.heatmap.json');
 ?>
 <head>
   
@@ -38,8 +40,16 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
     <label class="widget">
       <span class="widget-label">Dataset</span>
       <select id="db" name="db">
-        <option value="saureus">S. aureus SNP distances</option>
-        <option value="cdiff">C. difficile SNP distances</option>
+<?php 
+foreach ($data_files as $data_file): 
+  $data = json_decode(file_get_contents($data_file), TRUE);
+  $filename = basename(substr($data_file, 0, -13));
+  $units = htmlspecialchars($data['distance_unit']);
+  $title = preg_replace('#\\..*#', '', $filename);
+  $date = strftime('%b %d %Y', strtotime($data['generated']));
+  ?>
+        <option value="<?= htmlspecialchars($filename) ?>"><?= $title ?> <?= $units ?> – <?= $date ?></option>
+<?php endforeach ?>
       </select>
     </label>
     <label class="widget">
@@ -286,10 +296,11 @@ $(function() {
     
       if (visibleNodes.length) {
         // Agglomerative, single-linkage hierarchical clustering based on the above dissimilarity matrix
-        function disFunc(a, b) { return matrix[a.i][b.i].z; }
+        // Hierarchical clustering expects symmetrical distances, so we average across the diagonal of the dissimilarity matrix
+        function disFunc(a, b) { return (matrix[a.i][b.i].z + matrix[b.i][a.i].z) / 2; }
         allClusters = HClust.agnes(visibleNodes, {disFunc: disFunc, kind: 'single'});
         _.each(allClusters.index, function(leaf, i) { visibleNodes[leaf.index].groupOrder = i;  });
-    
+        
         // Find all clusters with diameter below the snpThreshold with >1 children
         allClusters = _.filter(allClusters.cut(snpThreshold), function(clust) { return clust.children; });
         // Sort them by size, in descending order
@@ -475,7 +486,7 @@ $(function() {
         
     svg.append("text")
         .attr("class", "axis-label")
-        .attr("x", width + 50)
+        .attr("x", width + 70)
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
@@ -483,7 +494,7 @@ $(function() {
         
     svg.append("text")
         .attr("class", "axis-label")
-        .attr("x", width + 130)
+        .attr("x", width + 150)
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
@@ -491,7 +502,7 @@ $(function() {
         
     svg.append("text")
         .attr("class", "axis-label")
-        .attr("x", width + 190)
+        .attr("x", width + 210)
         .attr("y", -10)
         .attr("dy", ".32em")
         .attr("text-anchor", "start")
@@ -558,21 +569,21 @@ $(function() {
           .text(function(d) { return fixUnit(nodes[d.y].collection_unit); });
       rowEnter.append("text")
           .attr("class", "date")
-          .attr("x", width + 50)
+          .attr("x", width + 70)
           .attr("y", idealBandWidth / 2)
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
           .text(function(d) { return formatDate(nodes[d.y].ordered); });
       rowEnter.append("text")
           .attr("class", "mlst")
-          .attr("x", width + 130)
+          .attr("x", width + 150)
           .attr("y", idealBandWidth / 2)
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
           .text(function(d) { return nodes[d.y].mlst_subtype; });
       rowEnter.append("text")
           .attr("class", "isolate-id row-label")
-          .attr("x", width + 190)
+          .attr("x", width + 210)
           .attr("y", idealBandWidth / 2)
           .attr("dy", ".32em")
           .attr("text-anchor", "start")
