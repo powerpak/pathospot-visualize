@@ -89,6 +89,7 @@ foreach ($data_files as $data_file):
     </label>
     <div class="clear"></div>
     <label>Filter by specimen order dates</label>
+    <label id="histo-title">Distances to closest isolate</label>
   </div>
 </div>
 
@@ -361,12 +362,13 @@ $(function() {
     }
     x.domain(calculateOrder('groupOrder'));
     
+    
     // ***************************** BRUSH SLIDER ************************************
     
     var orderDates = _.compact(_.pluck(nodes, "ordered"));
     
     var sliderSvg = d3.select("#controls").append("svg")
-        .attr("width", width + margin.left + margin.right)
+        .attr("width", width + margin.left)
         .attr("height", sliderHeight + 20)
         .append("g")
         .attr("transform", "translate(" + margin.left + ",0)");
@@ -435,6 +437,77 @@ $(function() {
       reorder();
       //svg.classed("selecting", !event.target.empty());
     }
+    
+
+    // ******************************* HISTOGRAM *************************************
+    // TODO: make this to the closest *previous* isolate
+    // TODO: add a second overlaid histogram for only distances between same-patient isolates
+
+    var histoMargin = {top: 6, left: 20, right: 10, bottom: 20}
+
+    var histoX = d3.scaleLog()
+        .rangeRound([0, margin.right - histoMargin.left - histoMargin.right]);
+    
+    var histoY = d3.scaleLinear()
+        .range([sliderHeight - histoMargin.top, 0]);
+            
+    var histoSvg = d3.select("#controls").append("svg")
+        .attr("width", margin.right)
+        .attr("height", sliderHeight + histoMargin.bottom);
+    
+    var histoG = histoSvg.append("g")
+        .attr("transform", "translate(" + histoMargin.left + "," + histoMargin.top + ")");
+    
+    var histoXAxis = histoG.append("g")
+        .attr("class", "axis axis--x")
+        .attr("transform", "translate(0," + (sliderHeight - histoMargin.top) + ")");
+    
+    var histoYAxis = histoG.append("g")
+        .attr("class", "axis axis--y");
+    
+    function updateHistoBars(mat) {
+      var distances = _.flatten(_.map(mat, function(row, i) { 
+        var exceptDiagonal = row.slice();
+        exceptDiagonal.splice(i, 1)
+        return d3.min(_.map(exceptDiagonal, function(cell) { 
+          return cell.origZ !== null ? cell.origZ : cell.z;
+        }));
+      }));
+            
+      histoX.domain([1, d3.max(distances) * 1.28]);
+      
+      var log10Scale = d3.scaleLinear().domain([0, Math.log10(d3.max(distances))]).ticks(20),
+          thresholds = _.map(log10Scale, function(x) { return Math.pow(10, x); });
+          
+      var bins = d3.histogram()
+          .domain(histoX.domain())
+          .thresholds(thresholds)
+          (distances);
+            
+      histoY.domain([0, d3.max(bins, function(d) { return d.length; })])
+
+      var histoBar = histoG.selectAll(".bar")
+          .data(bins);
+
+      var histoBarEnter = histoBar.enter().append("g")
+          .attr("class", "bar")
+      
+      histoBarEnter.append("rect");
+
+      histoBarEnter.merge(histoBar)
+          .attr("transform", function(d) { return "translate(" + histoX(d.x0) + "," + histoY(d.length) + ")"; })
+        .select("rect")
+          .attr("x", 1)
+          .attr("width", function(d) { return histoX(d.x1) - histoX(d.x0) - 1; })
+          .attr("height", function(d) { return sliderHeight - histoMargin.top - histoY(d.length); });
+
+      histoBar.exit().remove();
+      
+      histoXAxis.call(d3.axisBottom(histoX).ticks(5, ",.1s"));
+      histoYAxis.call(d3.axisLeft(histoY).ticks(3, ",s"));
+    }
+    updateHistoBars(fullMatrix);
+
   
     // **************************** HEATMAP ************************************
 

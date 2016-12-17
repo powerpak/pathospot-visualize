@@ -66,6 +66,11 @@ svg {
   -webkit-print-color-adjust: exact;
 }
 
+#histo-title {
+  position: absolute;
+  left: 710px;
+}
+
 .background {
   fill: #eee;
 }
@@ -143,6 +148,10 @@ text.axis-label {
   stroke: #000;
   stroke-width: 4px;
   fill: none;
+}
+
+.bar {
+  fill: rgba(0, 0, 0, 0.5);
 }
 
 /**** select2 customization ****/
