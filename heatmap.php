@@ -55,7 +55,7 @@ foreach ($data_files as $data_file):
     <label class="widget">
       <span class="widget-label">Similarity threshold</span>
       <input id="snps-num" name="snps_num" type="text" size="3" value="10" disabled />
-      <span class="units">SNPs</span>
+      <span class="distance-unit units">SNPs</span>
       <input id="snps" name="snps" class="range" type="range" min="1" step="1"/>
     </label>
     <div class="clear"></div>
@@ -89,7 +89,11 @@ foreach ($data_files as $data_file):
     </label>
     <div class="clear"></div>
     <label>Filter by specimen order dates</label>
-    <label id="histo-title">Distances to closest isolate</label>
+    <label id="histo-title">
+      Histogram of
+      <span class="distance-unit">distances</span>
+      to closest previous isolate
+    </label>
   </div>
 </div>
 
@@ -152,10 +156,11 @@ $(function() {
 
   // *************************** SVG/D3 SETUP *********************************
 
-  var margin = {top: 60, right: 300, bottom: 10, left: 80},
+  var margin = {top: 60, right: 400, bottom: 10, left: 80},
       width = 600,
       height = 600,
       sliderHeight = 80,
+      dendroRight = 140,
       DEFAULT_SNP_THRESHOLD = parseInt($('#snps-num').val(), 10),
       MAX_SNP_THRESHOLD = 100,
       TRANSITION_DURATION = 1000,
@@ -174,13 +179,6 @@ $(function() {
   var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
   $('#db').val(db);
   document.title = $('#db > option[value="'+ db +'"]').text() + ' - Heatmap';
-  
-  // Setup the slider and bind it to changing the disabled input
-  $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
-    polyfill: false,
-    onSlide: function(position, value) { $('#snps-num').val(value); },
-    onSlideEnd: function(position, value) { $('#snps-num').change(); }
-  });
 
   d3.json("data/" + db + ".heatmap.json", function(assemblies) {
 
@@ -190,7 +188,9 @@ $(function() {
         idealBandWidth = Math.max(width / n, 16),
         filteredDomain = [],
         rand20 = Math.floor(Math.random() * 20),
-        fullMatrix, visibleNodes, filteredClusters;
+        fullMatrix, visibleNodes, detectedClusters;
+    
+    $('.distance-unit').text(assemblies.distance_unit);
   
     // **************************  LOAD AND SETUP DATA STRUCTURES *****************************
   
@@ -198,7 +198,7 @@ $(function() {
     // `nodes`: the full list of nodes
     // `fullMatrix`: the full distance matrix
     // `visibleNodes`: which nodes should show up in the daterange selector and in the matrix based on `filters`
-    // `filteredClusters`: the clusters that were detected in `visibleNodes`
+    // `detectedClusters`: the clusters that were detected in `visibleNodes`
     // 
     // The parameter `filters` is an object with the following possible keys:
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
@@ -305,9 +305,9 @@ $(function() {
         // Find all clusters with diameter below the snpThreshold with >1 children
         allClusters = _.filter(allClusters.cut(snpThreshold), function(clust) { return clust.children; });
         // Sort them by size, in descending order
-        filteredClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
+        detectedClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
         // then annotate the nodes with the # of the cluster they are in
-        _.each(filteredClusters, function(clust, i) {
+        _.each(detectedClusters, function(clust, i) {
           _.each(clust.index, function(leaf) { visibleNodes[leaf.index].group = i; });
         });
       }
@@ -318,40 +318,40 @@ $(function() {
 
     // ************************* FILTERING AND ORDERING *****************************
   
-    function calculateOrder(orderMethod) {
+    function calculateOrder(indices, orderMethod) {
       switch (orderMethod) {
         case 'groupOrder':
-          return d3.range(n).sort(function(a, b) { return nodes[b].groupOrder - nodes[a].groupOrder; });
+          return indices.sort(function(a, b) { return nodes[b].groupOrder - nodes[a].groupOrder; });
         case 'order_date':
-          return d3.range(n).sort(function(a, b) { 
+          return indices.sort(function(a, b) { 
             return d3.ascending(nodes[a].order_date, nodes[b].order_date)
                 || d3.ascending(nodes[a].groupOrder, nodes[b].groupOrder);
           });
         case 'collection_unit':
-          return d3.range(n).sort(function(a, b) {
+          return indices.sort(function(a, b) {
             return d3.ascending(nodes[a].collection_unit, nodes[b].collection_unit)
                 || d3.ascending(nodes[a].groupOrder, nodes[b].groupOrder);
           });
         case 'mlst_subtype':
-          return d3.range(n).sort(function(a, b) { 
+          return indices.sort(function(a, b) { 
             return d3.ascending(nodes[a].mlst_subtype, nodes[b].mlst_subtype)
                 || d3.ascending(nodes[a].groupOrder, nodes[b].groupOrder);
           });
         case 'eRAP_ID':
-          return d3.range(n).sort(function(a, b) { return d3.ascending(nodes[a].eRAP_ID, nodes[b].eRAP_ID); });
+          return indices.sort(function(a, b) { return d3.ascending(nodes[a].eRAP_ID, nodes[b].eRAP_ID); });
       }
     }
     
     // Filters an ordered set of indexes by whether the node was merged into a similar node
     // from the same patient (if it was, it is removed)
-    function filterOrderByVisibleNodes(order) {
+    function filterByVisibleNodes(order) {
       var visibleNodeIndexes = {};
       _.each(visibleNodes, function(node) { visibleNodeIndexes[node.i] = true; });
       return _.filter(order, function(i) { return visibleNodeIndexes[i]; });
     }
 
     // Filters an ordered set of indexes by the current date range brush selection.
-    function filterOrderByBrush(order) {    
+    function filterByBrush(order) {    
       var selection = d3.brushSelection(brushg.node()),
         start, end;
         
@@ -360,7 +360,6 @@ $(function() {
       end = sliderX.invert(selection[1]);
       return _.filter(order, function(i) { return nodes[i].ordered >= start && nodes[i].ordered <= end; });
     }
-    x.domain(calculateOrder('groupOrder'));
     
     
     // ***************************** BRUSH SLIDER ************************************
@@ -368,7 +367,7 @@ $(function() {
     var orderDates = _.compact(_.pluck(nodes, "ordered"));
     
     var sliderSvg = d3.select("#controls").append("svg")
-        .attr("width", width + margin.left)
+        .attr("width", width + margin.left + margin.right)
         .attr("height", sliderHeight + 20)
         .append("g")
         .attr("transform", "translate(" + margin.left + ",0)");
@@ -440,53 +439,81 @@ $(function() {
     
 
     // ******************************* HISTOGRAM *************************************
-    // TODO: make this to the closest *previous* isolate
     // TODO: add a second overlaid histogram for only distances between same-patient isolates
 
-    var histoMargin = {top: 6, left: 20, right: 10, bottom: 20}
+    var histoMargin = {top: 6, left: 50, right: 40, bottom: 20},
+        histoHeight = sliderHeight - histoMargin.top,
+        histoWidth = margin.right - histoMargin.left - histoMargin.right;
 
     var histoX = d3.scaleLog()
-        .rangeRound([0, margin.right - histoMargin.left - histoMargin.right]);
+        .rangeRound([0, histoWidth]);
     
     var histoY = d3.scaleLinear()
         .range([sliderHeight - histoMargin.top, 0]);
             
-    var histoSvg = d3.select("#controls").append("svg")
-        .attr("width", margin.right)
-        .attr("height", sliderHeight + histoMargin.bottom);
-    
-    var histoG = histoSvg.append("g")
-        .attr("transform", "translate(" + histoMargin.left + "," + histoMargin.top + ")");
+    var histoG = sliderSvg.append("g")
+        .attr("transform", "translate(" + (width + histoMargin.left) + "," + histoMargin.top + ")");
     
     var histoXAxis = histoG.append("g")
         .attr("class", "axis axis--x")
-        .attr("transform", "translate(0," + (sliderHeight - histoMargin.top) + ")");
+        .attr("transform", "translate(0," + histoHeight + ")");
     
     var histoYAxis = histoG.append("g")
         .attr("class", "axis axis--y");
+        
+    var histoGBars = histoG.append("g");
+    
+    histoG.append("line")
+        .attr("class", "histo-cutoff")
+        .attr("y1", 0)
+        .attr("y2", histoHeight)
+    
+    histoG.append("rect")
+        .attr("class", "histo-bg")
+        .attr("width", histoWidth)
+        .attr("height", histoHeight)
+        .call(d3.drag()
+            .on("start drag", function() { 
+              $('#snps').val(Math.round(histoX.invert(d3.event.x))).change();
+              changeSnpThresholdDebounced();
+            })
+        );
     
     function updateHistoBars(mat) {
-      var distances = _.flatten(_.map(mat, function(row, i) { 
-        var exceptDiagonal = row.slice();
-        exceptDiagonal.splice(i, 1)
-        return d3.min(_.map(exceptDiagonal, function(cell) { 
-          return cell.origZ !== null ? cell.origZ : cell.z;
-        }));
-      }));
+      var allDistances = [], samePtDistances = [];
+      _.each(mat, function(row, i) {
+        if (nodes[i].ordered === null) { return; }
+        var previousIsolates = _.filter(row, function(cell, j) {
+          // exclude diagonal, only allow comparisons with chronologically previous isolates
+          return i !== j && nodes[j].ordered !== null && nodes[j].ordered <= nodes[i].ordered;
+        });
+        var samePtIsolates = !nodes[i].eRAP_ID ? [] : _.filter(previousIsolates, function(cell) {
+          // exclude diagonal, only allow comparisons with chronologically previous isolates
+          return nodes[cell.x].eRAP_ID == nodes[i].eRAP_ID;
+        });
+        function origZ(cell) { return cell.origZ !== null ? cell.origZ : cell.z; }
+        if (previousIsolates.length) { allDistances.push(d3.min(_.map(previousIsolates, origZ))); }
+        if (samePtIsolates.length) { samePtDistances.push(d3.min(_.map(samePtIsolates, origZ))); }
+      });
             
-      histoX.domain([1, d3.max(distances) * 1.28]);
+      histoX.domain([1, d3.max(allDistances) * 1.04]);
       
-      var log10Scale = d3.scaleLinear().domain([0, Math.log10(d3.max(distances))]).ticks(20),
+      var log10Scale = d3.scaleLinear().domain([0, Math.log10(d3.max(allDistances))]).ticks(20),
           thresholds = _.map(log10Scale, function(x) { return Math.pow(10, x); });
           
-      var bins = d3.histogram()
+      var binning = d3.histogram()
           .domain(histoX.domain())
           .thresholds(thresholds)
-          (distances);
+      
+      var binAllDistances = binning(allDistances),
+          binSamePtDistances = binning(samePtDistances);
+      _.each(binSamePtDistances, function(bin) { bin.samePt = true; });
+      
+      var bins = binAllDistances.concat(binSamePtDistances);
             
       histoY.domain([0, d3.max(bins, function(d) { return d.length; })])
 
-      var histoBar = histoG.selectAll(".bar")
+      var histoBar = histoGBars.selectAll(".bar")
           .data(bins);
 
       var histoBarEnter = histoBar.enter().append("g")
@@ -499,7 +526,8 @@ $(function() {
         .select("rect")
           .attr("x", 1)
           .attr("width", function(d) { return histoX(d.x1) - histoX(d.x0) - 1; })
-          .attr("height", function(d) { return sliderHeight - histoMargin.top - histoY(d.length); });
+          .attr("height", function(d) { return histoHeight - histoY(d.length); })
+          .classed("same-pt", function(d) { return d.samePt; });
 
       histoBar.exit().remove();
       
@@ -507,7 +535,12 @@ $(function() {
       histoYAxis.call(d3.axisLeft(histoY).ticks(3, ",s"));
     }
     updateHistoBars(fullMatrix);
-
+    
+    function updateHistoCutoff(cutoff) {
+      histoG.select(".histo-cutoff").attr("x1", histoX(cutoff)).attr("x2", histoX(cutoff));
+    }
+    updateHistoCutoff(DEFAULT_SNP_THRESHOLD);
+    
   
     // **************************** HEATMAP ************************************
 
@@ -826,10 +859,11 @@ $(function() {
       svg.selectAll("*").interrupt();
     }
     
+    
     // ******************************* CLUSTER LEGEND **************************************
     
     var clusterLegend = d3.select("#cluster-legend");
-    function updateClusters(clusters) {
+    function updateDetectedClusters(clusters) {
       clusterLegend.style('display', 'inline');
       clusterLegend.select('.num-clusters').text(clusters.length);
       var clusterList = clusterLegend.select('#cluster-list').selectAll('span').data(clusters);
@@ -839,7 +873,90 @@ $(function() {
           .text(function(d) { return d.index.length; });
       clusterList.exit().remove();
     }
-    updateClusters(filteredClusters);
+    updateDetectedClusters(detectedClusters);
+    
+    
+    // ******************************* DENDROGRAM ****************************************
+    
+    var dendroG = svg.append("g")
+        .attr("class", "dendro")
+        .attr("transform", "translate(" + (width + margin.right - dendroRight * 0.95) + ",0)");
+        
+    dendroG.append("path")
+        .attr("d", "M0,0 H" + dendroRight * 0.9)
+        .attr("class", "scale");
+    
+    dendroG.append("text")
+        .attr("class", "axis-label")
+        .attr("x", dendroRight * 0.45)
+        .attr("y", -10)
+        .attr("dy", ".32em")
+        .attr("text-anchor", "middle")
+        .text(MAX_SNP_THRESHOLD + " " + assemblies.distance_unit);
+    
+    var dendroX = d3.scaleLinear().range([0, dendroRight * 0.9])
+    
+    function reclusterFilteredNodes(filteredDomain) {
+      // Do a second round of single-linkage agglomerative clustering only for the visible nodes.
+      // This lets us draw the dendrogram
+      function disFunc(a, b) { return (fullMatrix[a][b].z + fullMatrix[b][a].z) / 2; }
+      var filteredClusters = HClust.agnes(filteredDomain, {disFunc: disFunc, kind: 'single'});
+      _.each(filteredClusters.index, function(leaf, i) { 
+        leaf.data = nodes[filteredDomain[leaf.index]];
+        leaf.data.groupOrder = i;
+      });
+      return filteredClusters;
+    }
+    
+    function updateDendrogram(filteredClusters) {
+      var cutClusters = _.filter(filteredClusters.cut(MAX_SNP_THRESHOLD), function(clust) { return !!clust.children; });
+            
+      dendroX.domain([0, MAX_SNP_THRESHOLD]);
+      
+      var dendroPath = dendroG.selectAll(".link")
+          .data(linksFromClusters(cutClusters), function(d) { return d.leaf; });
+      var dendroEnter = dendroPath.enter().append("path")
+          .attr("class", "link")
+          .attr("opacity", 0);
+      dendroPath.merge(dendroEnter)
+          .classed("leaf", function(d) { return d.leaf; })
+        .transition().duration(TRANSITION_DURATION * 0.5)
+          .attr("opacity", 0)
+        .transition().duration(1).delay(TRANSITION_DURATION * 0.5)
+          .attr("d", function(d) { return "M" + d.x1 + "," + d.y1 + " " + "V" + d.y2 + "H" + d.x2 ; })
+        .transition().duration(TRANSITION_DURATION * 0.5).delay(TRANSITION_DURATION * 0.5)
+          .attr("opacity", 1);
+      dendroPath.exit().transition().duration(TRANSITION_DURATION * 0.5)
+          .attr("opacity", 0)
+          .remove();
+    }
+    
+    function calculateMidpoints(clusters) {
+      var midpoints = _.map(clusters.children, function(child) {
+        if (!child.children) { return child.midpoint = x(child.data.i) + (0.5 * x.bandwidth()); }
+        else { return calculateMidpoints(child); }
+      });
+      return clusters.midpoint = (d3.max(midpoints) + d3.min(midpoints)) / 2;
+    }
+    
+    function extractLinks(clusts, links) {
+      if (!clusts.children) { return; }
+      _.each(clusts.children, function(child) {
+        links.push({x1: dendroX(clusts.distance), y1: clusts.midpoint, x2: dendroX(child.distance), y2: child.midpoint});
+        if (child.children) { extractLinks(child, links); }
+        else { links.push({x1: dendroX(child.distance), y1: child.midpoint, x2: -10, y2: child.midpoint, leaf: true}) }
+      });
+    }
+    
+    function linksFromClusters(clusters) {
+      var links = [];
+      _.each(clusters, function(clust) {
+        calculateMidpoints(clust);
+        extractLinks(clust, links);
+      });
+      return links;
+    }
+
     
     // ************************* BIND UI EVENTS -> CALLBACKS *******************************
     
@@ -859,15 +976,24 @@ $(function() {
         '<span class="select2-selection__arrow" role="presentation"><b role="presentation"></b></span>');
     $('#filter').on('change', changeSnpThreshold);
     
+    // Setup the slider and bind it to changing the disabled input
+    $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
+      polyfill: false,
+      onSlide: function(position, value) { $('#snps-num').val(value); updateHistoCutoff(value); },
+      onSlideEnd: function(position, value) { $('#snps-num').change(); }
+    });
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
+
 
     // **************************** UPDATING DATA -> UI ************************************
 
     function reorder() {    
-      var orderedNodeIndexes = calculateOrder($('#order').val());
+      var filteredDomain = filterByBrush(filterByVisibleNodes(d3.range(n))), 
+          filteredClusters = reclusterFilteredNodes(filteredDomain);
                 
-      filteredDomain = filterOrderByBrush(filterOrderByVisibleNodes(orderedNodeIndexes));
+      filteredDomain = calculateOrder(filteredDomain, $('#order').val());
+      
       // filter the fullMatrix to only the rows and columns in the filteredDomain
       filteredMatrix = _.map(
         _.filter(fullMatrix, function(col) { return _.contains(filteredDomain, col.y); }), 
@@ -882,28 +1008,25 @@ $(function() {
       x.domain(filteredDomain).range([0, Math.min(idealBandWidth * filteredDomain.length, width)]);
 
       updateColumns(filteredMatrix);
-      updateRows(filteredMatrix);
-
-      // t.selectAll(".row .bg")
-      //     .attr("class", function(d, i) { return _.contains(filteredDomain, i) ? "selected bg" : "bg"; });
-      // t.selectAll(".column .bg")
-      //     .attr("class", function(d, i) { return _.contains(filteredDomain, i) ? "selected bg" : "bg"; });
+      updateRows(filteredMatrix);    
+      updateDendrogram(filteredClusters);
     }
   
     function changeSnpThreshold() {
       interruptAllTransitions();
-      var snpThreshold = parseInt($('#snps-num').val(), 10);
+      var snpThreshold = parseInt($('#snps-num').val(), 10);      
       calculateMatrixAndVisibleNodes(nodes, links, snpThreshold, getFilters());
     
       z.domain([snpThreshold + 1, 0]);
     
       reorder();
       updateNodes(visibleNodes);
-      updateClusters(filteredClusters);
+      updateDetectedClusters(detectedClusters);
     }
+    var changeSnpThresholdDebounced = _.debounce(changeSnpThreshold, 200);
   
     // kick off an initial data update to setup the UI
-    brush.move(brushg, [width * 0.6, width * 0.8]);
+    brush.move(brushg, [width * 0.7, width]);
     
   });
   

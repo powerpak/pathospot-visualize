@@ -68,7 +68,9 @@ svg {
 
 #histo-title {
   position: absolute;
-  left: 710px;
+  left: 690px;
+  width: 380px;
+  text-align: center;
 }
 
 .background {
@@ -150,8 +152,33 @@ text.axis-label {
   fill: none;
 }
 
+.histo-bg {
+  fill: white;
+  opacity: 0;
+  cursor: crosshair;
+}
+
+.histo-cutoff {
+  stroke: red;
+  stroke-width: 2;
+  stroke-dasharray: 4;
+}
+
 .bar {
   fill: rgba(0, 0, 0, 0.5);
+}
+.bar .same-pt {
+  fill: rgba(0, 0, 0, 1);
+}
+
+.dendro .link, .dendro .scale {
+  fill: none;
+  stroke: #777;
+}
+
+.dendro .leaf {
+  stroke: #ccc;
+  stroke-dasharray: 2;
 }
 
 /**** select2 customization ****/
