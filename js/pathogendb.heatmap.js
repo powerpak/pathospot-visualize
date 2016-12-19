@@ -816,6 +816,7 @@ $(function() {
     var dendroX = d3.scaleLinear().range([0, dendroRight * 0.9])
     
     function reclusterFilteredNodes(filteredDomain) {
+      if (!filteredDomain.length) { return {cut: function() { return []; }, index: [], children: []}; }
       // Do a second round of single-linkage agglomerative clustering only for the visible nodes.
       // This lets us draw the dendrogram
       function disFunc(a, b) { return (fullMatrix[a][b].z + fullMatrix[b][a].z) / 2; }
@@ -1004,7 +1005,6 @@ $(function() {
     $('#epi-heatmap').css('position', 'absolute');
     
     function updateEpiHeatmap(filteredIsolates) {
-      console.log($('#epi-heatmap-gain').val());
       epiHeatmap.setData({
         max: Math.pow(10, parseFloat($('#epi-heatmap-gain').attr('max')) - $('#epi-heatmap-gain').val()),
         data: filteredIsolates
