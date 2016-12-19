@@ -13,6 +13,7 @@ $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/d
 <meta charset="utf-8" />
 <title>Surveillance Isolates - Heatmap</title>
 <link href="css/d3-tip.css" rel="stylesheet" />
+<link href="css/ionicons.css" rel="stylesheet" />
 <link href="css/rangeslider.css" rel="stylesheet" />
 <link href="css/select2.css" rel="stylesheet" />
 <link href="css/style.css" rel="stylesheet" />
@@ -80,7 +81,7 @@ foreach ($data_files as $data_file):
         </optgroup>
       </select>
     </label>
-    <label class="widget">
+    <label class="widget" id="toggle-main">
       <a data-show="heatmap" class="toggle-btn toggle-btn-left active">Heatmap view</a>
       <a data-show="network" class="toggle-btn toggle-btn-right">Network map view</a>
     </label>
@@ -100,7 +101,15 @@ foreach ($data_files as $data_file):
       <span id="cluster-list"></span>
     </label>
     <div class="clear"></div>
-    <label>Filter genomes by specimen order dates</label>
+    <label class="widget"><span class="widget-label">Filter genomes by specimen order dates</span></label>
+    <label class="widget" id="daterange-animate">
+      <span class="widget widget-label">Animate</span>
+      <a data-action="pause" class="toggle-btn mini toggle-btn-left active pause"><i class="icon ion-pause"></i></a>
+      <a data-action="play" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-play"></i></a>
+      <a data-action="play" data-speed="0.03" class="toggle-btn mini"><i class="icon ion-play"></i><i class="icon ion-play"></i></a>
+      <a data-action="playexpand" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-plus"></i> <i class="icon ion-play"></i></a>
+      <a data-action="playexpand" data-speed="0.03" class="toggle-btn mini toggle-btn-right"><i class="icon ion-plus"></i> <i class="icon ion-play"></i><i class="icon ion-play"></i></a>
+    </label>
     <label id="histo-title">
       Histogram of
       <span class="distance-unit">distances</span>

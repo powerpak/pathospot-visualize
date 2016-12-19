@@ -95,24 +95,33 @@ svg {
   border: 1px solid #d4dbe0;
   padding: 0.7em 1em;
   cursor: pointer;
-  border-radius: 8px;
+  border-right-width: 0;
 }
 
 .toggle-btn-left { border-radius: 8px 0 0 8px; }
-.toggle-btn-right { border-radius: 0 8px 8px 0; }
+.toggle-btn-right { border-radius: 0 8px 8px 0; border-right-width: 1px; }
+
+.toggle-btn.mini {
+  margin-top: -0.3em;
+  font-size: 80%;
+  padding: 0.4em 1em;
+}
 
 .toggle-btn:hover {
   border-color: #b0bdc6;
   text-decoration: none;
 }
+.toggle-btn:hover + .toggle-btn { border-left-color: #b0bdc6; }
+
 .toggle-btn.active {
   background-color: #e6e6e6;
   box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
 }
 .toggle-btn.active:hover {
   color: #536570;
-  border: 1px solid #d4dbe0;
+  border-color: #d4dbe0;
 }
+.toggle-btn.active:hover + .toggle-btn { border-left-color: #d4dbe0; }
 
 #main-viz {
   position: absolute;

@@ -49,6 +49,42 @@ Array.prototype.swap = function (x, y) {
   return this;
 }
 
+// Helper function for performant animations with requestAnimationFrame (instead of setInterval)
+// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
+// @param render: function(deltaT, now) {}  -- called every frame to render changes;
+//                                             should return false when the animation is over to stop looping
+// @param element: DOMElement               -- optional, sets the element within which the animation runs
+function animLoop(render, element) {
+  var running, lastFrame = +new Date,
+      raf = window.requestAnimationFrame       ||
+            window.mozRequestAnimationFrame    ||
+            window.webkitRequestAnimationFrame ||
+            window.msRequestAnimationFrame     ||
+            window.oRequestAnimationFrame;
+          
+  function loop(now) {
+    if (running !== false) {
+      raf ?
+        raf(loop, element) :
+        // fallback to setTimeout
+        setTimeout(loop, 16);
+      // Make sure to use a valid time, since:
+      // - Chrome 10 doesn't return it at all
+      // - setTimeout returns the actual timeout
+      now = now && now > 1E4 ? now : +new Date;
+      var deltaT = now - lastFrame;
+      // do not render frame when deltaT is too high, and avoid nonsense negative deltaT's
+      if (deltaT > 0 && deltaT < 160) {
+        running = render(deltaT, now);
+      }
+      lastFrame = now;
+    }
+  }
+  loop();
+};
+
+
+
 $(function() { 
 
   // *************************** SVG/D3 SETUP *********************************
@@ -63,6 +99,8 @@ $(function() {
       MAX_SNP_THRESHOLD = 100,
       MIN_SNP_THRESHOLD = 1,
       TRANSITION_DURATION = 1000,
+      ANIM_TRANSITION_DURATION = 200,
+      REDRAW_INTERVAL = 1000,
       PREPROCESS_FIELDS = {collection_unit: fixUnit, ordered: formatDate},
       HOSPITAL_MAP = 'msmc-stacking-gray';
   
@@ -113,6 +151,7 @@ $(function() {
         unitCoords = {"": [0, 0]},
         epiData = {isolates: []},
         rand20 = Math.floor(Math.random() * 20),
+        brushAnimateStatus = null,
         fullMatrix, visibleNodes, detectedClusters;
     
     $('.distance-unit').text(assemblies.distance_unit);
@@ -304,8 +343,8 @@ $(function() {
 
     var brush = d3.brushX()
         .extent([[0, 0], [width, sliderHeight - 1]])
-        .on("brush", _.debounce(brushmove, 200))
-        .on("end", brushend);
+        .on("brush", function(e) { return (brushAnimateStatus !== null) ? brushMove(e) : brushMoveDebounced(e); })
+        .on("end", brushEnd);
     
     sliderSvg.append("g")
         .attr("class", "x axis")
@@ -347,14 +386,21 @@ $(function() {
         .attr("class", "brush")
         .call(brush);
 
-    function brushmove(event) {
+    function brushMove(event) {
+      var now = (+new Date);
+      if (brushAnimateStatus !== null) {
+        if (now - brushAnimateStatus.lastRefresh < REDRAW_INTERVAL) { return; }
+        brushAnimateStatus.lastRefresh = now;
+      }
+      
       interruptAllTransitions();
       reorder();
       sliderSvg.select("g.beeswarm").selectAll("circle")
         .classed("selected", function(d) { return _.contains(filteredDomain, d.i); });
     }
+    var brushMoveDebounced = _.debounce(brushMove, 200);
 
-    function brushend(event) {
+    function brushEnd(event) {
       //reorder();  // FIXME: do we really need another reorder() for this event? It causes jerky double-draws
     }
     
@@ -538,6 +584,7 @@ $(function() {
     // functions for updating rows/columns of the heatmap
 
     function updateColumns(matrix) {
+      var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var column = rowsColsG.selectAll("g.column")
           .data(matrix, columnKeying);
 
@@ -555,18 +602,19 @@ $(function() {
           .attr("text-anchor", "start")
           .text(function(d, i) { return nodes[d.y].eRAP_ID; });
 
-      column.merge(columnEnter).transition().duration(TRANSITION_DURATION).delay(function(d, i) { return x(d.y) * 1; })
+      column.merge(columnEnter).transition().duration(transitionDuration).delay(function(d, i) { return x(d.y) * 1; })
           .attr("transform", function(d) { return "translate(" + x(d.y) + ")rotate(-90)"; })
           .attr("opacity", 1)
         .selectAll("text.col-label")
           .style("fill", function(d) { return nodes[d.y].group !== null ? c(nodes[d.y].group) : '#ccc'; });
 
-      column.exit().transition().duration(TRANSITION_DURATION)
+      column.exit().transition().duration(transitionDuration)
           .attr("opacity", 0)
           .remove(); 
     }
 
     function updateRows(matrix) {
+      var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var row = rowsColsG.selectAll("g.row")
           .data(matrix, columnKeying);
       var rowTextSpec = {
@@ -604,11 +652,11 @@ $(function() {
       row.merge(rowEnter).selectAll("text.pt-id.row-label")
           .style("fill", function(d) { return nodes[d.y].group !== null ? c(nodes[d.y].group) : '#ccc'; });
     
-      row.merge(rowEnter).transition().duration(TRANSITION_DURATION).delay(function(d) { return x(d.y) * 1; })
+      row.merge(rowEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.y) * 1; })
           .attr("transform", function(d) { return "translate(0," + x(d.y) + ")"; })
           .attr("opacity", 1);
 
-      row.exit().transition().duration(TRANSITION_DURATION)
+      row.exit().transition().duration(transitionDuration)
           .attr("opacity", 0)
           .remove();
       row.exit().selectAll(".cell").interrupt();
@@ -692,6 +740,7 @@ $(function() {
     heatmapG.on("click", function() { deselectCell(); tip.hide(); });
 
     function updateRowCells(rowData) {
+      var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var cell = d3.select(this).selectAll("rect")
           .data(_.filter(rowData, function(d) { return d.z < MAX_SNP_THRESHOLD; }), cellKeying);
       deselectCell();
@@ -722,7 +771,7 @@ $(function() {
       
       cell.merge(cellEnter).classed("clickable", cellClickable);
       
-      cell.merge(cellEnter).transition().duration(TRANSITION_DURATION).delay(function(d) { return x(d.x) * 1; })
+      cell.merge(cellEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.x) * 1; })
           .attr("x", function(d) { return x(d.x) + cellPadding(d); })
           .attr("width", function(d) { return x.bandwidth() - cellPadding(d) * 2; })
           .attr("height", function(d) { return x.bandwidth() - cellPadding(d) * 2; })
@@ -730,7 +779,7 @@ $(function() {
           .attr("fill", cellColor)
           .attr("opacity", function(d) { return z(d.z); });
     
-      cell.exit().transition().duration(TRANSITION_DURATION)
+      cell.exit().transition().duration(transitionDuration)
           .attr("opacity", 0)
           .remove();       
     }
@@ -817,6 +866,7 @@ $(function() {
     }
     
     function updateDendrogram(filteredClusters) {
+      var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var cutClusters = _.filter(filteredClusters.cut(MAX_SNP_THRESHOLD), function(clust) { return !!clust.children; });
             
       dendroX.domain([0, MAX_SNP_THRESHOLD]);
@@ -828,13 +878,13 @@ $(function() {
           .attr("opacity", 0);
       dendroPath.merge(dendroEnter)
           .classed("leaf", function(d) { return d.leaf; })
-        .transition().duration(TRANSITION_DURATION * 0.5)
+        .transition().duration(transitionDuration * 0.5)
           .attr("opacity", 0)
-        .transition().duration(1).delay(TRANSITION_DURATION * 0.5)
+        .transition().duration(1).delay(transitionDuration * 0.5)
           .attr("d", function(d) { return "M" + d.x1 + "," + d.y1 + " " + "V" + d.y2 + "H" + d.x2 ; })
-        .transition().duration(TRANSITION_DURATION * 0.5).delay(TRANSITION_DURATION * 0.5)
+        .transition().duration(transitionDuration * 0.5).delay(transitionDuration * 0.5)
           .attr("opacity", 1);
-      dendroPath.exit().transition().duration(TRANSITION_DURATION * 0.5)
+      dendroPath.exit().transition().duration(transitionDuration * 0.5)
           .attr("opacity", 0)
           .remove();
     }
@@ -1029,6 +1079,38 @@ $(function() {
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
     
+    // Setup the animation of the daterange brush
+    $('#daterange-animate .toggle-btn').click(function() {
+      var noChange = $(this).hasClass('active'),
+          action = $(this).data('action'),
+          retargetSpeed = parseFloat($(this).data('speed')),
+          startSelection = d3.brushSelection(brushG.node()),
+          wasRunning = brushAnimateStatus !== null;
+      
+      if (noChange) { return; }
+      $(this).addClass('active').siblings('.toggle-btn').removeClass('active');
+      
+      if (action == 'pause') {
+        brushAnimateStatus = null;
+        brush.move(brushG, startSelection);  // Ensure animation is stopped and UI is synched
+      } else {
+        brushAnimateStatus = {started: +new Date, lastRefresh: +new Date, speed: retargetSpeed, action: action};
+
+        !wasRunning && animLoop(function(deltaT) {
+          if (brushAnimateStatus === null) { return false; }
+          var oldSelection = d3.brushSelection(brushG.node()),
+              act = brushAnimateStatus.action,
+              newRight = Math.min(oldSelection[1] + deltaT * brushAnimateStatus.speed, width);
+              newSelection = [(act == 'play' ? newRight - oldSelection[1] : 0) + oldSelection[0], newRight];
+          brush.move(brushG, newSelection);
+          if (newRight == width) {
+            $('#daterange-animate .toggle-btn.pause').click();
+            return false;
+          }
+        });
+      }
+    });
+    
     // Setup the spatiotemporal map controls
     $('#epi-heatmap-opacity').rangeslider({ 
       polyfill: false,
@@ -1049,13 +1131,12 @@ $(function() {
 
     // Setup the view mode toggle botton
     $('#main-viz').children('.heatmap').data('active', true);
-    $('#controls .toggle-btn').click(function() {
+    $('#toggle-main .toggle-btn').click(function() {
       var activating = !$(this).hasClass('active'),
           showingWhat = $(this).data('show');
       if (showingWhat == 'network') { $('#network-show').prop('checked', true); }
       if (activating) {
-        $(this).addClass('active');
-        $(this).siblings('.toggle-btn').removeClass('active');
+        $(this).addClass('active').siblings('.toggle-btn').removeClass('active');
         $('.main-view.' + showingWhat).data('active', true).fadeIn();
         $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut(function() {
           reorder();
