@@ -4,7 +4,9 @@
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
 
-$data_files = array_reverse(glob(dirname(__FILE__).'/data/*.heatmap.json'));
+$data_files = array_reverse(glob(dirname(__FILE__).'/data/*.snv.heatmap.json'));
+$epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/data/*.epi.heatmap.json')));
+
 ?>
 <head>
   
@@ -21,7 +23,9 @@ $data_files = array_reverse(glob(dirname(__FILE__).'/data/*.heatmap.json'));
 <script src="js/d3-tip.js"></script>
 <script src="js/rangeslider.min.js" charset="utf-8"></script>
 <script src="js/select2.min.js" charset="utf-8"></script>
+<script src="js/heatmap.min.js" charset="utf-8"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
+
 <?php
 if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
 else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
@@ -47,8 +51,12 @@ foreach ($data_files as $data_file):
   $units = htmlspecialchars($data['distance_unit']);
   $title = preg_replace('#\\..*#', '', $filename);
   $date = strftime('%b %d %Y', strtotime($data['generated']));
+  $epi_filename = "";
+  foreach($epi_data_files as $file) { if (strpos($file, "$title.") === 0) { $epi_filename = $file; break; } }
   ?>
-        <option value="<?= htmlspecialchars($filename) ?>"><?= $title ?> <?= $units ?> – <?= $date ?></option>
+        <option value="<?= htmlspecialchars($filename) ?>" data-epi="<?= htmlspecialchars($epi_filename) ?>">
+          <?= $title ?> <?= $units ?> – <?= $date ?>
+        </option>
 <?php endforeach ?>
       </select>
     </label>
@@ -74,7 +82,7 @@ foreach ($data_files as $data_file):
     </label>
     <label class="widget">
       <a data-show="heatmap" class="toggle-btn toggle-btn-left active">Heatmap view</a>
-      <a data-show="network" class="toggle-btn toggle-btn-right">Network view</a>
+      <a data-show="network" class="toggle-btn toggle-btn-right">Network map view</a>
     </label>
     <div class="clear"></div>
     <label class="widget">
@@ -99,6 +107,23 @@ foreach ($data_files as $data_file):
       to closest previous isolate
     </label>
   </div>
+</div>
+
+<div id="epi-heatmap" class="main-view network" style="display: none"></div>
+
+<div id="epi-controls" class="main-view network" style="display: none">
+  <label class="widget chk-label">
+    <input id="network-show" type="checkbox" class="chk" checked />
+    <span class="widget-label">Show network</span>
+  </label>
+  <label class="widget">
+    <span class="widget-label">Densityplot opacity</span>
+    <input id="epi-heatmap-opacity" class="range" type="range" min="0" max="1" step="0.01" value="0.3"/>
+  </label>
+  <label class="widget">
+    <span class="widget-label">Gain</span>
+    <input id="epi-heatmap-gain" class="range" type="range" min="0" max="100" step="1" value="80"/>
+  </label>
 </div>
 
 <script src="js/pathogendb.heatmap.js"></script>

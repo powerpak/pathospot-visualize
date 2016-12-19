@@ -42,6 +42,9 @@ svg {
   display: inline-block;
   width: 100px;
 }
+.rangeslider__fill {
+  background: #1995dc;
+}
 
 #cluster-legend {
   display: none;
@@ -105,6 +108,11 @@ svg {
 .toggle-btn.active:hover {
   color: #536570;
   border: 1px solid #d4dbe0;
+}
+
+#main-viz {
+  position: absolute;
+  z-index: 1;
 }
 
 line {
@@ -207,8 +215,44 @@ text.axis-label {
   stroke-dasharray: 2;
 }
 
+#epi-heatmap {
+  background: no-repeat;
+  background-position: 0 0;
+  background-size: contain;
+  position: absolute;
+  z-index: 0;
+}
+#epi-heatmap img {
+  width: 100%;
+}
+
+#epi-heatmap .heatmap-canvas {
+  opacity: 0.5;
+}
+
+#epi-controls {
+  position: absolute;
+  z-index: 2;
+  margin-top: 40px;
+  margin-left: 80px;
+  color: #777;
+}
+
+#epi-controls .rangeslider {
+  opacity: 0.7;
+}
+
+#epi-controls .chk-label, #epi-controls .chk {
+  cursor: pointer;
+}
+
+#epi-controls .chk {
+  font-size: 160%;
+  margin-right: 0.2em;
+}
+
 .network-links line {
-  stroke: white;
+  stroke: rgba(255, 100, 100, 0.5);
 }
 
 .network-nodes circle {
@@ -287,6 +331,8 @@ text.axis-label {
 }
 
 /**** .d3-tip customizations ****/
+
+.d3-tip { z-index: 1000; }
 
 .d3-tip .dist-value { font-size: 120%; }
 

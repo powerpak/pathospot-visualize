@@ -104,8 +104,8 @@
   -ms-touch-action: pan-x;
 }
 
-input[type="range"]:focus + .rangeslider .rangeslider__handle {
+/*input[type="range"]:focus + .rangeslider .rangeslider__handle {
   -moz-box-shadow: 0 0 8px rgba(255, 0, 255, 0.9);
   -webkit-box-shadow: 0 0 8px rgba(255, 0, 255, 0.9);
   box-shadow: 0 0 8px rgba(255, 0, 255, 0.9);
-}
+}*/

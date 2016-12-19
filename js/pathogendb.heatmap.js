@@ -53,7 +53,7 @@ $(function() {
 
   // *************************** SVG/D3 SETUP *********************************
 
-  var margin = {top: 60, right: 400, bottom: 10, left: 80},
+  var margin = {top: 60, right: 400, bottom: 10, left: 80, networkTop: 30},
       width = 600,
       height = 600,
       sliderHeight = 80,
@@ -82,21 +82,31 @@ $(function() {
       
   var networkG = svg.append("g")
       .attr("class", "main-view network")
-      .attr("transform", "translate(0," + (margin.top / 2) + ")")
+      .attr("transform", "translate(0," + margin.networkTop + ")")
       .style("display", "none");
-    
+  
+  $("#epi-heatmap")
+      .css("width", width + margin.left + margin.right)
+      .css("height", height + margin.top + margin.bottom - margin.networkTop)
+      .css("margin-top", margin.networkTop)
+      .css("background-image", 'url(maps/' + HOSPITAL_MAP + '.png)');
+  
   var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
   $('#db').val(db);
+  var EPI_FILE = $('#db > option:selected').data('epi');
   document.title = $('#db > option[value="'+ db +'"]').text() + ' - Heatmap';
+
+  // ************************** FIRST, FETCH THE DISTANCES MATRIX ****************************
 
   d3.json("data/" + db + ".heatmap.json", function(assemblies) {
 
     var nodes = assemblies.nodes,
         links = assemblies.links,
-        unitCoords = {"": [0, 0]},
         n = nodes.length,
         idealBandWidth = Math.max(width / n, 16),
         filteredDomain = [],
+        unitCoords = {"": [0, 0]},
+        epiData = {isolates: []},
         rand20 = Math.floor(Math.random() * 20),
         fullMatrix, visibleNodes, detectedClusters;
     
@@ -252,23 +262,25 @@ $(function() {
       }
     }
     
-    // Filters an ordered set of indexes by whether the node was merged into a similar node
+    // Filters a set of indices by whether the node was merged into a similar node
     // from the same patient (if it was, it is removed)
-    function filterByVisibleNodes(order) {
-      var visibleNodeIndexes = {};
-      _.each(visibleNodes, function(node) { visibleNodeIndexes[node.i] = true; });
-      return _.filter(order, function(i) { return visibleNodeIndexes[i]; });
+    function filterByVisibleNodes(indices) {
+      var visibleNodeIndices = {};
+      _.each(visibleNodes, function(node) { visibleNodeIndices[node.i] = true; });
+      return _.filter(indices, function(i) { return visibleNodeIndices[i]; });
     }
 
-    // Filters an ordered set of indexes by the current date range brush selection.
-    function filterByBrush(order) {    
+    // Filters a set of indices by the current date range brush selection.
+    // By default, it will assume the indices point to `nodes`, but `what` can be set to override this.
+    function filterByBrush(indices, what) {    
       var selection = d3.brushSelection(brushG.node()),
         start, end;
+      what = what || nodes;
         
-      if (selection === null) { return order; }
+      if (selection === null) { return indices; }
       start = sliderX.invert(selection[0]);
       end = sliderX.invert(selection[1]);
-      return _.filter(order, function(i) { return nodes[i].ordered >= start && nodes[i].ordered <= end; });
+      return _.filter(indices, function(i) { return what[i].ordered >= start && what[i].ordered <= end; });
     }
     
     
@@ -610,36 +622,35 @@ $(function() {
       row.exit().selectAll(".cell").interrupt();
     }
     
-    function tipHtml(d) {
-      var tipRows = {
-            eRAP_ID: "Anon Pt ID",
-            collection_unit: "Unit",
-            ordered: "Order Date",
-            mlst_subtype: "MLST", 
-            isolate_ID: "Isolate ID",
-            assembly_ID: "Assembly ID",
-            contig_count: "# contigs",
-            contig_N50_format: 'contig N50',
-            contig_maxlength_format: 'longest contig'
-          },
-          ixLeft = d.y,  // node index for left side of tooltip table
-          ixRight = d.x, // "" for right side
-          leftClust = nodes[ixLeft].samePtMergeParent,
+    var tipRows = {
+          eRAP_ID: "Anon Pt ID",
+          collection_unit: "Unit",
+          ordered: "Order Date",
+          mlst_subtype: "MLST", 
+          isolate_ID: "Isolate ID",
+          assembly_ID: "Assembly ID",
+          contig_count: "# contigs",
+          contig_N50_format: 'contig N50',
+          contig_maxlength_format: 'longest contig'
+        };
+    
+    function tipLinkHtml(ixLeft, ixRight, dist) {
+      var leftClust = nodes[ixLeft].samePtMergeParent,
           rightClust = nodes[ixRight].samePtMergeParent,
           html = '<table class="link-info">'
-          + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + d.z + '</span> SNPs</th></tr>',
+          + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + dist + '</span> SNPs</th></tr>',
           snvs_url;
       
       // For each side of the tooltip table, if it is a merged isolate, display info for the *closest* isolate.
       if (leftClust) {
         ixLeft = _.first(_.sortBy(leftClust, function(i) { 
-          var cell = fullMatrix[i][d.x];
+          var cell = fullMatrix[i][ixLeft];
           return cell.origZ !== null ? cell.origZ : cell.z; 
         }));
       }
       if (rightClust) {
         ixRight = _.first(_.sortBy(rightClust, function(i) { 
-          var cell = fullMatrix[d.y][i];
+          var cell = fullMatrix[ixRight][i];
           return cell.origZ !== null ? cell.origZ : cell.z;
         }));
       }
@@ -673,6 +684,10 @@ $(function() {
       html += '<a href="' + snvs_url + '" target="_blank">SNP track</a> <a href="javascript:alert(\'coming soon\')">mummerplot</a>';
       html += '</span></div>';
       return html;
+    }
+    
+    function tipHtml(d) {
+      return tipLinkHtml(d.y, d.x, d.z);
     }
     
     var tip = d3.tip()
@@ -860,10 +875,6 @@ $(function() {
     
     // ****************************** NETWORK + MAP DIAGRAM *********************************
     
-    networkG.append("image")
-        .attr("xlink:href", "maps/" + HOSPITAL_MAP + ".png")
-        .attr("width", width + margin.left + margin.right)
-    
     var networkLinks = networkG.append("g")
         .attr("class", "network-links")
     
@@ -873,11 +884,11 @@ $(function() {
     var networkCenter = {x: (width + margin.left + margin.right) / 2, y: height / 2};
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.i; }).distance(400).strength(0))
-        .force("collision", d3.forceCollide(5))
+        .force("collision", d3.forceCollide(5.5))
         .force("stickyX", d3.forceX().strength(0.1).x(function(d) { 
           return unitCoords[d.data.collection_unit || ''][0] || networkCenter.x; 
         }))
-        .force("stickyY", d3.forceY().strength(0.1).y(function(d) { 
+        .force("stickyY", d3.forceY().strength(0.2).y(function(d) { 
           return unitCoords[d.data.collection_unit || ''][1] || networkCenter.y; 
         }));
     
@@ -919,7 +930,7 @@ $(function() {
       linkLines.exit().remove();
       
       function dragstarted(d) {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        if (!d3.event.active) simulation.alphaTarget(1).restart();
         d.fx = d.x;
         d.fy = d.y;
       }
@@ -930,7 +941,10 @@ $(function() {
       }
 
       function dragended(d) {
-        if (!d3.event.active) simulation.alphaTarget(0);
+        if (!d3.event.active) {
+          clearTimeout(simulationCooldown);
+          simulationCooldown = setTimeout(function() { simulation.alphaTarget(0); }, 1000);
+        }
         d.fx = null;
         d.fy = null;
       }
@@ -939,6 +953,8 @@ $(function() {
           .data(filteredNodes, function(d) { return d.i; });
       var nodeEnter = nodeCircles.enter().append("circle")
           .attr("r", 5)
+          .attr("cx", function(d) { return d.x; })
+          .attr("cy", function(d) { return d.y; })
           .call(d3.drag()
               .on("start", dragstarted)
               .on("drag", dragged)
@@ -970,6 +986,27 @@ $(function() {
       simulationCooldown = setTimeout(function() { simulation.alphaTarget(0); }, 1000);
     }
     
+    
+    // ************************* EPI HEATMAP (BEHIND NETWORK) ******************************
+    
+    var epiHeatmap = h337.create({
+      container: $('#epi-heatmap').get(0),
+      gradient: {
+          '.5': 'blue',
+          '.8': 'red',
+          '.95': 'white'
+        }
+    });
+    $('#epi-heatmap').css('position', 'absolute');
+    
+    function updateEpiHeatmap(filteredIsolates) {
+      console.log($('#epi-heatmap-gain').val());
+      epiHeatmap.setData({
+        max: parseInt($('#epi-heatmap-gain').attr('max'), 10) - $('#epi-heatmap-gain').val() + 1,
+        data: filteredIsolates
+      })
+    }
+    
     // ************************* BIND UI EVENTS -> CALLBACKS *******************************
     
     $("#order").on("change", function() { reorder(); });
@@ -988,34 +1025,50 @@ $(function() {
         '<span class="select2-selection__arrow" role="presentation"><b role="presentation"></b></span>');
     $('#filter').on('change', changeSnpThreshold);
     
-    // Setup the slider and bind it to changing the disabled input
+    // Setup the distance threshold slider and bind it to changing the disabled input
     $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, min: MIN_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
       polyfill: false,
-      onSlide: function(position, value) { $('#snps-num').val(value); updateHistoCutoff(value); },
-      onSlideEnd: function(position, value) { $('#snps-num').change(); }
+      onSlide: function(pos, value) { $('#snps-num').val(value); updateHistoCutoff(value); },
+      onSlideEnd: function(pos, value) { $('#snps-num').change(); }
     });
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
+    
+    // Setup the spatiotemporal map controls
+    $('#epi-heatmap-opacity').rangeslider({ 
+      polyfill: false,
+      onSlide: function(pos, value) { $('#epi-heatmap .heatmap-canvas').css('opacity', value); },
+    }).rangeslider('update', true);
+    $('#epi-heatmap-gain').rangeslider({ 
+      polyfill: false,
+      onSlide: function(pos, value) { 
+        epiHeatmap.setDataMax(parseInt($('#epi-heatmap-gain').attr('max'), 10) - value + 1); 
+      }
+    }).rangeslider('update', true);
+    $('#network-show').change(function() { $('#main-viz .network')[$(this).is(':checked') ? 'fadeIn' : 'fadeOut'](); });
 
     // Setup the view mode toggle botton
     $('#main-viz').children('.heatmap').data('active', true);
     $('#controls .toggle-btn').click(function() {
       var activating = !$(this).hasClass('active'),
           showingWhat = $(this).data('show');
+      if (showingWhat == 'network') { $('#network-show').prop('checked', true); }
       if (activating) {
         $(this).addClass('active');
         $(this).siblings('.toggle-btn').removeClass('active');
-        $('#main-viz').children('.' + showingWhat).data('active', true).fadeIn();
-        $('#main-viz').children(':not(.' + showingWhat + ')').data('active', false).fadeOut();
+        $('.main-view.' + showingWhat).data('active', true).fadeIn();
+        $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut();
         reorder();
       }
     });
 
-    // **************************** UPDATING DATA -> UI ************************************
+
+    // ************************** UPDATING UI FROM THE DATA **********************************
 
     function reorder() {    
       var filteredDomain = filterByBrush(filterByVisibleNodes(d3.range(n))), 
-          filteredClusters = reclusterFilteredNodes(filteredDomain);
+          filteredClusters = reclusterFilteredNodes(filteredDomain)
+          filteredIsolateIds = filterByBrush(d3.range(epiData.isolates.length), epiData.isolates);
                 
       filteredDomain = calculateOrder(filteredDomain, $('#order').val());
       
@@ -1037,7 +1090,8 @@ $(function() {
         updateRows(filteredMatrix);    
         updateDendrogram(filteredClusters);
       } else {
-        updateNetwork(filteredDomain); 
+        updateEpiHeatmap(_.values(_.pick(epiData.isolates, filteredIsolateIds)));
+        updateNetwork(filteredDomain);
       }
     }
   
@@ -1054,12 +1108,33 @@ $(function() {
     }
     var changeSnpThresholdDebounced = _.debounce(changeSnpThreshold, 200);
   
+  
+    // **************************** START THE VISUALIZATION ************************************
+  
+    // Download the coordinates for units on the map
     d3.json("maps/" + HOSPITAL_MAP + ".json", function(coords) {
       unitCoords = coords;
       
-      // kick off an initial data update to setup the UI
-      brush.move(brushG, [width * 0.7, width]);
+      // This is how we kick off an initial data update to setup the UI
+      function start() { brush.move(brushG, [width * 0.7, width]); }
+      start();
+      
+      // Download the spatiotemporal data for all isolates, if it's available
+      EPI_FILE && d3.json("data/" + EPI_FILE, function(epiFileData) { 
+        epiData = epiFileData;
+        if (epiData.isolates) {
+          epiData.isolates = _.compact(_.map(epiData.isolates, function(isolate) { 
+            var coords = unitCoords[isolate[1]];
+            if ((/\d{4}-\d{2}-\d{2}/).test(isolate[0]) && isolate[0] > '1901-00-00') {
+              if (coords && coords[0] != unitCoords[''][0] && coords[1] != unitCoords[''][1]) {
+                return {ordered: new Date(isolate[0]), unit: isolate[1], value: 1, x: coords[0], y: coords[1]};
+              }
+            }
+          }));
+        }
+      });
     });
+    
   });
   
 });
