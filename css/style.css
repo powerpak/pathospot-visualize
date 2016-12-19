@@ -259,12 +259,21 @@ text.axis-label {
 #epi-controls .color-scale {
   display: inline-block;
   width: 50px;
-  height: 1.4em;
-  margin-bottom: -0.4em;
+  height: 20px;
+  margin-bottom: -6px;
+  position: relative;
   background: -moz-linear-gradient(left, rgba(0,0,255,0) 0%, rgba(0,0,255,1) 50%, rgba(255,0,0,1) 80%, rgba(255,255,255,1) 95%, rgba(255,255,255,1) 100%);
   background: -webkit-linear-gradient(left, rgba(0,0,255,0) 0%,rgba(0,0,255,1) 50%,rgba(255,0,0,1) 80%,rgba(255,255,255,1) 95%,rgba(255,255,255,1) 100%);
   background: linear-gradient(to right, rgba(0,0,255,0) 0%,rgba(0,0,255,1) 50%,rgba(255,0,0,1) 80%,rgba(255,255,255,1) 95%,rgba(255,255,255,1) 100%);
 }
+
+#epi-controls .color-scale span {
+  position: absolute;
+  top: 22px;
+  font-size: 10px;
+}
+#epi-controls .color-scale .min { left: 0; }
+#epi-controls .color-scale .max { right: -1em; width: 2em; text-align: center; }
 
 .network-links line {
   stroke: rgba(255, 100, 100, 0.5);

@@ -100,11 +100,11 @@ foreach ($data_files as $data_file):
       <span id="cluster-list"></span>
     </label>
     <div class="clear"></div>
-    <label>Filter by specimen order dates</label>
+    <label>Filter genomes by specimen order dates</label>
     <label id="histo-title">
       Histogram of
       <span class="distance-unit">distances</span>
-      to closest previous isolate
+      to closest previous genome
     </label>
   </div>
 </div>
@@ -112,21 +112,21 @@ foreach ($data_files as $data_file):
 <div id="epi-heatmap" class="main-view network" style="display: none"><div class="cont"></div></div>
 
 <div id="epi-controls" class="main-view network toolbar" style="display: none">
-  <label class="widget chk-label">
-    <input id="network-show" type="checkbox" class="chk" checked />
-    <span class="widget-label">Show network</span>
-  </label>
   <label class="widget">
     Collected isolates
-    <div class="color-scale"></div>
+    <div class="color-scale"><span class="min">0</span><span class="max"></span></div>
   </labeL>
+  <label class="widget">
+    <span class="widget-label">Gain</span>
+    <input id="epi-heatmap-gain" class="range" type="range" min="0" max="2" step="0.025" value="1"/>
+  </label>
   <label class="widget">
     <span class="widget-label">Opacity</span>
     <input id="epi-heatmap-opacity" class="range" type="range" min="0" max="1" step="0.01" value="0.5"/>
   </label>
-  <label class="widget">
-    <span class="widget-label">Gain</span>
-    <input id="epi-heatmap-gain" class="range" type="range" min="0" max="2" step="0.025" value="1"/>
+  <label class="widget chk-label">
+    <input id="network-show" type="checkbox" class="chk" checked />
+    <span class="widget-label">Show genomic network</span>
   </label>
 </div>
 

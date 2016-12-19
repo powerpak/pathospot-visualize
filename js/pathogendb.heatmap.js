@@ -1046,7 +1046,9 @@ $(function() {
     $('#epi-heatmap-gain').rangeslider({ 
       polyfill: false,
       onSlide: function(pos, value) { 
-        epiHeatmap.setDataMax(Math.pow(10, parseFloat($('#epi-heatmap-gain').attr('max')) - value)); 
+        var dataMax = Math.pow(10, parseFloat($('#epi-heatmap-gain').attr('max')) - value);
+        $('#epi-controls .color-scale > .max').text(Math.round(dataMax));
+        epiHeatmap.setDataMax(dataMax); 
       }
     }).rangeslider('update', true);
     $('#network-show').change(function() { $('#main-viz .network')[$(this).is(':checked') ? 'fadeIn' : 'fadeOut'](); });
@@ -1061,8 +1063,9 @@ $(function() {
         $(this).addClass('active');
         $(this).siblings('.toggle-btn').removeClass('active');
         $('.main-view.' + showingWhat).data('active', true).fadeIn();
-        $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut();
-        reorder();
+        $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut(function() {
+          reorder();
+        });
       }
     });
 
