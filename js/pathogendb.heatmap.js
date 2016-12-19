@@ -928,7 +928,10 @@ $(function() {
           filteredLinks = linksFromFilteredDomain(filteredDomain);
       
       var linkLines = networkLinks.selectAll("line")
-          .data(filteredLinks, function(d) { return d.source + ' ' + d.target; });
+          .data(filteredLinks, function(d) { 
+            return (_.isUndefined(d.source.i) ? d.source : d.source.i) + ' ' + 
+                   (_.isUndefined(d.target.i) ? d.target : d.target.i);
+          });
       var linkEnter = linkLines.enter().append("line");
       linkLines.merge(linkEnter)
           .attr("stroke-width", function(d) { return Math.sqrt(d.value) / Math.sqrt(MAX_SNP_THRESHOLD) * 5; });
