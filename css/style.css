@@ -81,6 +81,32 @@ svg {
   clear: both;
 }
 
+.toggle-btn {
+  float: left;
+  display: inline-block;
+  color: #536570;
+  border: 1px solid #d4dbe0;
+  padding: 0.7em 1em;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.toggle-btn-left { border-radius: 8px 0 0 8px; }
+.toggle-btn-right { border-radius: 0 8px 8px 0; }
+
+.toggle-btn:hover {
+  border-color: #b0bdc6;
+  text-decoration: none;
+}
+.toggle-btn.active {
+  background-color: #e6e6e6;
+  box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+}
+.toggle-btn.active:hover {
+  color: #536570;
+  border: 1px solid #d4dbe0;
+}
+
 line {
   stroke: #fff;
 }
@@ -165,7 +191,7 @@ text.axis-label {
 }
 
 .bar {
-  fill: rgba(0, 0, 0, 0.5);
+  fill: rgba(0, 0, 0, 0.3);
 }
 .bar .same-pt {
   fill: rgba(0, 0, 0, 1);
@@ -179,6 +205,19 @@ text.axis-label {
 .dendro .leaf {
   stroke: #ccc;
   stroke-dasharray: 2;
+}
+
+.network-links line {
+  stroke: white;
+}
+
+.network-nodes circle {
+  stroke: white;
+  stroke-width: 1.5px;
+}
+
+.network-nodes .ungrouped {
+  fill: #222;
 }
 
 /**** select2 customization ****/
