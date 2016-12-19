@@ -1055,6 +1055,9 @@ $(function() {
       }
     }).rangeslider('update', true);
     $('#network-show').change(function() { $('#main-viz .network')[$(this).is(':checked') ? 'fadeIn' : 'fadeOut'](); });
+    $(window).resize(function() { 
+      $('#epi-heatmap').css('min-height', $(window).height() - $('#epi-heatmap').offset().top - margin.networkTop / 2); 
+    }).resize();
 
     // Setup the view mode toggle botton
     $('#main-viz').children('.heatmap').data('active', true);
@@ -1068,6 +1071,7 @@ $(function() {
         $('.main-view.' + showingWhat).data('active', true).fadeIn();
         $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut(function() {
           reorder();
+          $(window).resize();
         });
       }
     });
