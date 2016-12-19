@@ -109,9 +109,9 @@ foreach ($data_files as $data_file):
   </div>
 </div>
 
-<div id="epi-heatmap" class="main-view network" style="display: none"></div>
+<div id="epi-heatmap" class="main-view network" style="display: none"><div class="cont"></div></div>
 
-<div id="epi-controls" class="main-view network" style="display: none">
+<div id="epi-controls" class="main-view network toolbar" style="display: none">
   <label class="widget chk-label">
     <input id="network-show" type="checkbox" class="chk" checked />
     <span class="widget-label">Show network</span>
@@ -122,7 +122,7 @@ foreach ($data_files as $data_file):
   </labeL>
   <label class="widget">
     <span class="widget-label">Opacity</span>
-    <input id="epi-heatmap-opacity" class="range" type="range" min="0" max="1" step="0.01" value="0.3"/>
+    <input id="epi-heatmap-opacity" class="range" type="range" min="0" max="1" step="0.01" value="0.5"/>
   </label>
   <label class="widget">
     <span class="widget-label">Gain</span>

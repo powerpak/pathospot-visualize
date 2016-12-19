@@ -3,6 +3,10 @@ html {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+body {
+  margin: 1em 0;
+}
+
 svg {
   font: 10px "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -216,14 +220,16 @@ text.axis-label {
 }
 
 #epi-heatmap {
+  background-color: #2e2e2e;
+  position: absolute;
+  z-index: 0;
+  width: 100%;
+  box-shadow: inset 0 6px 10px rgba(0, 0, 0, 0.7);
+}
+#epi-heatmap > .cont {
   background: no-repeat;
   background-position: 0 0;
   background-size: contain;
-  position: absolute;
-  z-index: 0;
-}
-#epi-heatmap img {
-  width: 100%;
 }
 
 #epi-heatmap .heatmap-canvas {
@@ -234,7 +240,6 @@ text.axis-label {
   position: absolute;
   z-index: 2;
   margin-top: 40px;
-  margin-left: 80px;
   color: #777;
 }
 

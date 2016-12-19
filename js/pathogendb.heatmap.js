@@ -86,9 +86,13 @@ $(function() {
       .style("display", "none");
   
   $("#epi-heatmap")
+      .css("margin-top", margin.networkTop / 2)
+      .css("padding-top", margin.networkTop / 2)
+      .css("height", height + margin.top + margin.bottom - margin.networkTop);
+  
+  $('#epi-heatmap > .cont')
       .css("width", width + margin.left + margin.right)
       .css("height", height + margin.top + margin.bottom - margin.networkTop)
-      .css("margin-top", margin.networkTop)
       .css("background-image", 'url(maps/' + HOSPITAL_MAP + '.png)');
   
   var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
@@ -990,7 +994,7 @@ $(function() {
     // ************************* EPI HEATMAP (BEHIND NETWORK) ******************************
     
     var epiHeatmap = h337.create({
-      container: $('#epi-heatmap').get(0),
+      container: $('#epi-heatmap > .cont').get(0),
       gradient: {
           '.5': 'blue',
           '.8': 'red',
