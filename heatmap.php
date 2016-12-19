@@ -117,12 +117,16 @@ foreach ($data_files as $data_file):
     <span class="widget-label">Show network</span>
   </label>
   <label class="widget">
-    <span class="widget-label">Densityplot opacity</span>
+    Collected isolates
+    <div class="color-scale"></div>
+  </labeL>
+  <label class="widget">
+    <span class="widget-label">Opacity</span>
     <input id="epi-heatmap-opacity" class="range" type="range" min="0" max="1" step="0.01" value="0.3"/>
   </label>
   <label class="widget">
     <span class="widget-label">Gain</span>
-    <input id="epi-heatmap-gain" class="range" type="range" min="0" max="100" step="1" value="80"/>
+    <input id="epi-heatmap-gain" class="range" type="range" min="0" max="2" step="0.025" value="1"/>
   </label>
 </div>
 

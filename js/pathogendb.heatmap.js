@@ -1002,7 +1002,7 @@ $(function() {
     function updateEpiHeatmap(filteredIsolates) {
       console.log($('#epi-heatmap-gain').val());
       epiHeatmap.setData({
-        max: parseInt($('#epi-heatmap-gain').attr('max'), 10) - $('#epi-heatmap-gain').val() + 1,
+        max: Math.pow(10, parseFloat($('#epi-heatmap-gain').attr('max')) - $('#epi-heatmap-gain').val()),
         data: filteredIsolates
       })
     }
@@ -1037,12 +1037,12 @@ $(function() {
     // Setup the spatiotemporal map controls
     $('#epi-heatmap-opacity').rangeslider({ 
       polyfill: false,
-      onSlide: function(pos, value) { $('#epi-heatmap .heatmap-canvas').css('opacity', value); },
+      onSlide: function(pos, value) { $('#epi-heatmap .heatmap-canvas, .color-scale').css('opacity', value); },
     }).rangeslider('update', true);
     $('#epi-heatmap-gain').rangeslider({ 
       polyfill: false,
       onSlide: function(pos, value) { 
-        epiHeatmap.setDataMax(parseInt($('#epi-heatmap-gain').attr('max'), 10) - value + 1); 
+        epiHeatmap.setDataMax(Math.pow(10, parseFloat($('#epi-heatmap-gain').attr('max')) - value)); 
       }
     }).rangeslider('update', true);
     $('#network-show').change(function() { $('#main-viz .network')[$(this).is(':checked') ? 'fadeIn' : 'fadeOut'](); });

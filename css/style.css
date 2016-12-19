@@ -251,6 +251,16 @@ text.axis-label {
   margin-right: 0.2em;
 }
 
+#epi-controls .color-scale {
+  display: inline-block;
+  width: 50px;
+  height: 1.4em;
+  margin-bottom: -0.4em;
+  background: -moz-linear-gradient(left, rgba(0,0,255,0) 0%, rgba(0,0,255,1) 50%, rgba(255,0,0,1) 80%, rgba(255,255,255,1) 95%, rgba(255,255,255,1) 100%);
+  background: -webkit-linear-gradient(left, rgba(0,0,255,0) 0%,rgba(0,0,255,1) 50%,rgba(255,0,0,1) 80%,rgba(255,255,255,1) 95%,rgba(255,255,255,1) 100%);
+  background: linear-gradient(to right, rgba(0,0,255,0) 0%,rgba(0,0,255,1) 50%,rgba(255,0,0,1) 80%,rgba(255,255,255,1) 95%,rgba(255,255,255,1) 100%);
+}
+
 .network-links line {
   stroke: rgba(255, 100, 100, 0.5);
 }
