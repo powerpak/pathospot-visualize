@@ -54,6 +54,7 @@ $(function() {
   // *************************** SVG/D3 SETUP *********************************
 
   var margin = {top: 60, right: 400, bottom: 10, left: 80, networkTop: 30},
+      networkMargin = {top: 15, topPad: 30}
       width = 600,
       height = 600,
       sliderHeight = 80,
@@ -82,17 +83,17 @@ $(function() {
       
   var networkG = svg.append("g")
       .attr("class", "main-view network")
-      .attr("transform", "translate(0," + margin.networkTop + ")")
+      .attr("transform", "translate(0," + (networkMargin.top + networkMargin.topPad) + ")")
       .style("display", "none");
   
   $("#epi-heatmap")
-      .css("margin-top", margin.networkTop / 2)
-      .css("padding-top", margin.networkTop / 2)
-      .css("height", height + margin.top + margin.bottom - margin.networkTop);
+      .css("margin-top", networkMargin.top)
+      .css("padding-top", networkMargin.topPad)
+      .css("height", height + margin.top + margin.bottom - networkMargin.top - networkMargin.topPad);
   
   $('#epi-heatmap > .cont')
       .css("width", width + margin.left + margin.right)
-      .css("height", height + margin.top + margin.bottom - margin.networkTop)
+      .css("height", height + margin.top + margin.bottom - networkMargin.top - networkMargin.topPad)
       .css("background-image", 'url(maps/' + HOSPITAL_MAP + '.png)');
   
   var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
@@ -568,6 +569,18 @@ $(function() {
     function updateRows(matrix) {
       var row = rowsColsG.selectAll("g.row")
           .data(matrix, columnKeying);
+      var rowTextSpec = {
+            "row-label pt-id": {x: -6, fn: function(d) { return nodes[d.y].eRAP_ID; }},
+            "unit": {x: width + 6, fn: function(d) { return fixUnit(nodes[d.y].collection_unit); }},
+            "date": {x: width + 70, fn: function(d) { return formatDate(nodes[d.y].ordered); }},
+            "mlst": {x: width + 150, fn: function(d) { return nodes[d.y].mlst_subtype; }},
+            "isolate-id row-label": {
+              x: width + 210, 
+              fn: function(d) { 
+                return nodes[d.y].samePtMergeParent ? "MERGED" : nodes[d.y].isolate_ID; 
+              }
+            }
+          };
         
       var rowEnter = row.enter().append("g")
           .attr("class", function(d) { return "row" + (nodes[d.y].samePtMergeParent ? " merged" : ""); })
@@ -575,41 +588,16 @@ $(function() {
           .attr("opacity", 0);
       rowEnter.append("line")
           .attr("x2", width);
-      rowEnter.append("text")
-          .attr("class", "row-label pt-id")
-          .attr("x", -6)
-          .attr("y", idealBandWidth / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "end")
-          .text(function(d) { return nodes[d.y].eRAP_ID; });
-      rowEnter.append("text")
-          .attr("class", "unit")
-          .attr("x", width + 6)
-          .attr("y", idealBandWidth / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "start")
-          .text(function(d) { return fixUnit(nodes[d.y].collection_unit); });
-      rowEnter.append("text")
-          .attr("class", "date")
-          .attr("x", width + 70)
-          .attr("y", idealBandWidth / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "start")
-          .text(function(d) { return formatDate(nodes[d.y].ordered); });
-      rowEnter.append("text")
-          .attr("class", "mlst")
-          .attr("x", width + 150)
-          .attr("y", idealBandWidth / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "start")
-          .text(function(d) { return nodes[d.y].mlst_subtype; });
-      rowEnter.append("text")
-          .attr("class", "isolate-id row-label")
-          .attr("x", width + 210)
-          .attr("y", idealBandWidth / 2)
-          .attr("dy", ".32em")
-          .attr("text-anchor", "start")
-          .text(function(d) { return nodes[d.y].samePtMergeParent ? "MERGED" : nodes[d.y].isolate_ID; });
+          
+      _.each(rowTextSpec, function(spec, cls) {
+          rowEnter.append("text")
+              .attr("class", cls)
+              .attr("x", spec.x)
+              .attr("y", idealBandWidth / 2)
+              .attr("dy", ".32em")
+              .attr("text-anchor", spec.x < 0 ? "end" : "start")
+              .text(spec.fn);
+      });
     
       row.merge(rowEnter).each(updateRowCells);
     
@@ -1056,7 +1044,7 @@ $(function() {
     }).rangeslider('update', true);
     $('#network-show').change(function() { $('#main-viz .network')[$(this).is(':checked') ? 'fadeIn' : 'fadeOut'](); });
     $(window).resize(function() { 
-      $('#epi-heatmap').css('min-height', $(window).height() - $('#epi-heatmap').offset().top - margin.networkTop / 2); 
+      $('#epi-heatmap').css('min-height', $(window).height() - $('#epi-heatmap').offset().top - networkMargin.topPad); 
     }).resize();
 
     // Setup the view mode toggle botton
