@@ -25,6 +25,7 @@ $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/d
 <script src="js/rangeslider.min.js" charset="utf-8"></script>
 <script src="js/select2.min.js" charset="utf-8"></script>
 <script src="js/heatmap.min.js" charset="utf-8"></script>
+<script src="js/FileSaver.js" charset="utf-8"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
 
 <?php
@@ -99,6 +100,7 @@ foreach ($data_files as $data_file):
     <label id="cluster-legend" class="widget">
       <span class="num-clusters">N</span> clusters detected
       <span id="cluster-list"></span>
+      <a href="javascript:void(0)" id="download-clusters">Download as TSV</a>
     </label>
     <div class="clear"></div>
     <label class="widget"><span class="widget-label">Filter genomes by specimen order dates</span></label>

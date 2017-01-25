@@ -73,6 +73,10 @@ svg {
   -webkit-print-color-adjust: exact;
 }
 
+#download-clusters {
+  margin-left: 1em;
+}
+
 #histo-title {
   position: absolute;
   left: 690px;

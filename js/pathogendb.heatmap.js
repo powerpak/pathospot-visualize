@@ -828,7 +828,31 @@ $(function() {
           .style("background-color", function(d, i) { return c(i); } )
           .text(function(d) { return d.index.length; });
       clusterList.exit().remove();
+      
+      updateClustersTSVBlob(clusters);
     }
+    
+    function updateClustersTSVBlob(clusters) {
+      var rows = [["isolate_ID", "merged_into_isolate_ID", "eRAP_ID", "cluster_num", "cluster_color"]];
+      _.each(clusters, function(clust, i) {
+        _.each(clust.index, function(clustLeaf) {
+          var node = visibleNodes[clustLeaf.index];
+          rows.push([node.isolate_ID, '', node.eRAP_ID, i, c(i)]);
+          // Also include rows for isolates merged into this one, for having the same patient ID.
+          if (node.samePtMergeParent) {
+            _.each(node.samePtMergeParent, function(childNodeIndex) {
+              var childNode = nodes[childNodeIndex];
+              // The same-patient clusters include a link back to the parent isolate, which is redundant here
+              if (childNode.isolate_ID == node.isolate_ID) { return; }
+              rows.push([childNode.isolate_ID, node.isolate_ID, childNode.eRAP_ID, i, c(i)]);
+            });
+          }
+        });
+      });
+      var tsv = _.map(rows, function(cells) { return cells.join("\t"); }).join("\n");
+      $('#download-clusters').data('tsvBlob', new Blob([tsv], { type: "text/plain;" }));
+    }
+    
     updateDetectedClusters(detectedClusters);
     
     
@@ -1078,6 +1102,12 @@ $(function() {
     });
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
+    
+    // Allow downloading of clusters as TSV
+    $('#download-clusters').on('click', function() {
+      var filename = db + ".dist-" + $('#snps-num').val() + ".clusters.tsv"; 
+      saveAs($(this).data('tsvBlob'), filename); 
+    });
     
     // Setup the animation of the daterange brush
     $('#daterange-animate .toggle-btn').click(function() {
