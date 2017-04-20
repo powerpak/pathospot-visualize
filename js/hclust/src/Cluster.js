@@ -62,4 +62,17 @@ Cluster.prototype.group = function (minGroups) {
     return root;
 };
 
+/**
+ * Return all data for nodes in this cluster, using 'data' as the original array of node data
+ * @param {Array <Object>} data
+ * @return {Array <Object>}
+ */
+Cluster.prototype.nodeData = function (data) {
+    var nodeData = [],
+        n = this.index.length;
+    for (var i = 0; i < n; i++)
+        nodeData.push(data[this.index[i].index]);
+    return nodeData;
+};
+
 module.exports = Cluster;

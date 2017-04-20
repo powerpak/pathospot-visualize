@@ -108,7 +108,8 @@ function wardLink(cluster1, cluster2, disFun) {
 
 var defaultOptions = {
     disFunc: euclidean,
-    kind: 'single'
+    kind: 'single',
+    precision: 4
 };
 
 /**
@@ -149,37 +150,27 @@ function agnes(data, options) {
     else if (typeof options.kind !== "function")
         throw new TypeError('Undefined kind of similarity');
 
-    var list = new Array(len);
+    // Create a list of ClusterLeaf objects; one for every node.
+    // This becomes our working list of things we need to agglomeratively cluster.
+    var list = [];
     for (var i = 0; i < data.length; i++) {
-        list[i] = new ClusterLeaf(i);
+        list.push(new ClusterLeaf(i));
     }
     var min  = Infinity,
         d = {},
         dis = 0;
-
+  
+    // When the working list contains only one item (one Cluster object), we're done.
     while (list.length > 1) {
-
-        // calculates the minimum distance
+      
+        // Find the minimum distance among all pairs of things that still need to be clustered.
         d = {};
         min = Infinity;
         for (var j = 0; j < list.length; j++) {
             for (var k = j + 1; k < list.length; k++) {
-                var fData, sData;
-                if (list[j] instanceof ClusterLeaf)
-                    fData = [data[list[j].index]];
-                else {
-                    fData = new Array(list[j].index.length);
-                    for (var e = 0; e < fData.length; e++)
-                        fData[e] = data[list[j].index[e].index];
-                }
-                if (list[k] instanceof ClusterLeaf)
-                    sData = [data[list[k].index]];
-                else {
-                    sData = new Array(list[k].index.length);
-                    for (var f = 0; f < sData.length; f++)
-                        sData[f] = data[list[k].index[f].index];
-                }
-                dis = options.kind(fData, sData, options.disFunc).toFixed(4);
+                var fData = list[j].nodeData(data), 
+                    sData = list[k].nodeData(data);
+                dis = options.kind(fData, sData, options.disFunc).toFixed(options.precision);
                 if (dis in d) {
                     d[dis].push([list[j], list[k]]);
                 }
@@ -190,48 +181,45 @@ function agnes(data, options) {
             }
         }
 
-        // cluster dots
-        var dmin = d[min.toFixed(4)];
-        if (dmin.length == 6) { console.log(JSON.stringify(dmin)); } //FIXME
-        var clustered = new Array(dmin.length);
-        var aux,
-            count = 0;
+        // Cluster the ClusterLeaf's and/or Cluster's for the links at this minimum distance.
+        var dmin = d[min.toFixed(options.precision)];
+        var clustered = [];
+        var aux;
         while (dmin.length > 0) {
             aux = dmin.shift();
             for (var q = 0; q < dmin.length; q++) {
                 var int = dmin[q].filter(function(n) {
-                    //noinspection JSReferencingMutableVariableFromClosure
-                    return aux.indexOf(n) !== -1
+                  return aux.indexOf(n) !== -1;
                 });
                 if (int.length > 0) {
                     var diff = dmin[q].filter(function(n) {
-                        //noinspection JSReferencingMutableVariableFromClosure
-                        return aux.indexOf(n) === -1
+                        return aux.indexOf(n) === -1;
                     });
                     aux = aux.concat(diff);
-                    dmin.splice(q-- ,1);
+                    dmin.splice(q--, 1);
                 }
             }
-            clustered[count++] = aux;
+            clustered.push(aux);
         }
-        clustered.length = count;
 
+        // Create a new Cluster object for the clusters we just created
         for (var ii = 0; ii < clustered.length; ii++) {
             var obj = new Cluster();
             obj.children = clustered[ii].concat();
             obj.distance = min;
-            obj.index = new Array(len);
-            var indCount = 0;
+            obj.index = [];
+            // Glue the indexes for all children together into one big index for this Cluster.
+            // The .index should always list all nodes that are underneath this particular Cluster.
             for (var jj = 0; jj < clustered[ii].length; jj++) {
                 if (clustered[ii][jj] instanceof ClusterLeaf)
-                    obj.index[indCount++] = clustered[ii][jj];
-                else {
-                    indCount += clustered[ii][jj].index.length;
-                    obj.index = clustered[ii][jj].index.concat(obj.index);
-                }
+                    obj.index.push(clustered[ii][jj]);
+                else
+                    obj.index = obj.index.concat(clustered[ii][jj].index);
+                
+                // Delete the newly clustered ClusterLeaf/Cluster from the working list of things that
+                // still need to be clustered
                 list.splice((list.indexOf(clustered[ii][jj])), 1);
             }
-            obj.index.length = indCount;
             list.push(obj);
         }
     }

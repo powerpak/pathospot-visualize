@@ -12,4 +12,13 @@ function ClusterLeaf (index) {
 
 util.inherits(ClusterLeaf, Cluster);
 
+/**
+ * Returns the data for the node in this ClusterLeaf, using 'data' as the original array of node data
+ * @param {Array <Object>} data
+ * @return {Array <Object>}
+ */
+ClusterLeaf.prototype.nodeData = function (data) {
+    return [data[this.index]];
+};
+
 module.exports = ClusterLeaf;
