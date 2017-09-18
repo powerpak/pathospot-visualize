@@ -4,6 +4,8 @@
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
 
+require(dirname(__FILE__).'/php/lib.heatmap.php');
+
 $data_files = array_reverse(glob(dirname(__FILE__).'/data/*.snv.heatmap.json'));
 $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/data/*.epi.heatmap.json')));
 
@@ -48,11 +50,11 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
       <select id="db" name="db">
 <?php 
 foreach ($data_files as $data_file): 
-  $data = json_decode(file_get_contents($data_file), TRUE);
+  $meta = getHeatmapMetadata($data_file);
   $filename = basename(substr($data_file, 0, -13));
-  $units = htmlspecialchars($data['distance_unit']);
+  $units = htmlspecialchars($meta['distance_unit']);
   $title = preg_replace('#\\..*#', '', $filename);
-  $date = strftime('%b %d %Y', strtotime($data['generated']));
+  $date = strftime('%b %d %Y', strtotime($meta['generated']));
   $epi_filename = "";
   foreach($epi_data_files as $file) { if (strpos($file, "$title.") === 0) { $epi_filename = $file; break; } }
   ?>
