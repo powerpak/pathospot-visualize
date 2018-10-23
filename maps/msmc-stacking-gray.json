@@ -51,6 +51,8 @@
     "CANCER CENTER": [193, 433],
     "CCU": [305, 233],
     "CSIU": [178, 233],
+    "CICU": [178, 233],
+    "CSDU": [178, 233],
     "DIALYSIS B1": [677, 335],
     "Discharge": [193, 433],
     "EMERGENCY DEPARTMENT": [339, 335],

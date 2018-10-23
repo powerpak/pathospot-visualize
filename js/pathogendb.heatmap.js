@@ -171,7 +171,7 @@ $(function() {
     function calculateMatrixAndVisibleNodes(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],
-        allClusters;
+        allClusters, clusterableNodes;
         
       filters = _.extend({}, filters);
     
@@ -258,12 +258,21 @@ $(function() {
       if (filters.units && filters.units.length) {
         visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters.units, node.collection_unit); }); 
       }
+      
+      // We only need to cluster `nodes` that have at least one link below snpThreshold
+      // All other nodes could not possibly be within any clusters, and only waste time during `HClust.agnes` below
+      clusterableNodes = _.filter(visibleNodes, function(node) {
+        var i = node.i,
+          linkInRow = _.find(matrix[node.i], function(cell, j) { return i != j && cell.z <= snpThreshold; }),
+          linkInCol = _.find(matrix, function(col, j) { return i != j && col[i].z <= snpThreshold; });
+        return linkInRow || linkInCol;
+      });
     
       if (visibleNodes.length) {
         // Agglomerative, single-linkage hierarchical clustering based on the above dissimilarity matrix
         // Hierarchical clustering expects symmetrical distances, so we average across the diagonal of the dissimilarity matrix
         function disFunc(a, b) { return (matrix[a.i][b.i].z + matrix[b.i][a.i].z) / 2; }
-        allClusters = HClust.agnes(visibleNodes, {disFunc: disFunc, kind: 'single'});
+        allClusters = HClust.agnes(clusterableNodes, {disFunc: disFunc, kind: 'single'});
         
         // Find all clusters with diameter below the snpThreshold with >1 children
         allClusters = _.filter(allClusters.cut(snpThreshold), function(clust) { return clust.children; });
@@ -271,7 +280,7 @@ $(function() {
         detectedClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
         // then annotate the nodes with the # of the cluster they are in
         _.each(detectedClusters, function(clust, i) {
-          _.each(clust.index, function(leaf) { visibleNodes[leaf.index].group = i; });
+          _.each(clust.index, function(leaf) { clusterableNodes[leaf.index].group = i; });
         });
       }
     
@@ -876,14 +885,25 @@ $(function() {
     
     var dendroX = d3.scaleLinear().range([0, dendroRight * 0.9])
     
+    // Do a second round of single-linkage agglomerative clustering only for the nodes within the domain.
+    // This lets us draw the dendrogram.
     function reclusterFilteredNodes(filteredDomain) {
-      if (!filteredDomain.length) { return {cut: function() { return []; }, index: [], children: []}; }
-      // Do a second round of single-linkage agglomerative clustering only for the visible nodes.
-      // This lets us draw the dendrogram
+      var dendroDomain, filteredClusters;
+
       function disFunc(a, b) { return (fullMatrix[a][b].z + fullMatrix[b][a].z) / 2; }
-      var filteredClusters = HClust.agnes(filteredDomain, {disFunc: disFunc, kind: 'single'});
+      if (!filteredDomain.length) { return {cut: function() { return []; }, index: [], children: []}; }
+      
+      // We only need to cluster nodes that have at least one link below MAX_SNP_THRESHOLD
+      // All other nodes won't have any links in the dendrogram, and only waste time during `HClust.agnes` below
+      dendroDomain = _.filter(filteredDomain, function(i) {
+        var linkInRow = _.find(fullMatrix[i], function(cell, j) { return i != j && cell.z <= MAX_SNP_THRESHOLD; }),
+          linkInCol = _.find(fullMatrix, function(col, j) { return i != j && col[i].z <= MAX_SNP_THRESHOLD; });
+        return linkInRow || linkInCol;
+      });
+      
+      filteredClusters = HClust.agnes(dendroDomain, {disFunc: disFunc, kind: 'single'});
       _.each(filteredClusters.index, function(leaf, i) { 
-        leaf.data = nodes[filteredDomain[leaf.index]];
+        leaf.data = nodes[dendroDomain[leaf.index]];
         leaf.data.groupOrder = i;
       });
       return filteredClusters;
@@ -953,10 +973,12 @@ $(function() {
         .force("link", d3.forceLink().id(function(d) { return d.i; }).distance(400).strength(0))
         .force("collision", d3.forceCollide(5.5))
         .force("stickyX", d3.forceX().strength(0.1).x(function(d) { 
-          return unitCoords[d.data.collection_unit || ''][0] || networkCenter.x; 
+          var coords = unitCoords[d.data.collection_unit || ''];
+          return coords ? coords[0] : networkCenter.x; 
         }))
         .force("stickyY", d3.forceY().strength(0.2).y(function(d) { 
-          return unitCoords[d.data.collection_unit || ''][1] || networkCenter.y; 
+          var coords = unitCoords[d.data.collection_unit || ''];
+          return coords ? coords[1] : networkCenter.y; 
         }));
     
     var simulationCooldown = null;
