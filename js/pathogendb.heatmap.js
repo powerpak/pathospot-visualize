@@ -352,7 +352,7 @@ $(function() {
 
     var brush = d3.brushX()
         .extent([[0, 0], [width, sliderHeight - 1]])
-        .on("brush", function(e) { return (brushAnimateStatus !== null) ? brushMove(e) : brushMoveDebounced(e); })
+        .on("brush", function(e) { return (brushAnimateStatus !== null) && brushMove(e); })
         .on("end", brushEnd);
     
     sliderSvg.append("g")
@@ -410,7 +410,7 @@ $(function() {
     var brushMoveDebounced = _.debounce(brushMove, 200);
 
     function brushEnd(event) {
-      //reorder();  // FIXME: do we really need another reorder() for this event? It causes jerky double-draws
+      return brushMove(event);
     }
     
 
