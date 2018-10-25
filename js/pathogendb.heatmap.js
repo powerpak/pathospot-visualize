@@ -1,6 +1,6 @@
 function fixUnit(unit) {
   if (unit) {
-    unit = unit.replace(/EMERGENCY DEPARTMENT/, 'ED');
+    unit = unit.replace(/EMERGENCY (DEPARTMENT|DEPT)/, 'ED');
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
     unit = unit.replace(/^FPA.*/, 'FPA');
@@ -101,6 +101,8 @@ $(function() {
       TRANSITION_DURATION = 1000,
       ANIM_TRANSITION_DURATION = 200,
       REDRAW_INTERVAL = 1000,
+      IDEAL_LABEL_HEIGHT = 16,
+      MIN_LABEL_HEIGHT = 8,
       PREPROCESS_FIELDS = {collection_unit: fixUnit, ordered: formatDate},
       HOSPITAL_MAP = 'msmc-stacking-gray';
   
@@ -146,7 +148,10 @@ $(function() {
     var nodes = assemblies.nodes,
         links = assemblies.links,
         n = nodes.length,
-        idealBandWidth = Math.max(width / n, 16),
+        idealBandWidth = Math.max(width / n, IDEAL_LABEL_HEIGHT),
+        rowLimitForLabels = Math.floor(width / MIN_LABEL_HEIGHT),
+        rowLimitForLines = Math.floor(width / 4),
+        g = width / 3,
         filteredDomain = [],
         unitCoords = {"": [0, 0]},
         epiData = {isolates: []},
@@ -558,7 +563,8 @@ $(function() {
       if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return c(nodes[d.x].group); }
       return null;
     }
-    function cellPadding(d) {
+    function cellPadding(d, n) {
+      if (n > rowLimitForLines) { return 0; }
       if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return 1.5; }
       return 0.5;
     }
@@ -578,7 +584,7 @@ $(function() {
                       "MLST": width + 150, "Isolate ID": width + 210};
     _.each(axisLabels, function(xPos, label) {
       heatmapG.append("text")
-          .attr("class", "axis-label")
+          .attr("class", "axis-label axis-label-expanded")
           .attr("x", xPos)
           .attr("y", -10)
           .attr("dy", ".32em")
@@ -594,11 +600,15 @@ $(function() {
 
     function updateColumns(matrix) {
       var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
+      var columnExtraClasses = (matrix.length > rowLimitForLabels ? " no-labels" : "") +
+          (matrix.length > rowLimitForLines ? " no-lines" : "");
+      
+      heatmapG.classed("hide-axis-labels", matrix.length > rowLimitForLabels);
+          
       var column = rowsColsG.selectAll("g.column")
           .data(matrix, columnKeying);
 
       var columnEnter = column.enter().append("g")
-          .attr("class", "column")
           .attr("transform", function(d) { return "translate(" + x(d.y) + ")rotate(-90)"; })
           .attr("opacity", 0)
       columnEnter.append("line")
@@ -611,7 +621,9 @@ $(function() {
           .attr("text-anchor", "start")
           .text(function(d, i) { return nodes[d.y].eRAP_ID; });
 
-      column.merge(columnEnter).transition().duration(transitionDuration).delay(function(d, i) { return x(d.y) * 1; })
+      column.merge(columnEnter)
+          .attr("class", "column" + columnExtraClasses)
+        .transition().duration(transitionDuration).delay(function(d, i) { return x(d.y) * 1; })
           .attr("transform", function(d) { return "translate(" + x(d.y) + ")rotate(-90)"; })
           .attr("opacity", 1)
         .selectAll("text.col-label")
@@ -624,6 +636,9 @@ $(function() {
 
     function updateRows(matrix) {
       var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
+      var rowExtraClasses = (matrix.length > rowLimitForLabels ? " no-labels" : "") +
+          (matrix.length > rowLimitForLines ? " no-lines" : "");
+      
       var row = rowsColsG.selectAll("g.row")
           .data(matrix, columnKeying);
       var rowTextSpec = {
@@ -640,7 +655,6 @@ $(function() {
           };
         
       var rowEnter = row.enter().append("g")
-          .attr("class", function(d) { return "row" + (nodes[d.y].samePtMergeParent ? " merged" : ""); })
           .attr("transform", function(d) { return "translate(0," + x(d.y) + ")"; })
           .attr("opacity", 0);
       rowEnter.append("line")
@@ -656,9 +670,13 @@ $(function() {
               .text(spec.fn);
       });
     
-      row.merge(rowEnter).each(updateRowCells);
+      row.merge(rowEnter)
+          .attr("class", function(d) { 
+            return "row" + (nodes[d.y].samePtMergeParent ? " merged" : "") + rowExtraClasses; 
+          })
+          .each(updateRowCells);
     
-      row.merge(rowEnter).selectAll("text.pt-id.row-label")
+    row.merge(rowEnter).selectAll("text.pt-id.row-label")
           .style("fill", function(d) { return nodes[d.y].group !== null ? c(nodes[d.y].group) : '#ccc'; });
     
       row.merge(rowEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.y) * 1; })
@@ -748,18 +766,19 @@ $(function() {
     heatmapG.call(tip);
     heatmapG.on("click", function() { deselectCell(); tip.hide(); });
 
-    function updateRowCells(rowData) {
+    function updateRowCells(rowData, i, elems) {
       var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var cell = d3.select(this).selectAll("rect")
           .data(_.filter(rowData, function(d) { return d.z < MAX_SNP_THRESHOLD; }), cellKeying);
+      var numRows = elems.length;
       deselectCell();
       tip.hide();
     
       var cellEnter = cell.enter().append("rect")
           .attr("class", "cell")
           .classed("same-pt", function(d) { return nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID; })
-          .attr("x", function(d) { return x(d.x) + cellPadding(d); })
-          .attr("y", function(d) { return cellPadding(d); })
+          .attr("x", function(d) { return x(d.x) + cellPadding(d, numRows); })
+          .attr("y", function(d) { return cellPadding(d, numRows); })
           .style("stroke", cellStrokeColor)
           .attr("fill", cellColor)
           .attr("opacity", 0)       // All cells start out transparent and fade in
@@ -781,9 +800,9 @@ $(function() {
       cell.merge(cellEnter).classed("clickable", cellClickable);
       
       cell.merge(cellEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.x) * 1; })
-          .attr("x", function(d) { return x(d.x) + cellPadding(d); })
-          .attr("width", function(d) { return x.bandwidth() - cellPadding(d) * 2; })
-          .attr("height", function(d) { return x.bandwidth() - cellPadding(d) * 2; })
+          .attr("x", function(d) { return x(d.x) + cellPadding(d, numRows); })
+          .attr("width", function(d) { return x.bandwidth() - cellPadding(d, numRows) * 2; })
+          .attr("height", function(d) { return x.bandwidth() - cellPadding(d, numRows) * 2; })
           .style("stroke", cellStrokeColor)
           .attr("fill", cellColor)
           .attr("opacity", function(d) { return z(d.z); });
@@ -868,8 +887,7 @@ $(function() {
     // ******************************* DENDROGRAM ****************************************
     
     var dendroG = heatmapG.append("g")
-        .attr("class", "dendro")
-        .attr("transform", "translate(" + (width + margin.right - dendroRight * 0.95) + ",0)");
+        .attr("class", "dendro");
         
     dendroG.append("path")
         .attr("d", "M0,0 H" + dendroRight * 0.9)
@@ -909,10 +927,18 @@ $(function() {
       return filteredClusters;
     }
     
-    function updateDendrogram(filteredClusters) {
+    function updateDendrogram(filteredClusters, matrix) {
       var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
       var cutClusters = _.filter(filteredClusters.cut(MAX_SNP_THRESHOLD), function(clust) { return !!clust.children; });
-            
+      var noLabels = matrix.length > rowLimitForLabels;
+      var marginRight = noLabels ? 0 : margin.right - dendroRight * 0.95;
+      
+      dendroG.transition().duration(transitionDuration * 0.1)
+          .attr("opacity", 0)
+        .transition().duration(1).delay(transitionDuration * 0.1)
+          .attr("transform", "translate(" + (width + marginRight) + ",0)")
+        .transition().duration(transitionDuration * 0.5).delay(transitionDuration * 0.5)
+          .attr("opacity", 1);
       dendroX.domain([0, MAX_SNP_THRESHOLD]);
       
       var dendroPath = dendroG.selectAll(".link")
@@ -1223,7 +1249,7 @@ $(function() {
       if ($('#main-viz').children('.heatmap').data('active')) {
         updateColumns(filteredMatrix);
         updateRows(filteredMatrix);    
-        updateDendrogram(filteredClusters);
+        updateDendrogram(filteredClusters, filteredMatrix);
       } else {
         updateEpiHeatmap(_.values(_.pick(epiData.isolates, filteredIsolateIds)));
         updateNetwork(filteredDomain);

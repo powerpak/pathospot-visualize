@@ -11,12 +11,6 @@ svg {
   font: 10px "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-.axis path, .axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
-
 .units {
   color: #777;
 }
@@ -159,8 +153,7 @@ text.axis-label {
   stroke: black;
 }
 
-.axis path,
-.axis line {
+.axis path, .axis line {
   fill: none;
   stroke: #000;
   shape-rendering: crispEdges;
@@ -175,6 +168,16 @@ text.axis-label {
 
 .handle {
   fill: rgba(0, 0, 0, 0.7);
+}
+
+.column.no-labels text, .row.no-labels text  {
+  display: none;
+}
+.column.no-lines line, .row.no-lines line {
+  display: none;
+}
+.hide-axis-labels .axis-label-expanded {
+  display: none;
 }
 
 .cell {
@@ -230,6 +233,9 @@ text.axis-label {
 .dendro .leaf {
   stroke: #ccc;
   stroke-dasharray: 2;
+}
+.hide-axis-labels .dendro .leaf {
+  display: none;
 }
 
 #epi-heatmap {
