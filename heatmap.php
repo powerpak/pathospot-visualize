@@ -6,7 +6,7 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.heatmap.php');
 
-$data_files = array_reverse(glob(dirname(__FILE__).'/data/*.snv.heatmap.json'));
+$data_files = array_reverse(glob(dirname(__FILE__).'/data/*.{snv,parsnp}.heatmap.json', GLOB_BRACE));
 $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/data/*.epi.heatmap.json')));
 
 ?>

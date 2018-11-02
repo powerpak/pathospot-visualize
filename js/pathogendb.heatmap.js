@@ -55,7 +55,7 @@ Array.prototype.swap = function (x, y) {
 //                                             should return false when the animation is over to stop looping
 // @param element: DOMElement               -- optional, sets the element within which the animation runs
 function animLoop(render, element) {
-  var running, lastFrame = +new Date,
+  var running, lastFrame = +(new Date()),
       raf = window.requestAnimationFrame       ||
             window.mozRequestAnimationFrame    ||
             window.webkitRequestAnimationFrame ||
@@ -146,8 +146,19 @@ $(function() {
   d3.json("data/" + db + ".heatmap.json", function(assemblies) {
 
     var nodes = assemblies.nodes,
-        links = assemblies.links,
-        n = nodes.length,
+        links = _.isArray(assemblies.links[0]) ? [] : assemblies.links;
+        
+    // Unpack nodes and links, which may be compressed into array-of-array format
+    if (_.isArray(nodes[0])) { nodes = _.map(nodes.slice(1), function(v) { return _.object(nodes[0], v);  }); }
+    if (!links.length) {
+      _.each(assemblies.links, function(row, i) {
+        _.each(row, function(cell, j) { 
+          cell !== null && i !== j && links.push({source: i, target: j, value: cell}); 
+        });
+      });
+    }
+    
+    var n = nodes.length,
         idealBandWidth = Math.max(width / n, IDEAL_LABEL_HEIGHT),
         rowLimitForLabels = Math.floor(width / MIN_LABEL_HEIGHT),
         rowLimitForLines = Math.floor(width / 4),
@@ -199,7 +210,7 @@ $(function() {
           node.contig_N50_format = numberWithCommas(node.contig_N50);
           node.contig_maxlength_format = numberWithCommas(node.contig_maxlength);
         }
-        matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: 0, origZ: null}; });
+        matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: i == j ? 0 : Infinity, origZ: null}; });
         matrix[i].y = i;
       });
 
@@ -207,7 +218,11 @@ $(function() {
       // Clustering for the purposes of merging here is done via a single-linkage criterion
       _.each(links, function(link) {
         var sourceClusterIndex, targetClusterIndex;
-        matrix[link.source][link.target].z += link.value;
+        if (link.value === null) { return; }
+        if (matrix[link.source][link.target].z !== Infinity) {
+          return console.warn("Duplicate link between " + nodes[link.source] + " and " + nodes[link.target]);
+        }
+        matrix[link.source][link.target].z = link.value;
         if (link.value <= snpThreshold) {
           if (nodes[link.source].eRAP_ID != nodes[link.target].eRAP_ID) {
             nodes[link.source].count += 0.5; 
@@ -252,7 +267,7 @@ $(function() {
         });
       }
       
-      // Here, `filters` are applied to `nodes` to determine `visibleNodes`
+      // Here, `filters` are successively applied to `nodes` to determine `visibleNodes`
       visibleNodes = _.reject(nodes, function(node) { return node.samePtMergeChild; });
       if (filters.clustersOnly) { 
         visibleNodes = _.reject(visibleNodes, function(node) { return node.count <= 0; }); 
@@ -273,10 +288,12 @@ $(function() {
         return linkInRow || linkInCol;
       });
     
-      if (visibleNodes.length) {
+      if (clusterableNodes.length) {
         // Agglomerative, single-linkage hierarchical clustering based on the above dissimilarity matrix
         // Hierarchical clustering expects symmetrical distances, so we average across the diagonal of the dissimilarity matrix
-        function disFunc(a, b) { return (matrix[a.i][b.i].z + matrix[b.i][a.i].z) / 2; }
+        function disFunc(a, b) { 
+          return (matrix[a.i][b.i].z + matrix[b.i][a.i].z) / 2;
+        }
         allClusters = HClust.agnes(clusterableNodes, {disFunc: disFunc, kind: 'single'});
         
         // Find all clusters with diameter below the snpThreshold with >1 children
@@ -490,7 +507,9 @@ $(function() {
         if (previousIsolates.length) { allDistances.push(d3.min(_.map(previousIsolates, origZ))); }
         if (samePtIsolates.length) { samePtDistances.push(d3.min(_.map(samePtIsolates, origZ))); }
       });
-            
+      
+      allDistances = _.filter(allDistances, function(x) { return _.isFinite(x) }); 
+      samePtDistances = _.filter(samePtDistances, function(x) { return _.isFinite(x); });
       histoX.domain([MIN_SNP_THRESHOLD, d3.max(allDistances) * 1.04]);
       
       var log10Scale = d3.scaleLinear().domain([Math.log10(MIN_SNP_THRESHOLD), Math.log10(d3.max(allDistances))]).ticks(20),
@@ -906,7 +925,7 @@ $(function() {
     // Do a second round of single-linkage agglomerative clustering only for the nodes within the domain.
     // This lets us draw the dendrogram.
     function reclusterFilteredNodes(filteredDomain) {
-      var dendroDomain, filteredClusters;
+      var filteredClusters, dendroDomain;
 
       function disFunc(a, b) { return (fullMatrix[a][b].z + fullMatrix[b][a].z) / 2; }
       if (!filteredDomain.length) { return {cut: function() { return []; }, index: [], children: []}; }
@@ -919,19 +938,22 @@ $(function() {
         return linkInRow || linkInCol;
       });
       
-      filteredClusters = HClust.agnes(dendroDomain, {disFunc: disFunc, kind: 'single'});
-      _.each(filteredClusters.index, function(leaf, i) { 
-        leaf.data = nodes[dendroDomain[leaf.index]];
-        leaf.data.groupOrder = i;
-      });
-      return filteredClusters;
+      if (dendroDomain.length) {
+        filteredClusters = HClust.agnes(dendroDomain, {disFunc: disFunc, kind: 'single'});
+        _.each(filteredClusters.index, function(leaf, i) { 
+          leaf.data = nodes[dendroDomain[leaf.index]];
+          leaf.data.groupOrder = i;
+        });
+      }
+      return filteredClusters ? filteredClusters.cut(MAX_SNP_THRESHOLD) : [];
     }
     
-    function updateDendrogram(filteredClusters, matrix) {
+    function updateDendrogram(cutClusters, matrix) {
       var transitionDuration = brushAnimateStatus !== null ? ANIM_TRANSITION_DURATION : TRANSITION_DURATION;
-      var cutClusters = _.filter(filteredClusters.cut(MAX_SNP_THRESHOLD), function(clust) { return !!clust.children; });
       var noLabels = matrix.length > rowLimitForLabels;
       var marginRight = noLabels ? 0 : margin.right - dendroRight * 0.95;
+      
+      cutClusters = _.filter(cutClusters, function(clust) { return !!clust.children; });
       
       dendroG.transition().duration(transitionDuration * 0.1)
           .attr("opacity", 0)
@@ -1228,7 +1250,7 @@ $(function() {
 
     function reorder() {    
       var filteredDomain = filterByBrush(filterByVisibleNodes(d3.range(n))), 
-          filteredClusters = reclusterFilteredNodes(filteredDomain)
+          cutClusters = reclusterFilteredNodes(filteredDomain)
           filteredIsolateIds = filterByBrush(d3.range(epiData.isolates.length), epiData.isolates);
                 
       filteredDomain = calculateOrder(filteredDomain, $('#order').val());
@@ -1249,7 +1271,7 @@ $(function() {
       if ($('#main-viz').children('.heatmap').data('active')) {
         updateColumns(filteredMatrix);
         updateRows(filteredMatrix);    
-        updateDendrogram(filteredClusters, filteredMatrix);
+        updateDendrogram(cutClusters, filteredMatrix);
       } else {
         updateEpiHeatmap(_.values(_.pick(epiData.isolates, filteredIsolateIds)));
         updateNetwork(filteredDomain);
