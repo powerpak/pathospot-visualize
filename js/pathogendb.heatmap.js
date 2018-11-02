@@ -107,6 +107,7 @@ $(function() {
       HOSPITAL_MAP = 'msmc-stacking-gray';
   
   window.ANON = getURLParameter('anon');
+  window.rand20 = Math.floor(Math.random() * 20);
   
   var x = d3.scaleBand().range([0, width]),
       z = d3.scaleLinear().domain([DEFAULT_SNP_THRESHOLD + 1, 0]).clamp(true),
@@ -166,7 +167,6 @@ $(function() {
         filteredDomain = [],
         unitCoords = {"": [0, 0]},
         epiData = {isolates: []},
-        rand20 = Math.floor(Math.random() * 20),
         brushAnimateStatus = null,
         fullMatrix, visibleNodes, detectedClusters;
     
@@ -1310,7 +1310,9 @@ $(function() {
             var coords = unitCoords[isolate[1]];
             if ((/\d{4}-\d{2}-\d{2}/).test(isolate[0]) && isolate[0] > '1901-00-00') {
               if (coords && coords[0] != unitCoords[''][0] && coords[1] != unitCoords[''][1]) {
-                return {ordered: new Date(isolate[0]), unit: isolate[1], value: 1, x: coords[0], y: coords[1]};
+                var d = {ordered: new Date(isolate[0]), unit: isolate[1], value: 1, x: coords[0], y: coords[1]};
+                if (ANON) { d.ordered.setMonth(d.ordered.getMonth() + rand20 + 10); }
+                return d;
               }
             }
           }));
