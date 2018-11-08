@@ -183,7 +183,8 @@ $(function() {
     // The parameter `filters` is an object with the following possible keys:
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
-    //   `mlsts: ['1', '4', ...]` will show only nodes that have these mlst_subtypes
+    //   `mlsts: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
+    //   `units: ['MICU', ...]` will show only nodes that have these `.collection_unit`s
     function calculateMatrixAndVisibleNodes(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],

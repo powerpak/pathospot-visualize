@@ -75,4 +75,25 @@ Cluster.prototype.nodeData = function (data) {
     return nodeData;
 };
 
+/**
+ * Exports the cluster object in Newick tree format
+ * @param leafNameFunction {function} 
+ * @return string
+ */
+Cluster.prototype.toNewick = function (leafNameFunction, parentDistance) {
+    var childNewicks = [];
+    if (typeof leafNameFunction !== "function") {
+        leafNameFunction = function(leaf) { return leaf.index.toString(); }
+    }
+    if (!this.children) {
+        return leafNameFunction(this) + ':' + (parentDistance || 0);
+    } else {
+        for (var i = 0; i < this.children.length; i++) {
+            childNewicks.push(this.children[i].toNewick(leafNameFunction, this.distance));
+        }
+        return '(' + childNewicks.join(',') + ')' + 
+                (parentDistance === undefined ? ';' : (':' + parentDistance));
+    }
+};
+
 module.exports = Cluster;

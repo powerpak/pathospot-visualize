@@ -3,6 +3,7 @@
 var euclidean = require('./ml-euclidean-distance');
 var ClusterLeaf = require('./ClusterLeaf');
 var Cluster = require('./Cluster');
+require('./findIndex-polyfill');
 
 /**
  * @param cluster1
@@ -181,25 +182,37 @@ function agnes(data, options) {
             }
         }
 
-        // Cluster the ClusterLeaf's and/or Cluster's for the links at this minimum distance.
+        // Create new clusters of ClusterLeaf's and/or Cluster's for the links at this minimum distance.
         var dmin = d[min.toFixed(options.precision)];
         var clustered = [];
-        var aux;
-        while (dmin.length > 0) {
-            aux = dmin.shift();
-            for (var q = 0; q < dmin.length; q++) {
-                var int = dmin[q].filter(function(n) {
-                  return aux.indexOf(n) !== -1;
-                });
-                if (int.length > 0) {
-                    var diff = dmin[q].filter(function(n) {
-                        return aux.indexOf(n) === -1;
-                    });
-                    aux = aux.concat(diff);
-                    dmin.splice(q--, 1);
+        var pair;
+        
+        // For each pair of ClusterLeaf's/Cluster's linked at the minimum distance, ...
+        for (var ii = 0; ii < dmin.length; ii++) {
+            pair = dmin[ii];
+            // Try to find new clusters that already contain either side of the linked pair.
+            var firstAlreadyIn = clustered.findIndex(function(clust) { 
+                return clust.indexOf(pair[0]) !== -1;
+            });
+            var secondAlreadyIn = clustered.findIndex(function(clust) { 
+                return clust.indexOf(pair[1]) !== -1; 
+            });
+            // If both ends are in existing clusters, merge the two clusters (if they are different clusters).
+            // If only one end of the link is in a cluster, add the other end of the link to that cluster.
+            if (firstAlreadyIn !== -1) {
+                if (secondAlreadyIn !== -1) {
+                    if (firstAlreadyIn === secondAlreadyIn) { continue; }
+                    clustered[firstAlreadyIn] = clustered[firstAlreadyIn].concat(clustered[secondAlreadyIn]);
+                    clustered.splice(secondAlreadyIn, 1);
+                } else {
+                    clustered[firstAlreadyIn].push(pair[1]);
                 }
+            } else if (secondAlreadyIn !== -1) {
+                clustered[secondAlreadyIn].push(pair[0]);
+            } else {
+                // If neither side is in a cluster, make a new cluster out of this pair.
+                clustered.push(pair.concat());
             }
-            clustered.push(aux);
         }
 
         // Create a new Cluster object for the clusters we just created
