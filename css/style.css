@@ -1,3 +1,7 @@
+/* ================== */
+/* = GENERAL STYLES = */
+/* ================== */
+
 html {
   min-width: 1090px;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -27,55 +31,6 @@ svg {
 .widget-label {
   margin-right: 1em;
   line-height: 1.5em;
-}
-
-#snps-num {
-  text-align: right;
-}
-
-.range {
-  vertical-align: bottom;
-}
-.rangeslider--horizontal {
-  display: inline-block;
-  width: 100px;
-}
-.rangeslider__fill {
-  background: #1995dc;
-}
-
-#cluster-legend {
-  display: none;
-  line-height: 24px;
-}
-
-#cluster-list {
-  margin-left: 5px;
-  position: relative;
-  top: -1px;
-}
-
-#cluster-list span {
-  color: white;
-  display: inline-block;
-  font-size: 12px;
-  min-width: 20px;
-  height: 20px;
-  line-height: 20px;
-  margin-right: 3px;
-  text-align: center;
-  -webkit-print-color-adjust: exact;
-}
-
-#download-clusters {
-  margin-left: 1em;
-}
-
-#histo-title {
-  position: absolute;
-  left: 690px;
-  width: 380px;
-  text-align: center;
 }
 
 .background {
@@ -120,6 +75,62 @@ svg {
   border-color: #d4dbe0;
 }
 .toggle-btn.active:hover + .toggle-btn { border-left-color: #d4dbe0; }
+
+/* ================== */
+/* = HEATMAP STYLES = */
+/* ================== */
+
+#snps-num {
+  text-align: right;
+}
+
+.range {
+  vertical-align: bottom;
+}
+.rangeslider--horizontal {
+  display: inline-block;
+  width: 100px;
+}
+.rangeslider__fill {
+  background: #1995dc;
+}
+
+#cluster-legend {
+  display: none;
+  line-height: 24px;
+}
+
+#cluster-list {
+  margin-left: 5px;
+  position: relative;
+  top: -1px;
+}
+
+#cluster-list a {
+  color: white;
+  display: inline-block;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
+  line-height: 20px;
+  margin-right: 3px;
+  text-align: center;
+  -webkit-print-color-adjust: exact;
+}
+#cluster-list a:link {
+  text-decoration: none;
+}
+
+#download-clusters {
+  margin-left: 1em;
+}
+
+#histo-title {
+  position: absolute;
+  left: 690px;
+  width: 380px;
+  text-align: center;
+}
 
 #main-viz {
   position: absolute;
@@ -308,7 +319,21 @@ text.axis-label {
   fill: #222;
 }
 
-/**** select2 customization ****/
+/* ========================== */
+/* = DENDRO-TIMELINE STYLES = */
+/* ========================== */
+
+#dendro-timeline {
+  padding-left: 80px;
+}
+
+#color-scale {
+  font-size: 12px;
+}
+
+/* ========================= */
+/* = SELECT2 CUSTOMIZATION = */
+/* ========================= */
 
 #filter-cont select.select2 {  /* helps prevent flash of unstyled content */
   visibility: hidden;
@@ -374,7 +399,9 @@ text.axis-label {
   content: '\2713 ';
 }
 
-/**** .d3-tip customizations ****/
+/* ========================= */
+/* = D3-TIP CUSTOMIZATIONS = */
+/* ========================= */
 
 .d3-tip { z-index: 1000; }
 

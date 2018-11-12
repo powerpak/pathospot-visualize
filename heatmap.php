@@ -28,6 +28,7 @@ $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/d
 <script src="js/select2.min.js" charset="utf-8"></script>
 <script src="js/heatmap.min.js" charset="utf-8"></script>
 <script src="js/FileSaver.js" charset="utf-8"></script>
+<script src="js/utils.js"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
 
 <?php

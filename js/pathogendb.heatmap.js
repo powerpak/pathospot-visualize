@@ -1,90 +1,3 @@
-function fixUnit(unit) {
-  if (unit) {
-    unit = unit.replace(/EMERGENCY (DEPARTMENT|DEPT)/, 'ED');
-    unit = unit.replace(/INITIAL DEPARTMENT/, '??');
-    unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
-    unit = unit.replace(/^FPA.*/, 'FPA');
-    if (window.ANON) { unit = rot13(unit); }
-  }
-  return unit;
-}
-
-function formatDate(d) {
-  if (!d) { return ''; }
-  d = new Date(d);
-  return d.getFullYear() + '-' + ("0" + (d.getMonth() + 1)).slice(-2) + '-' + ("0" + d.getDate()).slice(-2);
-}
-
-// one-liner from http://stackoverflow.com/questions/11582512/how-to-get-url-parameters-with-javascript/11582513
-function getURLParameter(name) {
-  return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')
-      .exec(location.search) || [null, ''])[1]
-      .replace(/\+/g, '%20')) || null;
-}
-
-function numberWithCommas(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-function rot13(s) {
-  return s.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});
-}
-
-function getFilters() {
-  var filters = $('#filter').val(),
-    mlstFilters = _.filter(filters, function(v) { return (/^MLST:/).test(v); }),
-    unitFilters = _.filter(filters, function(v) { return (/^Unit:/).test(v); });
-  return {
-    mergeSamePt: _.contains(filters, 'mergeSamePt'), 
-    clustersOnly: _.contains(filters, 'clustersOnly'),
-    mlsts: _.map(mlstFilters, function(v) { return v.split(':')[1]; }),
-    units: _.map(unitFilters, function(v) { return v.split(':')[1]; })
-  };
-}
-
-Array.prototype.swap = function (x, y) {
-  var b = this[x];
-  this[x] = this[y];
-  this[y] = b;
-  return this;
-}
-
-// Helper function for performant animations with requestAnimationFrame (instead of setInterval)
-// https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
-// @param render: function(deltaT, now) {}  -- called every frame to render changes;
-//                                             should return false when the animation is over to stop looping
-// @param element: DOMElement               -- optional, sets the element within which the animation runs
-function animLoop(render, element) {
-  var running, lastFrame = +(new Date()),
-      raf = window.requestAnimationFrame       ||
-            window.mozRequestAnimationFrame    ||
-            window.webkitRequestAnimationFrame ||
-            window.msRequestAnimationFrame     ||
-            window.oRequestAnimationFrame;
-          
-  function loop(now) {
-    if (running !== false) {
-      raf ?
-        raf(loop, element) :
-        // fallback to setTimeout
-        setTimeout(loop, 16);
-      // Make sure to use a valid time, since:
-      // - Chrome 10 doesn't return it at all
-      // - setTimeout returns the actual timeout
-      now = now && now > 1E4 ? now : +new Date;
-      var deltaT = now - lastFrame;
-      // do not render frame when deltaT is too high, and avoid nonsense negative deltaT's
-      if (deltaT > 0 && deltaT < 160) {
-        running = render(deltaT, now);
-      }
-      lastFrame = now;
-    }
-  }
-  loop();
-};
-
-
-
 $(function() { 
 
   // *************************** SVG/D3 SETUP *********************************
@@ -169,7 +82,7 @@ $(function() {
         unitCoords = {"": [0, 0]},
         epiData = {isolates: []},
         brushAnimateStatus = null,
-        fullMatrix, visibleNodes, detectedClusters;
+        fullMatrix, visibleNodes, clusterableNodes, detectedClusters;
     
     $('.distance-unit').text(assemblies.distance_unit);
   
@@ -179,17 +92,18 @@ $(function() {
     // `nodes`: the full list of nodes
     // `fullMatrix`: the full distance matrix
     // `visibleNodes`: which nodes should show up in the daterange selector and in the matrix based on `filters`
-    // `detectedClusters`: the clusters that were detected in `visibleNodes`
+    // `clusterableNodes`: the subset of `visibleNodes` that can be clustered (≥1 link under the `snpThreshold`)
+    // `detectedClusters`: the clusters that were detected in `clusterableNodes`
     // 
     // The parameter `filters` is an object with the following possible keys:
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
     //   `mlsts: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
     //   `units: ['MICU', ...]` will show only nodes that have these `.collection_unit`s
-    function calculateMatrixAndVisibleNodes(nodes, links, snpThreshold, filters) {
+    function calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],
-        allClusters, clusterableNodes;
+        allClusters;
         
       filters = _.extend({}, filters);
     
@@ -310,7 +224,7 @@ $(function() {
     
       fullMatrix = matrix;
     }
-    calculateMatrixAndVisibleNodes(nodes, links, DEFAULT_SNP_THRESHOLD, getFilters());
+    calculateMatrixAndNodeSubsets(nodes, links, DEFAULT_SNP_THRESHOLD, getFilters());
 
 
     // ************************* FILTERING AND ORDERING *****************************
@@ -871,10 +785,17 @@ $(function() {
     function updateDetectedClusters(clusters) {
       clusterLegend.style('display', 'inline');
       clusterLegend.select('.num-clusters').text(clusters.length);
-      var clusterList = clusterLegend.select('#cluster-list').selectAll('span').data(clusters);
-      var clusterEnter = clusterList.enter().append('span');
+      var clusterList = clusterLegend.select('#cluster-list').selectAll('a').data(clusters);
+      var clusterEnter = clusterList.enter().append('a');
       clusterList.merge(clusterEnter)
           .style("background-color", function(d, i) { return c(i); } )
+          .attr("href", function(d) {
+            var assemblyNames = _.map(d.index, function(leaf) { 
+              return encodeURIComponent(clusterableNodes[leaf.index].name); 
+            });  
+            return "dendro-timeline.php?db=" + db + "&assemblies=" + assemblyNames.join('+');
+          })
+          .attr("target", "_blank")
           .text(function(d) { return d.index.length; });
       clusterList.exit().remove();
       
@@ -885,7 +806,7 @@ $(function() {
       var rows = [["isolate_ID", "merged_into_isolate_ID", "eRAP_ID", "cluster_num", "cluster_color"]];
       _.each(clusters, function(clust, i) {
         _.each(clust.index, function(clustLeaf) {
-          var node = visibleNodes[clustLeaf.index];
+          var node = clusterableNodes[clustLeaf.index];
           rows.push([node.isolate_ID, '', node.eRAP_ID, i, c(i)]);
           // Also include rows for isolates merged into this one, for having the same patient ID.
           if (node.samePtMergeParent) {
@@ -1283,7 +1204,7 @@ $(function() {
     function changeSnpThreshold() {
       interruptAllTransitions();
       var snpThreshold = parseInt($('#snps-num').val(), 10);      
-      calculateMatrixAndVisibleNodes(nodes, links, snpThreshold, getFilters());
+      calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, getFilters());
     
       z.domain([snpThreshold + 1, 0]);
     
