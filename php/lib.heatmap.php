@@ -1,5 +1,9 @@
 <?php
 
+// Reads the metadata we need from the specified $data_file, which is a path to a JSON file
+// As a shortcut, tries to pull everything out of the first 1000 characters if possible,
+// which avoids a potentially expensive `json_decode()`; will fall back to that if needed
+// though.
 function getHeatmapMetadata($data_file) {
   $meta = array();
   

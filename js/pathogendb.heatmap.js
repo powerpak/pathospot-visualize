@@ -158,6 +158,7 @@ $(function() {
         });
       });
     }
+    window.nodes = nodes;
     
     var n = nodes.length,
         idealBandWidth = Math.max(width / n, IDEAL_LABEL_HEIGHT),
