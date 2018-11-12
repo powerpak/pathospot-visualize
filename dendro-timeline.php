@@ -61,7 +61,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
     <label class="widget">
       <span class="widget-label">Scale tree by</span>
       <select id="color-nodes" name="color_nodes" disabled>
-        <option value="divergence">Divergence</option>
+        <option value="divergence">Divergence (SNPs per Mbp)</option>
         <option value="time">Time</option>
       </select>
     </label>
