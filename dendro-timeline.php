@@ -11,6 +11,7 @@ list($db, $assembly_names, $isolates, $matching_tree, $error) = parse_query_stri
 if (!$error) {
   if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
   else { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
+  if (!$pruned_tree) { $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`?"; }
 }
 
 ?>
