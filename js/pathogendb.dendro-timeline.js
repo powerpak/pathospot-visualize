@@ -127,29 +127,31 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   // = Setup the timeline =
   // ======================
   
-  function updateTimeline() {
-    var drawableEncounters = _.filter(encounters, function(enc) { return !!enc.department_name; });
-    
-    var rowHeight = 10,
+  function updateTimeline(encounters, isolates) {
+    var drawableEncounters = _.filter(encounters, function(enc) { return !!enc.department_name; }),
+        rowHeight = 10,
         width = 800,
         xAxisSize = 20,
         yAxisSize = 250,
         yAxisPadding = 8,
         now = new Date(),
-        $timeline = $("#timeline");
-    
-    var erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
+        $timeline = $("#timeline"),
+        erapIds = [],
+        erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return enc.eRAP_ID + ':' + enc.department_name;
         }).concat(_.map(isolates, function(iso) {
           return iso.eRAP_ID + ':' + iso.collection_unit;
-        }));    
+        })),
+        height, erapIdDeptTupleScale;
+        
+    $timeline.children(':not(defs)').remove();
+    
     erapIdDeptTuples = _.uniq(erapIdDeptTuples).sort();
-    var height = erapIdDeptTuples.length * rowHeight,
-        erapIdDeptTupleScale = d3.scale.ordinal()
-            .domain(erapIdDeptTuples)
-            .rangePoints([0, height - rowHeight]);
+    height = erapIdDeptTuples.length * rowHeight;
+    erapIdDeptTupleScale = d3.scale.ordinal()
+        .domain(erapIdDeptTuples)
+        .rangePoints([0, height - rowHeight]);
             
-    var erapIds = [];
     _.each(erapIdDeptTuples, function(tup) {
       var tup = tup.split(':', 2);
       if (!erapIds.length || _.last(erapIds).id !== tup[0]) {
@@ -164,7 +166,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         maxEncDate = _.max(_.pluck(encounters, 'end_date')),
         xScale = d3.time.scale.utc().domain(orderedScale.domain()).range([0, width - yAxisSize]),
         unzoomedXScale = xScale.copy(),
-        xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(8).tickSize(-height, 0).tickPadding(5);
+        xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(6).tickSize(-height, 0).tickPadding(5);
     
     var lastZoom = null,
         oneDayInPx = unzoomedXScale(d3.time.day.offset(now, 1)) - unzoomedXScale(now),
@@ -175,7 +177,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
           .on("zoom", function() {
             $timeline.trigger("draw");
           });
-    
+        
     var timelineSvg = d3.select("#timeline")
         .attr("width", width)
         .attr("height", erapIdDeptTuples.length * rowHeight + xAxisSize)
@@ -288,7 +290,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
 
     $timeline.trigger("draw");
   }
-  updateTimeline();
+  updateTimeline(encounters, isolates);
   
   // ==============================================================
   // = Setup callbacks for controls that update the visualization =
@@ -296,5 +298,6 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   $colorBy.change(function() {
     tree.update();
     updateColorLegend(tree);
+    updateTimeline(encounters, isolates);
   });
 }
