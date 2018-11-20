@@ -1,5 +1,6 @@
 function fixUnit(unit) {
   if (unit) {
+    unit = unit.replace(/MOUNT SINAI HOSPITAL +/, 'HOSP ');
     unit = unit.replace(/EMERGENCY (DEPARTMENT|DEPT)/, 'ED');
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');

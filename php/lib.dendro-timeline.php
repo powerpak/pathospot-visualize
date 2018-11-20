@@ -58,9 +58,10 @@ function get_isolate_data($nodes, $assembly_names) {
 }
 
 
-// Processes all the $_GET query variables for the dendro-timeline.php page
-// If an error occurs, $error is set to the error message
-function parse_query_string($REQ) {
+// Processes all the `$_GET` query variables for the `dendro-timeline.php` page and loads
+// data from the `.heatmap.json` file into a list of returned variables
+// If an error occurs, `$error` is set to the error message
+function load_from_heatmap_json($REQ) {
   $db = null;
   $assembly_names = null;
   $isolates = null;
@@ -69,7 +70,7 @@ function parse_query_string($REQ) {
   
   if (isset($REQ['db'])) {
     $db = preg_replace('/[^\w.-]/i', '', $REQ['db']);
-    $json = json_decode(@file_get_contents(dirname(dirname(__FILE__)). "/data/$db.heatmap.json"), true);
+    $json = json_decode(@file_get_contents(dirname(dirname(__FILE__)) . "/data/$db.heatmap.json"), true);
   }
   
   if (isset($json) && $json && is_array($json["trees"])) {
@@ -90,6 +91,33 @@ function parse_query_string($REQ) {
       }
     }
   } else { $error = "Could not load valid JSON from `db`. Is there a matching `.heatmap.json` file in `data/`?"; }
+  if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
   
   return array($db, $assembly_names, $isolates, $matching_tree, $error);
+}
+
+
+//
+function load_encounters_for_isolates($db, $isolates) {
+  $eRAP_IDs = array();
+  $tsv_header = null;
+  $encounters = array();
+  
+  foreach ($isolates as $isolate) { $eRAP_IDs[$isolate["eRAP_ID"]] = true; }
+  
+  $fh = @fopen(dirname(dirname(__FILE__)) . "/data/" . preg_replace('/\.\w+$/', '', $db) . ".encounters.tsv", 'r');
+  if ($fh === false) { return null; }
+  while (($line = fgetcsv($fh, 0, "\t")) !== false) {
+    if ($tsv_header === null) { 
+      $tsv_header = $line; 
+      $eRAP_ID_col = array_search("eRAP_ID", $tsv_header);
+      array_push($encounters, $line);
+    } else {
+      if ($eRAP_ID_col !== false && isset($eRAP_IDs[$line[$eRAP_ID_col]])) {
+        array_push($encounters, $line);
+      }
+    }
+  }
+  
+  return $encounters;
 }

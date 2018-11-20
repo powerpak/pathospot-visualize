@@ -331,6 +331,37 @@ text.axis-label {
   font-size: 12px;
 }
 
+#timeline-cont {
+  margin-top: 20px;
+}
+
+#timeline .x.axis .tick line {
+  opacity: 0.2;
+}
+
+#timeline .pt-dividers g rect {
+  fill: none;
+}
+
+#timeline .pt-dividers g:nth-child(even) rect {
+  fill: #f3f6fa;
+}
+
+#timeline .pt-dividers text {
+  font-size: 14px;
+  font-weight: bold;
+  fill: #777;
+}
+
+#timeline .encounter {
+  fill: black;
+  opacity: 0.2;
+}
+#timeline .encounter.transfer {
+  fill: url(#diagonal-stripe-5) #fff;
+  opacity: 0.2;
+}
+
 /* ========================= */
 /* = SELECT2 CUSTOMIZATION = */
 /* ========================= */

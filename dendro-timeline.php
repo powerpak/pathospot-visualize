@@ -6,12 +6,13 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.dendro-timeline.php');
 
-list($db, $assembly_names, $isolates, $matching_tree, $error) = parse_query_string($_GET);
+list($db, $assembly_names, $isolates, $matching_tree, $error) = load_from_heatmap_json($_GET);
 
 if (!$error) {
-  if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
-  else { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
+  if ($matching_tree) { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
   if (!$pruned_tree) { $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`?"; }
+  if ($isolates) { $encounters = load_encounters_for_isolates($db, $isolates); }
+  if (!$encounters) { $error = "Could not load encounter data; is there an `.encounters.tsv` file corresponding to the `.heatmap.json` file?"; }
 }
 
 ?>
@@ -72,153 +73,48 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
 <div id="dendro-timeline">
   <svg id="color-scale" width="100" height="300"></svg>
   <svg id="dendro"></svg>
+  <div id="timeline-cont" class="clear">
+    <svg id="timeline" width="700" height="300">
+      <defs>
+        <pattern id="diagonal-stripe-5" patternUnits="userSpaceOnUse" width="10" height="10">
+          <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSdibGFjaycvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J3doaXRlJyBzdHJva2Utd2lkdGg9JzInLz4KPC9zdmc+" x="0" y="0" width="10" height="10">
+          </image>
+        </pattern>
+      </defs>
+    </svg>
+  </div>
 </div>
 
 <script src="js/pathogendb.dendro-timeline.js"></script>
 <script type="text/javascript">
   var prunedTree = <?= json_encode($pruned_tree); ?>;
   var isolates = <?= json_encode($isolates); ?>;
+  var encounters = <?= json_encode($encounters); ?>;
   
-  // Parse out certain fields that are specially formatted
+  var dateRegex = (/\d{4}-\d{2}-\d{2}/);
+  
+  // Preprocess specially formatted fields in `isolates`
   _.each(isolates, function(v) {
-    if ((/\d{4}-\d{2}-\d{2}/).test(v.order_date) && v.order_date > '1901-00-00') { 
+    if (dateRegex.test(v.order_date) && v.order_date > '1901-00-00') { 
       v.ordered = new Date(v.order_date);
-      v.collection_unit = fixUnit(v.collection_unit);
     }
+    v.collection_unit = fixUnit(v.collection_unit);
   });
   
-  $(function(){
-    // Constants.
-    var colors = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", "#73B583", "#7CB878", "#86BB6E", "#90BC65", "#9ABD5C", "#A4BE56", "#AFBD4F", "#B9BC4A", "#C2BA46", "#CCB742", "#D3B240", "#DAAC3D", "#DFA43B", "#E39B39", "#E68F36", "#E68234", "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
-    var unknownColor = "#AAA";
-    var nodeRadius = 4;
-    
-    // Scales, formats, and other objects for setting up d3.js
-    var spectralScale = d3.scale.linear()
-        .domain(_.range(colors.length))
-        .interpolate(d3.interpolateHcl)
-        .range(_.map(colors, function(v) { return d3.rgb(v); }));
-    var orderedScale = d3.time.scale()
-        .range([0, colors.length - 1]);
-    var orderedFormat = d3.time.format("%b %Y");
-    var collectionUnitScale = d3.scale.ordinal()
-        .domain(_.uniq(_.compact(_.pluck(isolates, 'collection_unit'))).sort())
-        .rangePoints([0, colors.length - 1]);
-    var isLeafNode = d3.layout.phylotree.is_leafnode;
-    
-    // jQuery objects for controls that can update the visualization
-    var $colorBy = $('#color-nodes');
-    var colorByFunctions = {
-      ordered: function(isolate) { 
-        return isolate.ordered ? spectralScale(orderedScale(isolate.ordered)) : unknownColor; 
-      },
-      collection_unit: function(isolate) {
-        return isolate.collection_unit ? spectralScale(collectionUnitScale(isolate.collection_unit)) : 
-            unknownColor;
-      }
-    }
-    
-    // =====================================
-    // = Setup the phylotree.js in #dendro =
-    // =====================================
-    
-    var tree = d3.layout.phylotree()
-        .options({
-          brush: false,
-          selectable: false,
-          "align-tips": true
-        })
-        .node_circle_size(0)
-        .svg(d3.select("#dendro"));
-    
-    // Custom node styler to color the node tip and add extra metadata to the right-hand side
-    tree.style_nodes(function(container, node) {
-      if (d3.layout.phylotree.is_leafnode(node)) {
-        var shiftTip = tree.shift_tip(node)[0];
-        var circle = container.selectAll("circle").data([node]);
-        var isolate = isolates[node.name];
-        var fillColor = colorByFunctions[$colorBy.val()](isolate);
-        var strokeColor = d3.rgb(fillColor).darker().toString();
-      
-        circle.exit().remove();
-        
-        circle.enter().append("circle")
-            .attr("r", nodeRadius)
-            .attr("cx", nodeRadius);
-        
-        circle.style("fill", fillColor)
-            .style("stroke", strokeColor);
-      
-        container.selectAll("text")
-            .attr("x", nodeRadius * 2.5)
-            .text(isolate.isolate_ID + ' : ' + isolate.order_date + ' : ' + isolate.collection_unit);
-      }
-    });
-    
-    // Parse the Newick-formatted prunedTree for the specified `assemblies` in the query string
-    tree(prunedTree);
-    
-    // Root the tree on the chronologically first isolate
-    var earliest = _.min(tree.get_nodes(), function(node) { 
-      return isLeafNode(node) ? isolates[node.name].ordered : Infinity;
-    });
-    var latest = _.max(tree.get_nodes(), function(node) { 
-      return isLeafNode(node) ? isolates[node.name].ordered : -Infinity;
-    });
-    orderedScale.domain([isolates[earliest.name].ordered, isolates[latest.name].ordered]);
-    tree.reroot(earliest);
-    tree.layout();
-    
-    window.tree = tree; //FIXME: makes debugging easier.
-    
-    // ==========================
-    // = Setup the color legend =
-    // ==========================
-    
-    function updateColorLegend(tree) {
-      var colorSvg = d3.select("#color-scale");
-      var swatchHeight = 20;
-      var idealNumSwatches = Math.min(_.keys(isolates).length, 8);
-      var labelFormatter = _.identity;
-      var colorSwatches, fillFunction, swatchData;
-      
-      if ($colorBy.val() == 'ordered') {
-        swatchData = idealNumSwatches > 3 ? orderedScale.ticks(idealNumSwatches) : orderedScale.domain();
-        fillFunction = function(d) { return spectralScale(orderedScale(d)) };
-        labelFormatter = orderedFormat;
-      } else {
-        swatchData = collectionUnitScale.domain();
-        fillFunction = function(d) { return spectralScale(collectionUnitScale(d)) };
-      }
-      colorSwatches = colorSvg.selectAll("g").data(swatchData);
-      
-      colorSvg.attr("height", Math.max(tree.size()[0], swatchData.length * swatchHeight));
-      
-      colorSwatches.exit().remove();
-    
-      var swatchEnter = colorSwatches.enter().append("g")
-          .attr("transform", function(d, i) { return "translate(0," + (i * swatchHeight) + ")" });
-      swatchEnter.append("rect")
-          .attr("width", swatchHeight * 0.6)
-          .attr("height", swatchHeight * 0.6);
-      swatchEnter.append("text")
-          .attr("x", swatchHeight)
-          .attr("y", swatchHeight * 0.5);
-          
-      colorSwatches.select("rect")
-          .style("fill", fillFunction);
-      colorSwatches.select("text")
-          .text(labelFormatter);
-    }
-    updateColorLegend(tree);
-    
-    // ==============================================================
-    // = Setup callbacks for controls that update the visualization =
-    // ==============================================================
-    $colorBy.change(function() {
-      tree.update();
-      updateColorLegend(tree);
-    });
+  // Preprocess `encounters` into an array of objects (unpacking it from an array-of-arrays with a header row)
+  encounters = _.map(encounters.slice(1), function(v) { return _.object(encounters[0], v);  });
+  // Preprocess specially formatted fields in `encounters`
+  _.each(encounters, function(v) {
+    v.start_date = dateRegex.test(v.start_date) ? new Date(v.start_date) : null;
+    v.end_date = dateRegex.test(v.end_date) ? new Date(v.end_date) : null;
+    // Convert right-closed date intervals into right-open intervals for ease of plotting
+    v.end_date && v.end_date.setDate(v.end_date.getDate() + 1);
+    v.department_name = fixUnit(v.department_name);
+    v.transfer = v.transfer === 'yes';
+  });
+  
+  $(function() {
+    dendroTimeline(prunedTree, isolates, encounters);
   });
 </script>
 
