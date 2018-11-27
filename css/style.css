@@ -333,6 +333,7 @@ text.axis-label {
 
 #timeline-cont {
   margin-top: 20px;
+  margin-left: -40px;
 }
 
 #timeline .x.axis .tick line {
@@ -358,6 +359,11 @@ text.axis-label {
 }
 #timeline .encounter.inpatient {
   fill: #aaa;
+}
+#timeline .transfers line {
+  stroke: #999;
+  stroke-width: 1px;
+  stroke-dasharray: 2,1;
 }
 /*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;

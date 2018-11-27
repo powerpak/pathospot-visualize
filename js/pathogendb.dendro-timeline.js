@@ -1,6 +1,10 @@
 function dendroTimeline(prunedTree, isolates, encounters) {
   // Constants.
-  var colors = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", "#73B583", "#7CB878", "#86BB6E", "#90BC65", "#9ABD5C", "#A4BE56", "#AFBD4F", "#B9BC4A", "#C2BA46", "#CCB742", "#D3B240", "#DAAC3D", "#DFA43B", "#E39B39", "#E68F36", "#E68234", "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
+  var colors = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 
+    "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", 
+    "#73B583", "#7CB878", "#86BB6E", "#90BC65", "#9ABD5C", "#A4BE56", "#AFBD4F", "#B9BC4A", 
+    "#C2BA46", "#CCB742", "#D3B240", "#DAAC3D", "#DFA43B", "#E39B39", "#E68F36", "#E68234", 
+    "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
   var unknownColor = "#AAA";
   var nodeRadius = 4;
   
@@ -28,6 +32,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
           unknownColor;
     }
   }
+  var $filter = $('#filter');
+  var $timeline = $('#timeline');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -40,7 +46,11 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         "align-tips": true
       })
       .node_circle_size(0)
-      .svg(d3.select("#dendro"));
+      .svg(d3.select("#dendro")),
+      oldBranchLength = tree.branch_length();
+  
+  // Scale up branch lengths to SNVs per **Mbp** core genome
+  tree.branch_length(function() { return oldBranchLength.apply(this, arguments) * 1000000; })
   
   // Custom node styler to color the node tip and add extra metadata to the right-hand side
   tree.style_nodes(function(container, node) {
@@ -127,15 +137,50 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   // = Setup the timeline =
   // ======================
   
-  function updateTimeline(encounters, isolates) {
-    var drawableEncounters = _.filter(encounters, function(enc) { return !!enc.department_name; }),
-        rowHeight = 10,
-        width = 800,
-        xAxisSize = 20,
+  function filterEncounters(encounters, filters) {
+    encounters = _.filter(encounters, function(enc) {
+      return (enc.department_name && enc.start_time && enc.end_time && enc.end_time > enc.start_time);
+    });
+    encounters = _.filter(encounters, function(enc) {
+      if (filters == 'outpatient') { return enc.encounter_type != "Hospital Encounter"; }
+      if (filters == 'inpatient') { return enc.encounter_type == "Hospital Encounter"; }
+      return true;
+    });
+    return encounters;
+  }
+  
+  function resizeTimelineWidth(paddingLeft, xScale, zoom) {
+    var yAxisPadding = 8,
         yAxisSize = 250,
-        yAxisPadding = 8,
+        paddingRight = 80,
+        width = $timeline.parent().innerWidth() - paddingLeft - paddingRight,
+        oldXScale = xScale.copy();
+    
+    // If `zoom` is not provided, we are resizing and rescaling before drawing any elements
+    xScale.range([0, width - yAxisSize]);
+    if (!zoom) { return xScale; }
+    
+    // Resize **without** rescaling (performed when the window is resized after drawing elements)
+    // We need to "bake" the old zoom transforms into future ones, as calling zoom.x() resets everything
+    xScale.domain([oldXScale.domain()[0], oldXScale.invert(width - yAxisSize)]);
+    zoom.x(xScale);
+    
+    $timeline.attr("width", paddingLeft + width);
+    $timeline.find(".pt-dividers rect").attr("width", width);
+    $timeline.find(".pt-dividers text").attr("x", width - yAxisPadding);
+    $timeline.find(".zoom-rect").attr("width", width - yAxisSize);
+    $timeline.find(".y.axis").attr("transform", "translate(" + (width - yAxisSize + yAxisPadding) + ",0)");
+    $('#timeline-clip rect').attr("width", width - yAxisSize);
+  }
+  
+  function updateTimeline(encounters, isolates) {
+    var drawableEncounters = filterEncounters(encounters, $filter.val()),
+        transfers = _.filter(drawableEncounters, function(enc) { return !!enc.transfer_to; }),
+        rowHeight = 10,
+        xAxisSize = 20,
+        paddingLeft = 40,
         now = new Date(),
-        $timeline = $("#timeline"),
+        zoomCache = {last: null},
         erapIds = [],
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return enc.eRAP_ID + ':' + enc.department_name;
@@ -164,11 +209,12 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     
     var minEncDate = _.min(_.pluck(encounters, 'start_time')),
         maxEncDate = _.max(_.pluck(encounters, 'end_time')),
-        xScale = d3.time.scale.utc().domain(orderedScale.domain()).range([0, width - yAxisSize]),
-        unzoomedXScale = xScale.copy(),
-        xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(6).tickSize(-height, 0).tickPadding(5);
+        xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
     
-    var lastZoom = null,
+    resizeTimelineWidth(paddingLeft, xScale, false, false);
+    
+    var unzoomedXScale = xScale.copy();
+        xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(6).tickSize(-height, 0).tickPadding(5),
         oneDayInPx = unzoomedXScale(d3.time.day.offset(now, 1)) - unzoomedXScale(now),
         zoomOutLimit = (unzoomedXScale.domain()[1] - unzoomedXScale.domain()[0]) / (maxEncDate - minEncDate),
         zoom = d3.behavior.zoom()
@@ -178,11 +224,12 @@ function dendroTimeline(prunedTree, isolates, encounters) {
             $timeline.trigger("draw");
           });
         
+    // Create the root SVG element and a base <g> that is positioned at the upper-left corner of the plot
+    // All other elements are descendants of this <g>, which serves as the origin of the coordinate system
     var timelineSvg = d3.select("#timeline")
-        .attr("width", width)
         .attr("height", erapIdDeptTuples.length * rowHeight + xAxisSize)
       .append("g")
-        .attr("transform", "translate(0," + xAxisSize + ")");
+        .attr("transform", "translate(" + paddingLeft + "," + xAxisSize + ")");
     
     // Draw patient Y axis dividers in the very back
     var ptDividersGEnter = timelineSvg.append("g")
@@ -194,13 +241,11 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .attr("y", function(erapId) { return erapIdDeptTupleScale(erapId.id + ':' + erapId.start); })
         .attr("height", function (erapId) { return rowHeight * erapId.length; })
         .attr("x", 0)
-        .attr("width", width);
     ptDividersGEnter.append("text")
         .attr("y", function(erapId) { 
           return erapIdDeptTupleScale(erapId.id + ':' + erapId.start) + rowHeight * erapId.length * 0.5;
         })
         .attr("text-anchor", "end")
-        .attr("x", width - yAxisPadding)
         .attr("dy", rowHeight * 0.5)
         .text(function(erapId) { return erapId.id });
                 
@@ -211,11 +256,11 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // Plotting area that is clipped so data do not draw outside of it onto the axes
     var plotAreaG = timelineSvg.append("g")
         .attr("class", "plot-area")
-        .attr("clip-path", "url(#clip)");
+        .attr("clip-path", "url(#timeline-clip)");
 
     // Draw encounters
     var encX = function(enc) { return xScale(enc.start_time); },
-        encWidth = function(enc) { return xScale(enc.end_time) - xScale(enc.start_time); },
+        encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); },
         encY = function(enc) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + enc.department_name); };
     plotAreaG.append("g")
         .attr("class", "encounters")
@@ -227,8 +272,25 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         })
         .attr("y", encY)
         .attr("height", rowHeight)
-        .attr("x", encX)
-        .attr("width", encWidth);
+        .attr("shape-rendering", "crispEdges");
+        
+    // Draw transfers
+    plotAreaG.append("g")
+        .attr("class", "transfers")
+      .selectAll("line")
+        .data(transfers)
+      .enter().append("line")
+        .attr("x1", function(enc) { return xScale(enc.end_time); })
+        .attr("x2", function(enc) { return xScale(enc.end_time); })
+        .attr("y1", function(enc) { 
+          var depts = [enc.department_name, enc.transfer_to];
+          return _.min(_.map(depts, function(dept) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + dept); }));
+        })
+        .attr("y2", function(enc) {
+          var depts = [enc.department_name, enc.transfer_to];
+          return _.max(_.map(depts, function(dept) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + dept); }))
+              + rowHeight;
+        });
     
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
@@ -240,9 +302,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     plotAreaG.append("g")
         .attr("class", "isolates")
       .selectAll("circle")
-        .data(_.values(isolates))
+        .data(_.filter(isolates, function(iso) { return !!iso.ordered; }))
       .enter().append("circle")
-        .attr("cx", isolateX)
         .attr("cy", isolateY)
         .attr("r", nodeRadius)
         .style("fill", isolateFill)
@@ -251,7 +312,6 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // Draw Y axis labels
     timelineSvg.append("g")
         .attr("class", "y axis")
-        .attr("transform", "translate(" + (width - yAxisSize + yAxisPadding) + ",0)")
       .selectAll("text")
         .data(erapIdDeptTuples)
       .enter().append("text")
@@ -262,7 +322,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     
     // Invisible <rect> in front of the plot to capture zoom mouse/touch events
     var zoomRect = timelineSvg.append("rect")
-        .attr("width", width - yAxisSize)
+        .attr("class", "zoom-rect")
         .attr("height", height)
         .attr("fill", "none")
         .attr("pointer-events", "all")
@@ -270,25 +330,34 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     
     // Add a clipping mask so data that moves outside the plot area is clipped
     timelineSvg.append("clipPath")
-        .attr("id", "clip")
+        .attr("id", "timeline-clip")
       .append("rect")
-        .attr("width", width - yAxisSize)
         .attr("height", height);
     
     // Bind event handler to redraw axes/data after zooming
     $timeline.unbind("draw").on("draw", function() {
-      var e = d3.event || lastZoom;
+      var e = d3.event || zoomCache.last;
+      // NOTE: we used to transform parent <g>'s directly from the d3.event calculations, e.g.
+      //   .attr("transform", "translate(" + e.translate[0] + "," + "0)scale(" + e.scale + ",1)");
+      // but this no longer works after adding the `resizeWidth` event, as that resets `zoom`.
+      // Now, we have to reposition every datapoint.
       timelineSvg.select("g.x.axis").call(xAxis);
-      if (e) {
-        timelineSvg.select(".encounters")
-            .attr("transform", "translate(" + e.translate[0] + "," + "0)scale(" + e.scale + ",1)");
-        timelineSvg.select(".isolates").selectAll("circle")
-            .attr("cx", isolateX);
-      }
-      if (d3.event) { lastZoom = d3.event; }
+      timelineSvg.select(".isolates").selectAll("circle")
+          .attr("cx", isolateX);
+      timelineSvg.select(".encounters").selectAll("rect")
+          .attr("x", encX)
+          .attr("width", encWidth);
+      timelineSvg.select(".transfers").selectAll("line")
+          .attr("x1", function(enc) { return xScale(enc.end_time); })
+          .attr("x2", function(enc) { return xScale(enc.end_time); })
+      if (d3.event) { zoomCache.last = d3.event; }
+    });
+    $timeline.unbind("resizeWidth").on("resizeWidth", function() {
+      resizeTimelineWidth(paddingLeft, xScale, zoom);
+      $timeline.trigger("draw");
     });
 
-    $timeline.trigger("draw");
+    $timeline.trigger("resizeWidth");
   }
   updateTimeline(encounters, isolates);
   
@@ -299,5 +368,11 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     tree.update();
     updateColorLegend(tree);
     updateTimeline(encounters, isolates);
+  });
+  $filter.change(function() {
+    updateTimeline(encounters, isolates);
+  });
+  $(window).resize(function() {
+    $timeline.trigger("resizeWidth");
   });
 }

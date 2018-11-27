@@ -66,6 +66,14 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="time">Time</option>
       </select>
     </label>
+    <label class="widget">
+      <span class="widget-label">Filter timeline events</span>
+      <select id="filter" name="filter">
+        <option value="inpatient">Inpatient only</option>
+        <option value="outpatient">Outpatient only</option>
+        <option value="">All encounters</option>
+      </select>
+    </label>
     <div class="clear"/>
   </div>
 </div>

@@ -121,6 +121,7 @@ foreach ($data_files as $data_file):
       to closest previous genome
     </label>
   </div>
+  <div class="clear"></div>
 </div>
 
 <div id="epi-heatmap" class="main-view network" style="display: none"><div class="cont"></div></div>
