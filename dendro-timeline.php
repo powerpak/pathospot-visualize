@@ -92,6 +92,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   var encounters = <?= json_encode($encounters); ?>;
   
   var dateRegex = (/\d{4}-\d{2}-\d{2}/);
+  var timeRegex = (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}/);
   
   // Preprocess specially formatted fields in `isolates`
   _.each(isolates, function(v) {
@@ -105,12 +106,9 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   encounters = _.map(encounters.slice(1), function(v) { return _.object(encounters[0], v);  });
   // Preprocess specially formatted fields in `encounters`
   _.each(encounters, function(v) {
-    v.start_date = dateRegex.test(v.start_date) ? new Date(v.start_date) : null;
-    v.end_date = dateRegex.test(v.end_date) ? new Date(v.end_date) : null;
-    // Convert right-closed date intervals into right-open intervals for ease of plotting
-    v.end_date && v.end_date.setDate(v.end_date.getDate() + 1);
+    v.start_time = timeRegex.test(v.start_time) ? new Date(v.start_time) : null;
+    v.end_time = timeRegex.test(v.end_time) ? new Date(v.end_time) : null;
     v.department_name = fixUnit(v.department_name);
-    v.transfer = v.transfer === 'yes';
   });
   
   $(function() {

@@ -162,8 +162,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       }
     });
     
-    var minEncDate = _.min(_.pluck(encounters, 'start_date')),
-        maxEncDate = _.max(_.pluck(encounters, 'end_date')),
+    var minEncDate = _.min(_.pluck(encounters, 'start_time')),
+        maxEncDate = _.max(_.pluck(encounters, 'end_time')),
         xScale = d3.time.scale.utc().domain(orderedScale.domain()).range([0, width - yAxisSize]),
         unzoomedXScale = xScale.copy(),
         xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(6).tickSize(-height, 0).tickPadding(5);
@@ -214,8 +214,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .attr("clip-path", "url(#clip)");
 
     // Draw encounters
-    var encX = function(enc) { return xScale(enc.start_date); },
-        encWidth = function(enc) { return xScale(enc.end_date) - xScale(enc.start_date); },
+    var encX = function(enc) { return xScale(enc.start_time); },
+        encWidth = function(enc) { return xScale(enc.end_time) - xScale(enc.start_time); },
         encY = function(enc) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + enc.department_name); };
     plotAreaG.append("g")
         .attr("class", "encounters")
@@ -223,7 +223,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .data(drawableEncounters)
       .enter().append("rect")
         .attr("class", function(enc) {
-          return enc.transfer ? "encounter transfer" : "encounter";
+          return enc.encounter_type == "Hospital Encounter" ? "encounter inpatient" : "encounter outpatient";
         })
         .attr("y", encY)
         .attr("height", rowHeight)

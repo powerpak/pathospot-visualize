@@ -354,13 +354,15 @@ text.axis-label {
 }
 
 #timeline .encounter {
-  fill: black;
-  opacity: 0.2;
+  fill: #ccc;
 }
-#timeline .encounter.transfer {
+#timeline .encounter.inpatient {
+  fill: #aaa;
+}
+/*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;
   opacity: 0.2;
-}
+}*/
 
 /* ========================= */
 /* = SELECT2 CUSTOMIZATION = */
