@@ -149,14 +149,16 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     return encounters;
   }
   
-  function resizeTimelineWidth(paddingLeft, xScale, zoom) {
+  function resizeTimelineWidth(encounters, paddingLeft, xScale, zoom) {
     var yAxisPadding = 8,
         yAxisSize = 250,
         paddingRight = 80,
         width = $timeline.parent().innerWidth() - paddingLeft - paddingRight,
-        oldXScale = xScale.copy();
+        oldXScale = xScale.copy(),
+        now = new Date(),
+        minEncDate, maxEncDate, oneDayInPx, zoomOutLimit;
     
-    // If `zoom` is not provided, we are resizing and rescaling before drawing any elements
+    // If `zoom` is not provided, we are only resizing and rescaling **before** drawing any elements
     xScale.range([0, width - yAxisSize]);
     if (!zoom) { return xScale; }
     
@@ -164,6 +166,11 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // We need to "bake" the old zoom transforms into future ones, as calling zoom.x() resets everything
     xScale.domain([oldXScale.domain()[0], oldXScale.invert(width - yAxisSize)]);
     zoom.x(xScale);
+    minEncDate = _.min(_.pluck(encounters, 'start_time')),
+    maxEncDate = _.max(_.pluck(encounters, 'end_time')),
+    oneDayInPx = xScale(d3.time.day.offset(now, 1)) - xScale(now),
+    zoomOutLimit = (xScale.domain()[1] - xScale.domain()[0]) / (maxEncDate - minEncDate),
+    zoom.scaleExtent([zoomOutLimit, 10 / oneDayInPx])
     
     $timeline.attr("width", paddingLeft + width);
     $timeline.find(".pt-dividers rect").attr("width", width);
@@ -179,7 +186,6 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         rowHeight = 10,
         xAxisSize = 20,
         paddingLeft = 40,
-        now = new Date(),
         zoomCache = {last: null},
         erapIds = [],
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
@@ -207,19 +213,13 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       }
     });
     
-    var minEncDate = _.min(_.pluck(encounters, 'start_time')),
-        maxEncDate = _.max(_.pluck(encounters, 'end_time')),
-        xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
+    var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
     
-    resizeTimelineWidth(paddingLeft, xScale, false, false);
+    resizeTimelineWidth(encounters, paddingLeft, xScale, false, false);
     
-    var unzoomedXScale = xScale.copy();
-        xAxis = d3.svg.axis().scale(xScale).orient("top").ticks(6).tickSize(-height, 0).tickPadding(5),
-        oneDayInPx = unzoomedXScale(d3.time.day.offset(now, 1)) - unzoomedXScale(now),
-        zoomOutLimit = (unzoomedXScale.domain()[1] - unzoomedXScale.domain()[0]) / (maxEncDate - minEncDate),
+    var xAxis = d3.svg.axis().scale(xScale).orient("top").tickSize(-height, 0).tickPadding(5),
         zoom = d3.behavior.zoom()
           .x(xScale)
-          .scaleExtent([zoomOutLimit, 10 / oneDayInPx])
           .on("zoom", function() {
             $timeline.trigger("draw");
           });
@@ -341,6 +341,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       //   .attr("transform", "translate(" + e.translate[0] + "," + "0)scale(" + e.scale + ",1)");
       // but this no longer works after adding the `resizeWidth` event, as that resets `zoom`.
       // Now, we have to reposition every datapoint.
+      xAxis.ticks(Math.floor($timeline.find(".zoom-rect").width() / 100));
       timelineSvg.select("g.x.axis").call(xAxis);
       timelineSvg.select(".isolates").selectAll("circle")
           .attr("cx", isolateX);
@@ -353,7 +354,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       if (d3.event) { zoomCache.last = d3.event; }
     });
     $timeline.unbind("resizeWidth").on("resizeWidth", function() {
-      resizeTimelineWidth(paddingLeft, xScale, zoom);
+      resizeTimelineWidth(encounters, paddingLeft, xScale, zoom);
       $timeline.trigger("draw");
     });
 
