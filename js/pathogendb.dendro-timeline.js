@@ -8,7 +8,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   var unknownColor = "#AAA";
   var nodeRadius = 4;
   
-  // Scales, formats, and other objects for setting up d3.js
+  // D3 scales, formats, and other helpers that are used globally
   var spectralScale = d3.scale.linear()
       .domain(_.range(colors.length))
       .interpolate(d3.interpolateHcl)
@@ -34,6 +34,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   }
   var $filter = $('#filter');
   var $timeline = $('#timeline');
+  var $yGrouping = $('#timeline-grouping');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -133,9 +134,9 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   }
   updateColorLegend(tree);
   
-  // ======================
-  // = Setup the timeline =
-  // ======================
+  // ===================================
+  // = Setup the timeline in #timeline =
+  // ===================================
   
   function filterEncounters(encounters, filters) {
     encounters = _.filter(encounters, function(enc) {
@@ -163,7 +164,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     if (!zoom) { return xScale; }
     
     // Resize **without** rescaling (performed when the window is resized after drawing elements)
-    // We need to "bake" the old zoom transforms into future ones, as calling zoom.x() resets everything
+    // In this case, we need to change the domain of `xScale` to match the new range
+    // This requires us reset the zooming behavior with `zoom.x()` as well as its `scaleExtent`
     xScale.domain([oldXScale.domain()[0], oldXScale.invert(width - yAxisSize)]);
     zoom.x(xScale);
     minEncDate = _.min(_.pluck(encounters, 'start_time')),
@@ -180,6 +182,23 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     $('#timeline-clip rect').attr("width", width - yAxisSize);
   }
   
+  function setupYScaleAndGroups(tuples, yScale) {
+    var yGroups = [];
+    tuples.sort();
+    yScale.domain(tuples);
+    
+    _.each(tuples, function(tup) {
+      var tup = tup.split(':', 2);
+      if (!yGroups.length || _.last(yGroups).id !== tup[0]) {
+        yGroups.push({id: tup[0], start: tup[1], end: tup[1], length: 1});
+      } else {
+        _.last(yGroups).end = tup[1];
+        _.last(yGroups).length += 1;
+      }
+    });
+    return yGroups;
+  }
+  
   function updateTimeline(encounters, isolates) {
     var drawableEncounters = filterEncounters(encounters, $filter.val()),
         transfers = _.filter(drawableEncounters, function(enc) { return !!enc.transfer_to; }),
@@ -187,41 +206,32 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         xAxisSize = 20,
         paddingLeft = 40,
         zoomCache = {last: null},
-        erapIds = [],
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return enc.eRAP_ID + ':' + enc.department_name;
         }).concat(_.map(isolates, function(iso) {
           return iso.eRAP_ID + ':' + iso.collection_unit;
         })),
-        height, erapIdDeptTupleScale;
-        
+        yGroups,
+        height,
+        yScale;
+    
+    // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
     $timeline.children(':not(defs)').remove();
     
-    erapIdDeptTuples = _.uniq(erapIdDeptTuples).sort();
+    // Setup Y scale and grouping
+    erapIdDeptTuples = _.uniq(erapIdDeptTuples);
     height = erapIdDeptTuples.length * rowHeight;
-    erapIdDeptTupleScale = d3.scale.ordinal()
-        .domain(erapIdDeptTuples)
-        .rangePoints([0, height - rowHeight]);
-            
-    _.each(erapIdDeptTuples, function(tup) {
-      var tup = tup.split(':', 2);
-      if (!erapIds.length || _.last(erapIds).id !== tup[0]) {
-        erapIds.push({id: tup[0], start: tup[1], end: tup[1], length: 1});
-      } else {
-        _.last(erapIds).end = tup[1];
-        _.last(erapIds).length += 1;
-      }
-    });
+    yScale = d3.scale.ordinal().rangePoints([0, height - rowHeight]);
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale);
     
+    // Setup X scale and axis
     var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
-    
-    resizeTimelineWidth(encounters, paddingLeft, xScale, false, false);
-    
+    resizeTimelineWidth(encounters, paddingLeft, xScale, false);
     var xAxis = d3.svg.axis().scale(xScale).orient("top").tickSize(-height, 0).tickPadding(5),
         zoom = d3.behavior.zoom()
           .x(xScale)
           .on("zoom", function() {
-            $timeline.trigger("draw");
+            $timeline.trigger("zoomX");
           });
         
     // Create the root SVG element and a base <g> that is positioned at the upper-left corner of the plot
@@ -231,23 +241,10 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       .append("g")
         .attr("transform", "translate(" + paddingLeft + "," + xAxisSize + ")");
     
-    // Draw patient Y axis dividers in the very back
-    var ptDividersGEnter = timelineSvg.append("g")
-        .attr("class", "pt-dividers")
-      .selectAll("g")
-        .data(erapIds)
-      .enter().append("g");
-    ptDividersGEnter.append("rect")
-        .attr("y", function(erapId) { return erapIdDeptTupleScale(erapId.id + ':' + erapId.start); })
-        .attr("height", function (erapId) { return rowHeight * erapId.length; })
-        .attr("x", 0)
-    ptDividersGEnter.append("text")
-        .attr("y", function(erapId) { 
-          return erapIdDeptTupleScale(erapId.id + ':' + erapId.start) + rowHeight * erapId.length * 0.5;
-        })
-        .attr("text-anchor", "end")
-        .attr("dy", rowHeight * 0.5)
-        .text(function(erapId) { return erapId.id });
+    // Draw patient Y axis dividers in the very back.
+    // For now a placeholder is created that is filled later by the `reorderY` handler below.
+    var ptDividersG = timelineSvg.append("g")
+        .attr("class", "pt-dividers");
                 
     // Draw X axis in the back
     timelineSvg.append("g")
@@ -261,7 +258,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // Draw encounters
     var encX = function(enc) { return xScale(enc.start_time); },
         encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); },
-        encY = function(enc) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + enc.department_name); };
+        encY = function(enc) { return yScale(enc.eRAP_ID + ':' + enc.department_name); };
     plotAreaG.append("g")
         .attr("class", "encounters")
       .selectAll("rect")
@@ -270,7 +267,6 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .attr("class", function(enc) {
           return enc.encounter_type == "Hospital Encounter" ? "encounter inpatient" : "encounter outpatient";
         })
-        .attr("y", encY)
         .attr("height", rowHeight)
         .attr("shape-rendering", "crispEdges");
         
@@ -281,21 +277,12 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .data(transfers)
       .enter().append("line")
         .attr("x1", function(enc) { return xScale(enc.end_time); })
-        .attr("x2", function(enc) { return xScale(enc.end_time); })
-        .attr("y1", function(enc) { 
-          var depts = [enc.department_name, enc.transfer_to];
-          return _.min(_.map(depts, function(dept) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + dept); }));
-        })
-        .attr("y2", function(enc) {
-          var depts = [enc.department_name, enc.transfer_to];
-          return _.max(_.map(depts, function(dept) { return erapIdDeptTupleScale(enc.eRAP_ID + ':' + dept); }))
-              + rowHeight;
-        });
+        .attr("x2", function(enc) { return xScale(enc.end_time); });
     
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
         isolateY = function(iso) { 
-          return erapIdDeptTupleScale(iso.eRAP_ID + ':' + iso.collection_unit) + rowHeight * 0.5; 
+          return yScale(iso.eRAP_ID + ':' + iso.collection_unit) + rowHeight * 0.5; 
         },
         isolateFill = colorByFunctions[$colorBy.val()],
         isolateStroke = function(iso) { return d3.rgb(isolateFill(iso)).darker().toString(); };
@@ -304,7 +291,6 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       .selectAll("circle")
         .data(_.filter(isolates, function(iso) { return !!iso.ordered; }))
       .enter().append("circle")
-        .attr("cy", isolateY)
         .attr("r", nodeRadius)
         .style("fill", isolateFill)
         .style("stroke", isolateStroke);
@@ -316,9 +302,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .data(erapIdDeptTuples)
       .enter().append("text")
         .attr("class", "dept-label")
-        .attr("y", erapIdDeptTupleScale)
-        .attr("dy", rowHeight - 1)
-        .text(function(v) { return v.split(':', 2)[1]; });
+        .attr("dy", rowHeight - 1);
     
     // Invisible <rect> in front of the plot to capture zoom mouse/touch events
     var zoomRect = timelineSvg.append("rect")
@@ -334,8 +318,8 @@ function dendroTimeline(prunedTree, isolates, encounters) {
       .append("rect")
         .attr("height", height);
     
-    // Bind event handler to redraw axes/data after zooming
-    $timeline.unbind("draw").on("draw", function() {
+    // Bind event handler to redraw axes/data after zooming/panning along the X axis
+    $timeline.unbind("zoomX").on("zoomX", function() {
       var e = d3.event || zoomCache.last;
       // NOTE: we used to transform parent <g>'s directly from the d3.event calculations, e.g.
       //   .attr("transform", "translate(" + e.translate[0] + "," + "0)scale(" + e.scale + ",1)");
@@ -353,11 +337,56 @@ function dendroTimeline(prunedTree, isolates, encounters) {
           .attr("x2", function(enc) { return xScale(enc.end_time); })
       if (d3.event) { zoomCache.last = d3.event; }
     });
+    
+    // Bind event handler to reorder the yScale after setting a new Y axis sort order
+    $timeline.unbind("reorderY").on("reorderY", function(e, firstDraw) {
+      console.log(firstDraw);
+      if (!firstDraw) {
+          yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale);
+      }
+      
+      var ptDividersGG = ptDividersG.selectAll("g").data(yGroups);
+      ptDividersGG.exit().remove();
+      
+      var ptDividersGEnter = ptDividersGG.enter().append("g");
+      ptDividersGEnter.append("rect")
+          .attr("y", function(yGroup) { return yScale(yGroup.id + ':' + yGroup.start); })
+          .attr("height", function (yGroup) { return rowHeight * yGroup.length; })
+          .attr("x", 0)
+      ptDividersGEnter.append("text")
+          .attr("y", function(yGroup) { 
+            return yScale(yGroup.id + ':' + yGroup.start) + rowHeight * yGroup.length * 0.5;
+          })
+          .attr("text-anchor", "end")
+          .attr("dy", rowHeight * 0.5)
+          .text(function(yGroup) { return yGroup.id });
+      
+      plotAreaG.select(".encounters").selectAll("rect")
+          .attr("y", encY)
+      plotAreaG.select(".transfers").selectAll("line")
+          .attr("y1", function(enc) { 
+            var depts = [enc.department_name, enc.transfer_to];
+            return _.min(_.map(depts, function(dept) { return yScale(enc.eRAP_ID + ':' + dept); }));
+          })
+          .attr("y2", function(enc) {
+            var depts = [enc.department_name, enc.transfer_to];
+            return _.max(_.map(depts, function(dept) { return yScale(enc.eRAP_ID + ':' + dept); }))
+                + rowHeight;
+          });
+      plotAreaG.select(".isolates").selectAll("circle")
+          .attr("cy", isolateY);
+      timelineSvg.select(".y.axis").selectAll("text")
+          .attr("y", yScale)
+          .text(function(v) { return v.split(':', 2)[1]; });
+    });
+    
+    // Bind event handler to resize the timeline after resizing the browser window
     $timeline.unbind("resizeWidth").on("resizeWidth", function() {
       resizeTimelineWidth(encounters, paddingLeft, xScale, zoom);
-      $timeline.trigger("draw");
+      $timeline.trigger("zoomX");
     });
 
+    $timeline.trigger("reorderY", true);
     $timeline.trigger("resizeWidth");
   }
   updateTimeline(encounters, isolates);
@@ -365,14 +394,21 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   // ==============================================================
   // = Setup callbacks for controls that update the visualization =
   // ==============================================================
+  
   $colorBy.change(function() {
     tree.update();
     updateColorLegend(tree);
     updateTimeline(encounters, isolates);
   });
+  
   $filter.change(function() {
     updateTimeline(encounters, isolates);
   });
+  
+  $yGrouping.change(function() {
+    $timeline.trigger("reorderY", false);
+  });
+  
   $(window).resize(function() {
     $timeline.trigger("resizeWidth");
   });

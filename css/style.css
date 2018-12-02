@@ -327,12 +327,17 @@ text.axis-label {
   padding-left: 80px;
 }
 
+#dendro-timeline .toolbar {
+  margin-top: 20px;
+  padding-left: 0;
+}
+
 #color-scale {
   font-size: 12px;
 }
 
 #timeline-cont {
-  margin-top: 20px;
+  margin-top: 10px;
   margin-left: -40px;
 }
 

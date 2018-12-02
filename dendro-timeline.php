@@ -66,6 +66,15 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="time">Time</option>
       </select>
     </label>
+    <div class="clear"/>
+  </div>
+</div>
+
+<div id="dendro-timeline">
+  <svg id="color-scale" width="100" height="300"></svg>
+  <svg id="dendro"></svg>
+  
+  <div class="toolbar">
     <label class="widget">
       <span class="widget-label">Filter timeline events</span>
       <select id="filter" name="filter">
@@ -74,13 +83,15 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="">All encounters</option>
       </select>
     </label>
-    <div class="clear"/>
+    <label class="widget">
+      <span class="widget-label">Group Y axis by</span>
+      <select id="timeline-grouping" name="timeline_grouping">
+        <option value="0">eRAP ID</option>
+        <option value="1">Location</option>
+      </select>
+    </label>
   </div>
-</div>
-
-<div id="dendro-timeline">
-  <svg id="color-scale" width="100" height="300"></svg>
-  <svg id="dendro"></svg>
+  
   <div id="timeline-cont" class="clear">
     <svg id="timeline" width="700" height="300">
       <defs>
