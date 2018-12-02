@@ -354,9 +354,12 @@ text.axis-label {
 }
 
 #timeline .pt-dividers text {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: bold;
   fill: #777;
+}
+#timeline .single-groups .pt-dividers text {
+  display: none;
 }
 
 #timeline .encounter {
@@ -369,6 +372,9 @@ text.axis-label {
   stroke: #999;
   stroke-width: 1px;
   stroke-dasharray: 2,1;
+}
+#timeline .single-groups.grouping-by-pt .transfers line {
+  stroke: #000;
 }
 /*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;

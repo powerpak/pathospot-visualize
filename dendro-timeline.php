@@ -84,10 +84,12 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
       </select>
     </label>
     <label class="widget">
-      <span class="widget-label">Group Y axis by</span>
+      <span class="widget-label">Y axis </span>
       <select id="timeline-grouping" name="timeline_grouping">
-        <option value="0">eRAP ID</option>
-        <option value="1">Location</option>
+        <option value="0,1">Group by patient, then by location</option>
+        <option value="1,0">Group by location, then eRAP ID</option>
+        <option value="0">Group by patient only</option>
+        <option value="1">Group by location only</option>
       </select>
     </label>
   </div>

@@ -182,20 +182,28 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     $('#timeline-clip rect').attr("width", width - yAxisSize);
   }
   
-  function setupYScaleAndGroups(tuples, yScale) {
-    var yGroups = [];
-    tuples.sort();
-    yScale.domain(tuples);
+  function setupYScaleAndGroups(tuples, yScale, rowHeight) {
+    var yGroups = [],
+      yGrouping = _.map($yGrouping.val().split(","), parseInt10),
+      selector = function(tup) { return _.map(yGrouping, function(i) { return tup[i]; }) },
+      domain, 
+      height;
     
-    _.each(tuples, function(tup) {
-      var tup = tup.split(':', 2);
-      if (!yGroups.length || _.last(yGroups).id !== tup[0]) {
-        yGroups.push({id: tup[0], start: tup[1], end: tup[1], length: 1});
-      } else {
-        _.last(yGroups).end = tup[1];
+    domain = _.sortBy(_.uniq(_.map(tuples, selector), false, stringifyTuple), stringifyTuple);
+    height = domain.length * rowHeight;
+    yScale.rangePoints([0, height - rowHeight]);
+    yScale.domain(domain);
+    
+    _.each(domain, function(tup) {
+      if (!yGroups.length || _.last(yGroups).label !== tup[0]) {
+        yGroups.push({label: tup[0], start: tup, end: tup, length: 1});
+      } else if (yGrouping.length > 1) {
+        _.last(yGroups).end = tup;
         _.last(yGroups).length += 1;
       }
     });
+    yGroups.grouping = yGrouping;
+    yGroups.selector = selector;
     return yGroups;
   }
   
@@ -207,22 +215,22 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         paddingLeft = 40,
         zoomCache = {last: null},
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
-          return enc.eRAP_ID + ':' + enc.department_name;
+          return [enc.eRAP_ID, enc.department_name];
         }).concat(_.map(isolates, function(iso) {
-          return iso.eRAP_ID + ':' + iso.collection_unit;
+          return [iso.eRAP_ID, iso.collection_unit];
         })),
         yGroups,
         height,
-        yScale;
+        yScale, yScaleGrouped;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
     $timeline.children(':not(defs)').remove();
     
     // Setup Y scale and grouping
-    erapIdDeptTuples = _.uniq(erapIdDeptTuples);
-    height = erapIdDeptTuples.length * rowHeight;
-    yScale = d3.scale.ordinal().rangePoints([0, height - rowHeight]);
-    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale);
+    yScale = d3.scale.ordinal();
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight);
+    height = _.last(yScale.range()) + rowHeight;
+    yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
     // Setup X scale and axis
     var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
@@ -237,7 +245,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // Create the root SVG element and a base <g> that is positioned at the upper-left corner of the plot
     // All other elements are descendants of this <g>, which serves as the origin of the coordinate system
     var timelineSvg = d3.select("#timeline")
-        .attr("height", erapIdDeptTuples.length * rowHeight + xAxisSize)
+        .attr("height", height + xAxisSize)
       .append("g")
         .attr("transform", "translate(" + paddingLeft + "," + xAxisSize + ")");
     
@@ -257,8 +265,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
 
     // Draw encounters
     var encX = function(enc) { return xScale(enc.start_time); },
-        encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); },
-        encY = function(enc) { return yScale(enc.eRAP_ID + ':' + enc.department_name); };
+        encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); };
     plotAreaG.append("g")
         .attr("class", "encounters")
       .selectAll("rect")
@@ -282,7 +289,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
         isolateY = function(iso) { 
-          return yScale(iso.eRAP_ID + ':' + iso.collection_unit) + rowHeight * 0.5; 
+          return yScaleGrouped([iso.eRAP_ID, iso.collection_unit]) + rowHeight * 0.5; 
         },
         isolateFill = colorByFunctions[$colorBy.val()],
         isolateStroke = function(iso) { return d3.rgb(isolateFill(iso)).darker().toString(); };
@@ -295,14 +302,9 @@ function dendroTimeline(prunedTree, isolates, encounters) {
         .style("fill", isolateFill)
         .style("stroke", isolateStroke);
     
-    // Draw Y axis labels
+    // Create a placeholder for Y axis labels
     timelineSvg.append("g")
-        .attr("class", "y axis")
-      .selectAll("text")
-        .data(erapIdDeptTuples)
-      .enter().append("text")
-        .attr("class", "dept-label")
-        .attr("dy", rowHeight - 1);
+        .attr("class", "y axis");
     
     // Invisible <rect> in front of the plot to capture zoom mouse/touch events
     var zoomRect = timelineSvg.append("rect")
@@ -340,44 +342,63 @@ function dendroTimeline(prunedTree, isolates, encounters) {
     
     // Bind event handler to reorder the yScale after setting a new Y axis sort order
     $timeline.unbind("reorderY").on("reorderY", function(e, firstDraw) {
-      console.log(firstDraw);
+      var duration = 0, height;
       if (!firstDraw) {
-          yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale);
+        yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight);
+        duration = 500;
       }
+      height = _.last(yScale.range()) + rowHeight;
+      xAxis.tickSize(-height, 0);
       
-      var ptDividersGG = ptDividersG.selectAll("g").data(yGroups);
+      timelineSvg.classed("single-groups", yGroups.grouping.length === 1)
+          .classed("grouping-by-pt", yGroups.grouping[0] === 0);
+      var ptDividersGG = ptDividersG.selectAll("g").data(yGroups, function(grp) { return grp.label; });
       ptDividersGG.exit().remove();
       
       var ptDividersGEnter = ptDividersGG.enter().append("g");
       ptDividersGEnter.append("rect")
-          .attr("y", function(yGroup) { return yScale(yGroup.id + ':' + yGroup.start); })
-          .attr("height", function (yGroup) { return rowHeight * yGroup.length; })
           .attr("x", 0)
       ptDividersGEnter.append("text")
-          .attr("y", function(yGroup) { 
-            return yScale(yGroup.id + ':' + yGroup.start) + rowHeight * yGroup.length * 0.5;
-          })
           .attr("text-anchor", "end")
-          .attr("dy", rowHeight * 0.5)
-          .text(function(yGroup) { return yGroup.id });
+          .attr("dy", rowHeight * 0.5);
+          
+      ptDividersGG.select("rect").transition().duration(duration)
+          .attr("y", function(yGroup) { return yScale(yGroup.start); })
+          .attr("height", function (yGroup) { return rowHeight * yGroup.length; });
+      ptDividersGG.select("text")
+          .attr("y", function(yGroup) { 
+            return yScale(yGroup.start) + rowHeight * yGroup.length * 0.5;
+          })
+          .text(function(yGroup) { return yGroup.label });
       
-      plotAreaG.select(".encounters").selectAll("rect")
-          .attr("y", encY)
-      plotAreaG.select(".transfers").selectAll("line")
+      plotAreaG.select(".encounters").selectAll("rect").transition().duration(duration)
+          .attr("y", function(enc) { return yScaleGrouped([enc.eRAP_ID, enc.department_name]); })
+      plotAreaG.select(".transfers").selectAll("line").transition().duration(duration)
           .attr("y1", function(enc) { 
             var depts = [enc.department_name, enc.transfer_to];
-            return _.min(_.map(depts, function(dept) { return yScale(enc.eRAP_ID + ':' + dept); }));
+            return _.min(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }));
           })
           .attr("y2", function(enc) {
             var depts = [enc.department_name, enc.transfer_to];
-            return _.max(_.map(depts, function(dept) { return yScale(enc.eRAP_ID + ':' + dept); }))
+            return _.max(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }))
                 + rowHeight;
           });
-      plotAreaG.select(".isolates").selectAll("circle")
+      plotAreaG.select(".isolates").selectAll("circle").transition().duration(duration)
           .attr("cy", isolateY);
-      timelineSvg.select(".y.axis").selectAll("text")
+          
+      var yAxisLabels = timelineSvg.select(".y.axis")
+        .selectAll("text")
+          .data(yScale.domain());
+      yAxisLabels.exit().remove();
+      
+      yAxisLabels.enter().append("text")
+          .attr("class", "dept-label")
+          .attr("dy", rowHeight - 1);
+      yAxisLabels.transition().duration(duration)
           .attr("y", yScale)
-          .text(function(v) { return v.split(':', 2)[1]; });
+          .text(function(v) { return _.last(v); });
+          
+      zoomRect.attr("height", height);
     });
     
     // Bind event handler to resize the timeline after resizing the browser window
@@ -407,6 +428,7 @@ function dendroTimeline(prunedTree, isolates, encounters) {
   
   $yGrouping.change(function() {
     $timeline.trigger("reorderY", false);
+    $timeline.trigger("resizeWidth");
   });
   
   $(window).resize(function() {

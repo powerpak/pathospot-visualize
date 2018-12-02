@@ -4,6 +4,7 @@ function fixUnit(unit) {
     unit = unit.replace(/EMERGENCY (DEPARTMENT|DEPT)/, 'ED');
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
+    unit = unit.replace(/INTERVENTIONAL RADIOLOGY/, 'IR');
     unit = unit.replace(/^FPA.*/, 'FPA');
     if (window.ANON) { unit = rot13(unit); }
   }
@@ -29,6 +30,14 @@ function numberWithCommas(x) {
 
 function rot13(s) {
   return s.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});
+}
+
+function parseInt10(s) { 
+  return parseInt(s, 10);
+}
+
+function stringifyTuple(tuple) {
+  return tuple.join("\n");
 }
 
 function getFilters() {
