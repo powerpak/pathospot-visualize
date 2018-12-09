@@ -328,17 +328,28 @@ text.axis-label {
 }
 
 #dendro-timeline .toolbar {
-  margin-top: 20px;
-  padding-left: 0;
+  padding-top: 20px;
+  padding-left: 100px;
+}
+
+#color-scale, #dendro {
+  float: left;
 }
 
 #color-scale {
   font-size: 12px;
 }
 
+.fixed #color-scale {
+  position: fixed;
+  top: 0;
+}
+.fixed #dendro {
+  margin-left: 100px;
+}
+
 #timeline-cont {
-  margin-top: 10px;
-  margin-left: -40px;
+  margin-left: 60px;
 }
 
 #timeline .x.axis .tick line {
@@ -368,6 +379,11 @@ text.axis-label {
 #timeline .encounter.inpatient {
   fill: #aaa;
 }
+#timeline .encounter.hover {
+  stroke: #222;
+  stroke-width: 4px;
+}
+
 #timeline .transfers line {
   stroke: #999;
   stroke-width: 1px;
@@ -461,6 +477,10 @@ text.axis-label {
   border-bottom: 1px solid white;
   border-collapse: collapse;
   margin-bottom: 0.5em;
+}
+
+.enc-info {
+  border-bottom: none;
 }
 
 .link-info th, .link-info td {

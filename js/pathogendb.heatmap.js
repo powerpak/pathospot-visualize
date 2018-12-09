@@ -765,13 +765,13 @@ $(function() {
           .attr("width", x.bandwidth() + 2)
           .attr("height", x.bandwidth() + 2)
           .attr("visibility", "visible");
-      tip.attr('class', tip.attr('class').replace(/\s+show-more(\s)+/g, '$1') + ' show-more');
+      tip.classed("show-more", true);
     }
     
     function deselectCell() {
       selectedCell = null;
       selectedCellReticle.attr("visibility", "hidden");
-      tip.attr('class', tip.attr('class').replace(/\s+show-more(\s)+/g, '$1'));
+      tip.classed("show-more", false);
     }
     
     function interruptAllTransitions() {

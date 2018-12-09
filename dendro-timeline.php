@@ -21,15 +21,16 @@ if (!$error) {
 <meta charset="utf-8" />
 <title>Surveillance Isolates - Dendrogram with Timeline</title>
 
+<link rel="stylesheet" href="css/d3-tip.css" />
 <link rel="stylesheet" href="css/phylotree.css">
 <link rel="stylesheet" href="css/phylotree.bootstrap.css">
 <link rel="stylesheet" href="css/style.css">
-
 
 <script src="js/underscore-min.js"></script>
 <script src="js/jquery.min.js"></script>
 <script src="js/d3.v3.js" charset="utf-8"></script>
 <script src="js/phylotree.js"></script>
+<script src="js/d3-tip.js"></script>
 <script src="js/utils.js"></script>
 
 
@@ -66,7 +67,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="time">Time</option>
       </select>
     </label>
-    <div class="clear"/>
+    <div class="clear"></div>
   </div>
 </div>
 
@@ -74,7 +75,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   <svg id="color-scale" width="100" height="300"></svg>
   <svg id="dendro"></svg>
   
-  <div class="toolbar">
+  <div class="toolbar clear">
     <label class="widget">
       <span class="widget-label">Filter timeline events</span>
       <select id="filter" name="filter">
@@ -84,7 +85,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
       </select>
     </label>
     <label class="widget">
-      <span class="widget-label">Y axis </span>
+      <span class="widget-label">Timeline Y axis </span>
       <select id="timeline-grouping" name="timeline_grouping">
         <option value="0,1">Group by patient, then by location</option>
         <option value="1,0">Group by location, then eRAP ID</option>
@@ -133,7 +134,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   });
   
   $(function() {
-    dendroTimeline(prunedTree, isolates, encounters);
+    dendroTimeline(prunedTree, isolates, encounters, '.navbar');
   });
 </script>
 
