@@ -343,6 +343,7 @@ text.axis-label {
 .fixed #color-scale {
   position: fixed;
   top: 0;
+  left: 80px;
 }
 .fixed #dendro {
   margin-left: 100px;
