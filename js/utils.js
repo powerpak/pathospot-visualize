@@ -11,6 +11,10 @@ function fixUnit(unit) {
   return unit;
 }
 
+function fixForClass(value) {
+  return value.replace(/\W/g, '-');
+}
+
 function formatDate(d) {
   if (!d) { return ''; }
   d = new Date(d);

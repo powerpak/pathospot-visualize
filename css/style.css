@@ -376,14 +376,20 @@ text.axis-label {
 
 #timeline .encounter {
   fill: #ccc;
+  stroke-width: 0px;
 }
 #timeline .encounter.inpatient {
   fill: #aaa;
+}
+#timeline .encounter.hover-highlight {
+  stroke: #222;
+  stroke-width: 2px;
 }
 #timeline .encounter.hover {
   stroke: #222;
   stroke-width: 4px;
 }
+
 
 #timeline .transfers line {
   stroke: #999;

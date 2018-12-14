@@ -93,6 +93,15 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="1">Group by location only</option>
       </select>
     </label>
+    <label class="widget">
+      <span class="widget-label">On hover </span>
+      <select id="hover" name="hover">
+        <option value="tooltip">Show tooltip</option>
+        <option value="unit" selected>Highlight same unit</option>
+        <option value="patient">Highlight same patient</option>
+        <option value="">Do nothing</option>
+      </select>
+    </label>
   </div>
   
   <div id="timeline-cont" class="clear">

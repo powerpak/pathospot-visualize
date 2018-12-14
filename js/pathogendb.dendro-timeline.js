@@ -50,6 +50,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   var $filter = $('#filter');
   var $timeline = $('#timeline');
   var $yGrouping = $('#timeline-grouping');
+  var $hover = $('#hover');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -186,17 +187,26 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   // interaction. These functions recalculate mouseover/out targets with the zoom-rect hidden.
   var prevHoverEl = null;
   $timeline.on("mousemove", function(e) {
-    var prevDisplay = $(".zoom-rect").css("display");
+    var prevDisplay = $(".zoom-rect").css("display"),
+        hoverAction = $hover.val(),
+        enc;
     $(".zoom-rect").css("display", "none");
     var el = document.elementFromPoint(e.clientX, e.clientY);
     if (el !== prevHoverEl) {
       if ($(prevHoverEl).hasClass("encounter")) { 
         $(prevHoverEl).removeClass("hover");
+        $(".encounter").removeClass("hover-highlight");
         tip.hide(d3.select(prevHoverEl).data()[0], prevHoverEl); 
       }
       if ($(el).hasClass("encounter")) { 
         $(el).addClass("hover");
-        tip.show(d3.select(el).data()[0], el); 
+        enc = d3.select(el).data()[0];
+        hoverAction && tip.show(enc, el);
+        if (hoverAction == 'unit') { 
+          $(".encounter.dept-" + fixForClass(enc.department_name)).not(el).addClass("hover-highlight"); 
+        } else if (hoverAction == 'patient') {
+          $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el).addClass("hover-highlight"); 
+        }
       }
       prevHoverEl = el;
     }
@@ -205,6 +215,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   $timeline.on("mouseleave", function(e) {
     if ($(prevHoverEl).hasClass("encounter")) {
       $(prevHoverEl).removeClass("hover");
+      $(".encounter").removeClass("hover-highlight");
       tip.hide(d3.select(prevHoverEl).data()[0], prevHoverEl); 
     }
     prevHoverEl = null;
@@ -343,14 +354,18 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
     var encX = function(enc) { return xScale(enc.start_time); },
         encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); },
         encFill = colorByFunctions.encounters[$colorBy.val()];
+        encClass = function(enc) {
+          var cls = enc.encounter_type == "Hospital Encounter" ? "encounter inpatient" : "encounter outpatient";
+          cls += " dept-" + fixForClass(enc.department_name);
+          cls += " erap-" + enc.eRAP_ID;
+          return cls;
+        }
     plotAreaG.append("g")
         .attr("class", "encounters")
       .selectAll("rect")
         .data(drawableEncounters)
       .enter().append("rect")
-        .attr("class", function(enc) {
-          return enc.encounter_type == "Hospital Encounter" ? "encounter inpatient" : "encounter outpatient";
-        })
+        .attr("class", encClass)
         .attr("height", rowHeight)
         .style("fill", encFill)
         .attr("shape-rendering", "crispEdges");
