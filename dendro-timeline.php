@@ -123,7 +123,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   var encounters = <?= json_encode($encounters); ?>;
   
   var dateRegex = (/\d{4}-\d{2}-\d{2}/);
-  var timeRegex = (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+\d{2}:\d{2}/);
+  var timeRegex = (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}/);
   
   // Preprocess specially formatted fields in `isolates`
   _.each(isolates, function(v) {
