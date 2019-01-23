@@ -21,6 +21,20 @@ function formatDate(d) {
   return d.getFullYear() + '-' + ("0" + (d.getMonth() + 1)).slice(-2) + '-' + ("0" + d.getDate()).slice(-2);
 }
 
+function formatPercentages(d) {
+  if (_.isUndefined(d) || _.isNull(d)) { return ''; }
+  if (!_.isArray(d)) { d = [d]; }
+  return _.map(d, function(v) { return v.toFixed(1); }).join('&mdash;') + '%';
+}
+
+function formatClusterNumber(d) {
+  if (_.isUndefined(d) || _.isNull(d)) { return ''; }
+  var clusterColor = $('a.cluster-' + d).css('background-color');
+  d = d.toString();
+  if (clusterColor) { d = '<span class="cluster-color" style="background-color:' + clusterColor + '"></span> ' + d; }
+  return d;
+}
+
 // one-liner from http://stackoverflow.com/questions/11582512/how-to-get-url-parameters-with-javascript/11582513
 function getURLParameter(name) {
   return decodeURIComponent((new RegExp('[?|&]' + name + '=' + '([^&;]+?)(&|#|;|$)')

@@ -16,7 +16,13 @@ $(function() {
       REDRAW_INTERVAL = 1000,
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
-      PREPROCESS_FIELDS = {collection_unit: fixUnit, ordered: formatDate},
+      PREPROCESS_FIELDS = {
+        collection_unit: fixUnit,
+        ordered: formatDate,
+        group: formatClusterNumber,
+        coreGenomeSize: formatPercentages,
+        clusterCoverageRange: formatPercentages
+      },
       HOSPITAL_MAP = 'msmc-stacking-gray';
   
   window.ANON = getURLParameter('anon');
@@ -60,7 +66,9 @@ $(function() {
   d3.json("data/" + db + ".heatmap.json", function(assemblies) {
 
     var nodes = assemblies.nodes,
-        links = _.isArray(assemblies.links[0]) ? [] : assemblies.links;
+        links = _.isArray(assemblies.links[0]) ? [] : assemblies.links,
+        // In .parsnp.heatmap.json files, the (cleaned) parsnp Newick trees are included.
+        trees = assemblies.trees; 
         
     // Unpack nodes and links, which may be compressed into array-of-array format
     if (_.isArray(nodes[0])) { nodes = _.map(nodes.slice(1), function(v) { return _.object(nodes[0], v);  }); }
@@ -71,7 +79,8 @@ $(function() {
         });
       });
     }
-    window.nodes = nodes;
+    window.nodes = nodes; // FIXME: helps with debugging.
+    window.links = links;
     
     var n = nodes.length,
         idealBandWidth = Math.max(width / n, IDEAL_LABEL_HEIGHT),
@@ -82,13 +91,22 @@ $(function() {
         unitCoords = {"": [0, 0]},
         epiData = {isolates: []},
         brushAnimateStatus = null,
+        nodesToTrees = {},
+        parsnpStats = assemblies.parsnp_stats,
         fullMatrix, visibleNodes, clusterableNodes, detectedClusters;
     
     $('.distance-unit').text(assemblies.distance_unit);
+    
+    // If we have Newick trees from parsnp, create a map from node names to the tree it was included in
+    trees && _.each(trees, function(tree, i) {
+      var numerical = (/^\d+(\.\d+(e[+-]\d+)?)?$/),
+          nodesInTree = _.reject(tree.split(/[():,;]+/), function(token) { return !token || numerical.test(token); });
+      _.each(nodesInTree, function(node) { nodesToTrees[node] = i; });
+    });
   
     // **************************  LOAD AND SETUP DATA STRUCTURES *****************************
   
-    // This recalculates and DESTRUCTIVELY modifies the following globals above
+    // The following critical function recalculates and DESTRUCTIVELY modifies the following globals above
     // `nodes`: the full list of nodes
     // `fullMatrix`: the full distance matrix
     // `visibleNodes`: which nodes should show up in the daterange selector and in the matrix based on `filters`
@@ -113,6 +131,7 @@ $(function() {
         node.count = 0;
         node.group = null;
         node.groupOrder = null;
+        node.groupSize = null;
         node.samePtMergeParent = false;
         node.samePtMergeChild = false;
         if (_.isUndefined(node.ordered)) {
@@ -125,6 +144,13 @@ $(function() {
         if (_.isUndefined(node.contig_N50_format)) {
           node.contig_N50_format = numberWithCommas(node.contig_N50);
           node.contig_maxlength_format = numberWithCommas(node.contig_maxlength);
+        }
+        if (_.isUndefined(node.whichTree) && !_.isUndefined(nodesToTrees[node.name])) { 
+          node.whichTree = nodesToTrees[node.name];
+          if (parsnpStats && parsnpStats[node.whichTree]) {
+            node.coreGenomeSize = parsnpStats[node.whichTree].core_genome_size
+            node.clusterCoverageRange = parsnpStats[node.whichTree].cluster_coverage_range
+          }
         }
         matrix[i] = d3.range(n).map(function(j) { return {x: j, y: i, z: i == j ? 0 : Infinity, origZ: null}; });
         matrix[i].y = i;
@@ -218,7 +244,10 @@ $(function() {
         detectedClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
         // then annotate the nodes with the # of the cluster they are in
         _.each(detectedClusters, function(clust, i) {
-          _.each(clust.index, function(leaf) { clusterableNodes[leaf.index].group = i; });
+          _.each(clust.index, function(leaf) { 
+            clusterableNodes[leaf.index].group = i;
+            clusterableNodes[leaf.index].groupSize = clust.index.length;
+          });
         });
       }
     
@@ -311,10 +340,10 @@ $(function() {
       for (var i = 0; i < 120; ++i) simulation.tick();
 
       var circle = sliderSvg.select("g.beeswarm").selectAll("circle")
+          .attr("title", function(d) { return d.order_date; })
           .data(filteredNodes, function(d) { return d.i; });
     
       var circleEnter = circle.enter().append("circle")
-          .attr("title", function(d) { return d.order_date; })
           .attr("r", 4);
 
       circleEnter.merge(circle)
@@ -632,15 +661,25 @@ $(function() {
           isolate_ID: "Isolate ID",
           assembly_ID: "Assembly ID",
           contig_count: "# contigs",
-          contig_N50_format: 'contig N50',
-          contig_maxlength_format: 'longest contig'
+          contig_N50_format: 'Contig N50',
+          contig_maxlength_format: 'Longest contig',
+          "--": null,
+          group: 'Cluster #',
+          groupSize: 'Cluster size'
         };
+    if (_.any(nodes, function(node) { return !!node.coreGenomeSize; })) {
+      _.extend(tipRows, {
+        whichTree: 'Mash precluster #',
+        coreGenomeSize: 'Core genome',
+        clusterCoverageRange: 'Cluster coverage'
+      });
+    }
     
     function tipLinkHtml(ixLeft, ixRight, dist) {
       var leftClust = nodes[ixLeft].samePtMergeParent,
           rightClust = nodes[ixRight].samePtMergeParent,
           html = '<table class="link-info">'
-          + '<tr><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + dist + '</span> SNPs</th></tr>',
+          + '<tr class="separator"><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + dist + '</span> SNPs</th></tr>',
           snvs_url;
       
       // For each side of the tooltip table, if it is a merged isolate, display info for the *closest* isolate.
@@ -663,14 +702,16 @@ $(function() {
       _.each(tipRows, function(label, k) {
         var val1 = nodes[ixLeft][k],
             val2 = nodes[ixRight][k],
-            link;
+            link, valHasDash;
+        if ((/^-+$/).test(k)) { html += '<tr class="separator"><td colspan=2></td></tr>'; return; }
         if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[k]) { val1 = PREPROCESS_FIELDS[k](val1); val2 = PREPROCESS_FIELDS[k](val2); }
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
           val1 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';
           val2 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val2)) + '">' + val2 + '</a>';
         }
-        if (val1 == val2) { html += '<td class="same" colspan=2>' + val1 + '</td></tr>'; }
+        valHasDash = (/&mdash;/).test(val1);
+        if (val1 == val2) { html += '<td class="same' + (valHasDash ? '' : ' dashes') + '" colspan=2>' + val1 + '</td></tr>'; }
         else { html += '<td>' + val1 + '</td><td>' + val2 + '</td></tr>'; }
       });
       
@@ -683,7 +724,10 @@ $(function() {
         snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[ixLeft].name) + '&customTracks=' + snvs_url;
         snvs_url += '';
       }
-      html += '<a href="' + snvs_url + '" target="_blank">SNP track</a> <a href="javascript:alert(\'coming soon\')">mummerplot</a>';
+      html += '<a href="' + snvs_url + '" target="_blank">SNP track</a>';
+      if (nodes[ixLeft].group === nodes[ixRight].group) {
+        html += ' <a href="' + $('a.cluster-' + nodes[ixLeft].group).attr('href') + '" target="_blank">Explore this cluster</a>';
+      }
       html += '</span></div>';
       return html;
     }
@@ -795,6 +839,7 @@ $(function() {
             });  
             return "dendro-timeline.php?db=" + db + "&assemblies=" + assemblyNames.join('+');
           })
+          .attr("class", function(d, i) { return "cluster-" + i.toString(); })
           .attr("target", "_blank")
           .text(function(d) { return d.index.length; });
       clusterList.exit().remove();
