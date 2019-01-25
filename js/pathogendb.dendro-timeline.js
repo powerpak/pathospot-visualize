@@ -237,7 +237,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
     return encounters;
   }
   
-  function resizeTimelineWidth(encounters, paddingLeft, xScale, zoom) {
+  function resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, zoom) {
     var yAxisPadding = 8,
         yAxisSize = 250,
         paddingRight = 80,
@@ -255,11 +255,11 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
     // This requires us reset the zooming behavior with `zoom.x()` as well as its `scaleExtent`
     xScale.domain([oldXScale.domain()[0], oldXScale.invert(width - yAxisSize)]);
     zoom.x(xScale);
-    minEncDate = _.min(_.pluck(encounters, 'start_time')),
-    maxEncDate = _.max(_.pluck(encounters, 'end_time')),
+    minDate = _.min(_.pluck(encounters, 'start_time').concat(_.pluck(isolates, 'ordered'))),
+    maxDate = _.max(_.pluck(encounters, 'end_time').concat(_.pluck(isolates, 'ordered'))),
     oneDayInPx = xScale(d3.time.day.offset(now, 1)) - xScale(now),
-    zoomOutLimit = (xScale.domain()[1] - xScale.domain()[0]) / (maxEncDate - minEncDate),
-    zoom.scaleExtent([zoomOutLimit, 10 / oneDayInPx])
+    zoomOutLimit = (xScale.domain()[1] - xScale.domain()[0]) / (maxDate - minDate),
+    zoom.scaleExtent([zoomOutLimit, 50 / oneDayInPx])
     
     $timeline.attr("width", paddingLeft + width);
     $timeline.find(".pt-dividers rect").attr("width", width);
@@ -321,7 +321,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
     
     // Setup X scale and axis
     var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
-    resizeTimelineWidth(encounters, paddingLeft, xScale, false);
+    resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, false);
     var xAxis = d3.svg.axis().scale(xScale).orient("top").tickSize(-height, 0).tickPadding(5),
         zoom = d3.behavior.zoom()
           .x(xScale)
@@ -503,7 +503,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
     
     // Bind event handler to resize the timeline after resizing the browser window
     $timeline.unbind("resizeWidth").on("resizeWidth", function() {
-      resizeTimelineWidth(encounters, paddingLeft, xScale, zoom);
+      resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, zoom);
       $timeline.trigger("zoomX");
     });
 
