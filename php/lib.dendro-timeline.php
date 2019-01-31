@@ -1,41 +1,9 @@
 <?php
 
+
 // Validation function that ensures all assembly names passed into this page are safe
 function valid_assembly_name($name) {
   return !!preg_match('/[A-Za-z0-9_-]/', $name);
-}
-
-// Prunes the Newick tree given as the first argument to a smaller tree only containing
-// leaves named in the `$assembly_names` argument
-// Uses the scripts/prune-newick.py script to do all processing, which requires
-// Python and the `ete3` library 
-function prune_tree($newick_tree, $assembly_names) {
-  global $PYTHON;
-  $descriptorspec = array(
-     0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
-     1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
-     2 => array("pipe", "w")
-  );
-  
-  $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
-  $script = dirname(dirname(__FILE__)) . '/scripts/prune-newick.py';
-  $process = proc_open("$PYTHON $script $assembly_args", $descriptorspec, $pipes);
-
-  if (is_resource($process)) {
-    fwrite($pipes[0], $newick_tree);
-    fclose($pipes[0]);
-
-    $pruned_tree = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
-
-    $return_value = proc_close($process);
-    if (!$return_value) {
-      return $pruned_tree;
-    }
-  }
-  return false;
 }
 
 
@@ -79,7 +47,7 @@ function load_from_heatmap_json($REQ) {
       $error = "No valid assembly names were given in the `assemblies` parameter";
     } else {
       $isolates = get_isolate_data($json["nodes"], $assembly_names);
-      foreach ($json["trees"] as $tree) {
+      foreach ($json["trees"] as $which_tree => $tree) {
         $num_matches = 0;
         foreach ($assembly_names as $assembly_name) {
           $num_matches += preg_match('/[(,]' . preg_quote($assembly_name, '/') . '[:,]/', $tree);
@@ -93,11 +61,46 @@ function load_from_heatmap_json($REQ) {
   } else { $error = "Could not load valid JSON from `db`. Is there a matching `.heatmap.json` file in `data/`?"; }
   if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
   
-  return array($db, $assembly_names, $isolates, $matching_tree, $error);
+  return array($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error);
 }
 
 
-//
+// Prunes the Newick tree given as the first argument to a smaller tree only containing
+// leaves named in the `$assembly_names` argument
+// Uses the scripts/prune-newick.py script to do all processing, which requires
+// Python and the `ete3` library 
+function prune_tree($newick_tree, $assembly_names) {
+  global $PYTHON;
+  $descriptorspec = array(
+     0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+     1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+     2 => array("pipe", "w")
+  );
+  
+  $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
+  $script = dirname(dirname(__FILE__)) . '/scripts/prune-newick.py';
+  $process = proc_open("$PYTHON $script $assembly_args", $descriptorspec, $pipes);
+
+  if (is_resource($process)) {
+    fwrite($pipes[0], $newick_tree);
+    fclose($pipes[0]);
+
+    $pruned_tree = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+
+    $return_value = proc_close($process);
+    if (!$return_value) {
+      return $pruned_tree;
+    }
+  }
+  return false;
+}
+
+
+// Loads the encounters.tsv data corresponding to the current `$db` parameter and
+// filters it to only the encounters with eRAP_IDs corresponding to those in `$isolates`
 function load_encounters_for_isolates($db, $isolates) {
   $eRAP_IDs = array();
   $tsv_header = null;
@@ -120,4 +123,39 @@ function load_encounters_for_isolates($db, $isolates) {
   }
   
   return $encounters;
+}
+
+
+// Loads the .npz data.
+//     - get the indices of the columns corresponding to $assembly_names
+//     - find the rows of the VCF that are *not* all equal across those columns. That can be done with:
+//       `~np.all(vcf_mat[col_indices[0], :] == vcf_mat[col_indices, :], axis=0)`
+//     - spit out just those rows' allele data, + the CHROM/POS/ALT + other annotations for those rows.
+function variants_for_assemblies_as_json($db_or_npz, $which_tree, $assembly_names) {
+  global $PYTHON;
+  $descriptorspec = array(
+     0 => array("pipe", "r"),  // stdin is a pipe that the child will read from
+     1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
+     2 => array("pipe", "w")
+  );
+  
+  $npz = preg_match('/\.vcfs\.npz$/', $db_or_npz) ? $db_or_npz : "{$db_or_npz}.vcfs.npz";
+  $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
+  $script = dirname(dirname(__FILE__)) . '/scripts/vcfs-npz-to-json.py';
+  $process = proc_open("$PYTHON $script data/$npz $which_tree $assembly_args", $descriptorspec, $pipes);
+
+  if (is_resource($process)) {
+    fclose($pipes[0]);
+
+    $json = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+
+    $return_value = proc_close($process);
+    if (!$return_value) {
+      return $json;
+    }
+  }
+  return json_encode(array("error" => isset($stderr) ? $stderr : "Error running the Python interpreter."));
 }

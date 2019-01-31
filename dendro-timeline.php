@@ -6,12 +6,17 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.dendro-timeline.php');
 
-list($db, $assembly_names, $isolates, $matching_tree, $error) = load_from_heatmap_json($_GET);
+// Load everything we can from the .heatmap.json.
+// Note that for our purposes, $assembly_names are the primary IDs for each of the $isolates
+list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error) = load_from_heatmap_json($_GET);
 
 if (!$error) {
   if ($matching_tree) { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
   if (!$pruned_tree) { $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`?"; }
-  if ($isolates) { $encounters = load_encounters_for_isolates($db, $isolates); }
+  if ($isolates) { 
+    $encounters = load_encounters_for_isolates($db, $isolates);
+    $variants_json = variants_for_assemblies_as_json($db, $which_tree, $assembly_names);
+  }
   if (!$encounters) { $error = "Could not load encounter data; is there an `.encounters.tsv` file corresponding to the `.heatmap.json` file?"; }
 }
 
@@ -121,6 +126,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   var prunedTree = <?= json_encode($pruned_tree); ?>;
   var isolates = <?= json_encode($isolates); ?>;
   var encounters = <?= json_encode($encounters); ?>;
+  var variants = <?= $variants_json ?>;
   
   var dateRegex = (/\d{4}-\d{2}-\d{2}/);
   var timeRegex = (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}/);

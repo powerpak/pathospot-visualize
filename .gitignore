@@ -1,5 +1,6 @@
 .DS_Store
 data/*.json
 data/*.tsv
+data/*.npz
 php/include.*
 js/example.*

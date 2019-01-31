@@ -1,9 +1,5 @@
 #!/usr/bin/env python
-
-import sys
-from ete3 import Tree
-
-USAGE = """
+"""
 prune-newick.py
 Prunes the tree piped into STDIN to the minimal topology connecting only specific leaves.
 Leaves to be kept are specified as command-line arguments, one for each leaf label.
@@ -13,10 +9,14 @@ Uses ete3's TreeNode.prune() method. For more info on this method, see:
 http://etetoolkit.org/docs/latest/tutorial/tutorial_trees.html#pruning-trees
 
 USAGE: cat tree.nwk | python prune-newick.py leaf1 leaf2 leaf3 ...
+
 """
 
+import sys
+from ete3 import Tree
+
 if len(sys.argv) < 2:
-    sys.stderr.write(USAGE)
+    sys.stderr.write(__doc__)
     sys.exit(1)
 
 leaf_ids = sys.argv[1:]

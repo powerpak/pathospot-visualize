@@ -387,7 +387,7 @@ text.axis-label {
 }
 #timeline .encounter.hover {
   stroke: #222;
-  stroke-width: 4px;
+  stroke-width: 2px;
 }
 
 
