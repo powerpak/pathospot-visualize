@@ -71,7 +71,7 @@ $(function() {
         trees = assemblies.trees; 
         
     // Unpack nodes and links, which may be compressed into array-of-array format
-    if (_.isArray(nodes[0])) { nodes = _.map(nodes.slice(1), function(v) { return _.object(nodes[0], v);  }); }
+    if (_.isArray(nodes[0])) { nodes = tabularIntoObjects(nodes); }
     if (!links.length) {
       _.each(assemblies.links, function(row, i) {
         _.each(row, function(cell, j) { 

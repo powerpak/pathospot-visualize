@@ -340,6 +340,23 @@ text.axis-label {
   font-size: 12px;
 }
 
+#dendro .variant rect {
+  stroke: white;
+  stroke-width: 1px;
+  fill: #777;
+}
+#dendro .variant.ref rect {
+  fill: white;
+}
+#dendro .variant text {
+  text-anchor: middle;
+  alignment-baseline: middle;
+  fill: white;
+}
+#dendro .variant.ref text {
+  fill: #ddd;
+}
+
 .fixed #color-scale {
   position: fixed;
   top: 0;

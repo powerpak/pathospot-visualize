@@ -11,6 +11,12 @@ function fixUnit(unit) {
   return unit;
 }
 
+// turns an array of arrays, where the first is a list of fieldnames, into an array of objects
+// e.g. [["a", "b", "c"], [1, 2, 3], [4, 5, 6], ...] => [{a: 1, b: 2, c: 3}, {a: 4, b: 5, c: 6}, ...]
+function tabularIntoObjects(arr) {
+  return _.map(arr.slice(1), function(v) { return _.object(arr[0], v); });
+}
+
 function fixForClass(value) {
   return value.replace(/\W/g, '-');
 }

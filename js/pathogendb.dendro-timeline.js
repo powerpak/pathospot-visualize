@@ -65,31 +65,79 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
       .node_circle_size(0)
       .svg(d3.select("#dendro")),
       oldBranchLength = tree.branch_length();
+  var isolateColumns = [
+    ["isolate_ID", 0, "Isolate ID"],
+    ["eRAP_ID", 60, "Anon Pt ID"],
+    ["order_date", 110, "Order Date"],
+    ["collection_unit", 180, "Unit"]
+  ];
+  var variantsX = 260, variantHeight = 15, variantWidth = 12;
+  
   
   // Scale up branch lengths to SNVs per **Mbp** core genome
   tree.branch_length(function() { return oldBranchLength.apply(this, arguments) * 1000000; })
+  
+  // 
+  if (variants.allele_info) {
+    variants.allele_info = tabularIntoObjects(variants.allele_info);
+    _.each(variants.allele_info, function(allele) { 
+      allele.nt_alts = allele.alt.split(',');
+      allele.aa_alts = allele.aa_alt.split(',');
+    });
+    variants.chrom_sizes = tabularIntoObjects(variants.chrom_sizes);
+    
+    // Tells phylotree to pretend that the branch_names are super long, so it adds extra width to the SVG
+    // see https://github.com/veg/phylotree.js/blob/master/examples/leafdata/index.html
+    tree.branch_name(function(node) {
+      return Array(Math.floor(variants.allele_info.length * 1.5) + 50).join(" ");
+    });
+  }
   
   // Custom node styler to color the node tip and add extra metadata to the right-hand side
   tree.style_nodes(function(container, node) {
     if (d3.layout.phylotree.is_leafnode(node)) {
       var shiftTip = tree.shift_tip(node)[0];
       var circle = container.selectAll("circle").data([node]);
+      var texts = container.selectAll("text").data(isolateColumns);
       var isolate = isolates[node.name];
       var fillColor = colorByFunctions.isolates[$colorBy.val()](isolate);
       var strokeColor = d3.rgb(fillColor).darker().toString();
+      var variantG, variantGG, variantEnter;
     
       circle.exit().remove();
-      
       circle.enter().append("circle")
           .attr("r", nodeRadius)
           .attr("cx", nodeRadius);
-      
       circle.style("fill", fillColor)
           .style("stroke", strokeColor);
-    
-      container.selectAll("text")
-          .attr("x", nodeRadius * 2.5)
-          .text(isolate.eRAP_ID + ' : ' + isolate.order_date + ' : ' + isolate.collection_unit);
+      
+      texts.exit().remove();
+      texts.enter().append("text");
+      texts.attr("x", function(d) { return nodeRadius * 2.5 + d[1]; })
+          .attr("transform", "translate(" + shiftTip + ",0)")
+          .attr("dx", nodeRadius)
+          .attr("dy", nodeRadius)
+          .style("font-size", "12px")
+          .text(function(d) { return isolate[d[0]]; } );
+          
+      if (variants.by_assembly) {
+        variantG = container.append("g")
+        variantG.attr("transform", "translate(" + (variantsX + shiftTip) + ", " + (-variantHeight * 0.5) + ")");
+        variantGG = variantG.selectAll("g").data(variants.by_assembly[node.name]);
+        
+        variantGG.exit().remove();
+        variantEnter = variantGG.enter().append("g")
+            .attr("class", "variant")
+            .classed("ref", function(d, i) { return d == variants.by_assembly[earliestNode.name][i]; })
+            .attr("transform", function(d, i) { return "translate(" + (i * variantWidth) + ",0)"; });
+        variantEnter.append("rect")
+            .attr("width", variantWidth)
+            .attr("height", variantHeight)
+        variantEnter.append("text")
+            .attr("x", variantWidth * 0.5)
+            .attr("y", variantHeight * 0.5 + 1)
+            .text(function(d, i) { return variants.allele_info[i].nt_alts[d - 1]; });
+      }
     }
   });
   
@@ -97,15 +145,17 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   tree(prunedTree);
   
   // Root the tree on the chronologically first isolate
-  var earliest = _.min(tree.get_nodes(), function(node) { 
+  var earliestNode = _.min(tree.get_nodes(), function(node) { 
     return isLeafNode(node) ? isolates[node.name].ordered : Infinity;
   });
-  var latest = _.max(tree.get_nodes(), function(node) { 
+  var latestNode = _.max(tree.get_nodes(), function(node) { 
     return isLeafNode(node) ? isolates[node.name].ordered : -Infinity;
   });
-  orderedScale.domain([isolates[earliest.name].ordered, isolates[latest.name].ordered]);
-  tree.reroot(earliest);
+  orderedScale.domain([isolates[earliestNode.name].ordered, isolates[latestNode.name].ordered]);
+  tree.reroot(earliestNode);
   tree.layout();
+  
+  //function update 
   
   // ==========================
   // = Setup the color legend =
