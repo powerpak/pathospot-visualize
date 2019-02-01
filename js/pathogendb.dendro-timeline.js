@@ -336,24 +336,27 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   $timeline.on("mousemove", function(e) {
     var prevDisplay = $(".zoom-rect").css("display"),
         hoverAction = $hover.val(),
-        enc;
+        enc, el, $encG, $hoverHighlight;
     $(".zoom-rect").css("display", "none");
-    var el = document.elementFromPoint(e.clientX, e.clientY);
+    el = document.elementFromPoint(e.clientX, e.clientY);
     if (el !== prevHoverEl) {
       if ($(prevHoverEl).hasClass("encounter")) { 
         $(prevHoverEl).removeClass("hover");
         $(".encounter").removeClass("hover-highlight");
         tip.hide(d3.select(prevHoverEl).data()[0], prevHoverEl); 
       }
-      if ($(el).hasClass("encounter")) { 
-        $(el).addClass("hover");
+      if ($(el).hasClass("encounter")) {
+        $encG = $(el).parent();
+        // The .appendTo()'s here move hovered <rect>'s to the end of the parent so they draw on top
+        $(el).addClass("hover").appendTo($encG);
         enc = d3.select(el).data()[0];
         hoverAction && tip.show(enc, el);
         if (hoverAction == 'unit') { 
-          $(".encounter.dept-" + fixForClass(enc.department_name)).not(el).addClass("hover-highlight"); 
+          $hoverHighlight = $(".encounter.dept-" + fixForClass(enc.department_name)).not(el)
         } else if (hoverAction == 'patient') {
-          $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el).addClass("hover-highlight"); 
+          $hoverHighlight = $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el)
         }
+        if ($hoverHighlight) { $hoverHighlight.addClass("hover-highlight").appendTo($encG); }
       }
       prevHoverEl = el;
     }
@@ -424,6 +427,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       domain, height, prevGroup;
     
     domain = _.sortBy(_.uniq(_.map(tuples, selector), false, stringifyTuple), stringifyTuple);
+    console.log(yGrouping, domain);
     if (padGroups) {
       _.each(domain, function(tup, i) { 
         if(i > 0 && tup[0] != prevGroup) { paddedDomain.push([prevGroup, null]); }
