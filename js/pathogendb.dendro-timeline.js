@@ -1,4 +1,4 @@
-function dendroTimeline(prunedTree, isolates, encounters, navbar) {
+function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   // Constants.
   var colors = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 
     "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", 
@@ -9,7 +9,11 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   var nodeRadius = 4;
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
-    end_time: function(d) { return d.toLocaleString(); }
+    end_time: function(d) { return d.toLocaleString(); },
+    gene: function(d) { return d.replace(/^PROKKA_/, 'P_'); },
+    chrom: function(d) { 
+      return (/^u\d{5}crpx_c_/).test(d) ? "chromosome" : ((/^u\d{5}crpx_p_/).test(d) ? "plas." : "other"); 
+    }
   }
   
   // D3 scales, formats, and other helpers that are used globally
@@ -51,6 +55,8 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   var $timeline = $('#timeline');
   var $yGrouping = $('#timeline-grouping');
   var $hover = $('#hover');
+  var $variantLabels = $('#variant-labels');
+  var $variantNtOrAa = $('#variant-nt-or-aa')
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -60,49 +66,46 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
       .options({
         brush: false,
         selectable: false,
+        transitions: false,
         "align-tips": true
       })
       .node_circle_size(0)
       .svg(d3.select("#dendro")),
       oldBranchLength = tree.branch_length();
+  
+  // Constants for positioning
   var isolateColumns = [
     ["isolate_ID", 0, "Isolate ID"],
     ["eRAP_ID", 60, "Anon Pt ID"],
     ["order_date", 110, "Order Date"],
     ["collection_unit", 180, "Unit"]
   ];
-  var variantsX = 260, variantHeight = 15, variantWidth = 12;
-  
+  var variantsX = 260, variantHeight = 15, variantWidth = 14;
+  var variantMapPadRatio = 0.2, variantMapStepback = 5,
+      variantMapContigHeight = 12, minVariantMapWidth = 200;
   
   // Scale up branch lengths to SNVs per **Mbp** core genome
   tree.branch_length(function() { return oldBranchLength.apply(this, arguments) * 1000000; })
   
-  // 
   if (variants.allele_info) {
-    variants.allele_info = tabularIntoObjects(variants.allele_info);
-    _.each(variants.allele_info, function(allele) { 
-      allele.nt_alts = allele.alt.split(',');
-      allele.aa_alts = allele.aa_alt.split(',');
-    });
-    variants.chrom_sizes = tabularIntoObjects(variants.chrom_sizes);
-    
     // Tells phylotree to pretend that the branch_names are super long, so it adds extra width to the SVG
     // see https://github.com/veg/phylotree.js/blob/master/examples/leafdata/index.html
     tree.branch_name(function(node) {
-      return Array(Math.floor(variants.allele_info.length * 1.5) + 50).join(" ");
+      return Array(Math.floor(variants.allele_info.length * 1.6) + 50).join(" ");
     });
   }
   
   // Custom node styler to color the node tip and add extra metadata to the right-hand side
   tree.style_nodes(function(container, node) {
     if (d3.layout.phylotree.is_leafnode(node)) {
-      var shiftTip = tree.shift_tip(node)[0];
-      var circle = container.selectAll("circle").data([node]);
-      var texts = container.selectAll("text").data(isolateColumns);
-      var isolate = isolates[node.name];
-      var fillColor = colorByFunctions.isolates[$colorBy.val()](isolate);
-      var strokeColor = d3.rgb(fillColor).darker().toString();
-      var variantG, variantGG, variantEnter;
+      var shiftTip = tree.shift_tip(node)[0],
+          circle = container.selectAll("circle").data([node]),
+          texts = container.selectAll("text").data(isolateColumns),
+          isolate = isolates[node.name],
+          fillColor = colorByFunctions.isolates[$colorBy.val()](isolate),
+          strokeColor = d3.rgb(fillColor).darker().toString(),
+          ntOrAa = $variantNtOrAa.val(),
+          variantG, variantGGs, variantEnter;
     
       circle.exit().remove();
       circle.enter().append("circle")
@@ -111,6 +114,7 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
       circle.style("fill", fillColor)
           .style("stroke", strokeColor);
       
+      // Add columns of textual metadata according to the spec in `isolateColumns`
       texts.exit().remove();
       texts.enter().append("text");
       texts.attr("x", function(d) { return nodeRadius * 2.5 + d[1]; })
@@ -120,15 +124,20 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
           .style("font-size", "12px")
           .text(function(d) { return isolate[d[0]]; } );
           
+      // Add genomic variant data for each node, if available in `variants.by_assembly`
       if (variants.by_assembly) {
-        variantG = container.append("g")
+        variantG = container.append("g").attr("class", "variants");
         variantG.attr("transform", "translate(" + (variantsX + shiftTip) + ", " + (-variantHeight * 0.5) + ")");
-        variantGG = variantG.selectAll("g").data(variants.by_assembly[node.name]);
+        variantGGs = variantG.selectAll("g").data(variants.by_assembly[node.name]);
         
-        variantGG.exit().remove();
-        variantEnter = variantGG.enter().append("g")
+        variantGGs.exit().remove();
+        variantEnter = variantGGs.enter().append("g")
             .attr("class", "variant")
             .classed("ref", function(d, i) { return d == variants.by_assembly[earliestNode.name][i]; })
+            .classed("nonsyn", function(d, i) {
+              var aa_alts = variants.allele_info[i].aa_alts;
+              return aa_alts && aa_alts[d - 1] != aa_alts[variants.by_assembly[earliestNode.name][i] - 1]; 
+            })
             .attr("transform", function(d, i) { return "translate(" + (i * variantWidth) + ",0)"; });
         variantEnter.append("rect")
             .attr("width", variantWidth)
@@ -136,7 +145,9 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
         variantEnter.append("text")
             .attr("x", variantWidth * 0.5)
             .attr("y", variantHeight * 0.5 + 1)
-            .text(function(d, i) { return variants.allele_info[i].nt_alts[d - 1]; });
+            .text(function(d, i) { 
+              return variants.allele_info[i][ntOrAa + "_alts"][d - 1] || "\u2014"; 
+            });
       }
     }
   });
@@ -154,8 +165,93 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   orderedScale.domain([isolates[earliestNode.name].ordered, isolates[latestNode.name].ordered]);
   tree.reroot(earliestNode);
   tree.layout();
+
+  // ================================================================
+  // = Plot variant labels and the genome map next to the phylotree =
+  // ================================================================
+
+  function updateVariantLabels() {
+    if (!variants.by_assembly || !variants.allele_info) { return; }
+    
+    var variantLabelsSvg = d3.select("#dendro-variant-labels"),
+        whichLabel = $variantLabels.val().split('+'),
+        ntOrAa = $variantNtOrAa.val(),
+        formatter = FORMAT_FOR_DISPLAY[whichLabel[0]],
+        bbox = getBBox(d3.select("#dendro .variants")),
+        texts = variantLabelsSvg.selectAll("text").data(variants.allele_info),
+        newHeight;
+      
+    variantLabelsSvg.attr("width", bbox.x + bbox.width);
+    texts.exit().remove();
+    texts.enter().append("text");
+    texts.attr("transform", function(d, i) { 
+          return "translate(" + (bbox.x + (i + 0.3) * variantWidth) + ",4)rotate(-60)"; 
+        })
+        .text(function(d) { 
+          var out = formatter ? formatter(d[whichLabel[0]]) : d[whichLabel[0]];
+          if (whichLabel[1] == 'pos' && out) { 
+            out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + d[ntOrAa + '_pos']; 
+          }
+          return out;
+        });
+    
+    newHeight = _.max(_.map(texts[0], function(node) { return getBBox(node).y + height; }));
+    variantLabelsSvg.attr("height", Math.ceil(newHeight));
+  }
+  updateVariantLabels();
   
-  //function update 
+  function updateGenomeVariantMap() {
+    if (!variants.allele_info || !variants.chrom_sizes) { return; }
+    var chromSizes = variants.chrom_sizes,
+        genomeSize = _.pluck(chromSizes, 'size').sum(),
+        padPerContig = Math.round(variantMapPadRatio * genomeSize / Math.max(chromSizes.length - 1, 1)),
+        genomeSizePadded = genomeSize + padPerContig * (chromSizes.length - 1),
+        bbox = getBBox(d3.select("#dendro .variants")),
+        variantMapWidth = Math.max(bbox.width, minVariantMapWidth),
+        variantMapHeight = bbox.y,
+        xScale = d3.scale.linear().domain([0, genomeSizePadded]).range([0, variantMapWidth]),
+        paddedStarts = {},
+        pos = 0,
+        paddedGenomicPos, xScaleChromPos, variantMapG, chromGs, chromEnter, mappingPaths;
+    
+    _.each(chromSizes, function(chrom) {
+      paddedStarts[chrom.chrom] = pos;
+      pos += chrom.size + padPerContig;
+    });
+    paddedGenomicPos = function(chrom, pos) { return paddedStarts[chrom] + pos; }
+    xScaleChromPos = function(chrom, pos) { return xScale(paddedGenomicPos(chrom, pos)); }
+    
+    variantMapG = d3.select('#dendro .variant-map');
+    if (variantMapG.node() === null) { 
+      variantMapG = d3.select('#dendro').append("g").attr("class", "variant-map");
+      variantMapG.attr("transform", "translate(" + bbox.x + ",0)"); 
+    }
+    
+    chromGs = variantMapG.selectAll("g.chrom").data(chromSizes);
+    chromGs.exit().remove();
+    chromEnter = chromGs.enter().append("g")
+        .attr("transform", function(d) { return "translate(" + xScaleChromPos(d.chrom, 0) + ",1)"; });
+    chromEnter.append("rect")
+        .attr("width", function(d) { return xScaleChromPos(chromSizes[0].chrom, d.size); })
+        .attr("height", variantMapContigHeight);
+    chromEnter.append("text")
+        .attr("x", function(d) { return xScaleChromPos(chromSizes[0].chrom, d.size) * 0.5; })
+        .attr("y", variantMapContigHeight * 0.8)
+        .text(function(d) { return FORMAT_FOR_DISPLAY.chrom(d.chrom); })
+    
+    mappingPaths = variantMapG.selectAll("path").data(variants.allele_info);
+    mappingPaths.exit().remove();
+    mappingPaths.enter().append("path")
+        .attr("d", function(d, i) {
+          var path = "M " + ((i + 0.5) * variantWidth) + " " + variantMapHeight,
+              targetX = xScaleChromPos(d.chrom, d.pos);
+          path += " L" + ((i + 0.5) * variantWidth) + " " + (variantMapHeight - variantMapStepback);
+          path += " L" + targetX + " " + (variantMapContigHeight + variantMapStepback);
+          path += " L" + targetX + " 1";
+          return path;
+        });
+  }
+  updateGenomeVariantMap();
   
   // ==========================
   // = Setup the color legend =
@@ -579,6 +675,12 @@ function dendroTimeline(prunedTree, isolates, encounters, navbar) {
   $yGrouping.change(function() {
     $timeline.trigger("reorderY", false);
     $timeline.trigger("resizeWidth");
+  });
+  
+  $variantLabels.change(updateVariantLabels);
+  $variantNtOrAa.change(function() {
+    updateVariantLabels();
+    tree.update();
   });
   
   $(window).resize(function() {

@@ -76,11 +76,40 @@ function getFilters() {
   };
 }
 
-Array.prototype.swap = function (x, y) {
+Array.prototype.swap = function(x, y) {
   var b = this[x];
   this[x] = this[y];
   this[y] = b;
   return this;
+}
+
+Array.prototype.sum = function() {
+  return _.reduce(this, function(a, b) { return a + b; }, 0);
+}
+
+// Given an SVG element, or a d3 selection containing SVG elements, returns the bounding box of the element
+// in pixel units relative to the top left corner of the containing SVG element
+function getBBox(elem) {
+  if (d3 && elem instanceof d3.selection) { elem = elem.node(); }
+  var point = elem.ownerSVGElement.createSVGPoint();
+      bbox = {},
+      matrix = elem.getCTM(),
+      tbbox = elem.getBBox(),
+      width = tbbox.width,
+      height = tbbox.height,
+      x = tbbox.x,
+      y = tbbox.y;
+
+  point.x = x;
+  point.y = y;
+  bbox.x = point.matrixTransform(matrix).x;
+  bbox.y = point.matrixTransform(matrix).y;
+  point.x += width;
+  bbox.width = point.matrixTransform(matrix).x - bbox.x;
+  point.y += height;
+  bbox.height = point.matrixTransform(matrix).y - bbox.y;
+  
+  return bbox;
 }
 
 // Helper function for performant animations with requestAnimationFrame (instead of setInterval)

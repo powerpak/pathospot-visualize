@@ -72,6 +72,19 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="time">Time</option>
       </select>
     </label>
+    <label class="widget">
+      <span class="widget-label">Variant labels</span>
+      <select id="variant-labels" name="variant_labels">
+        <option value="">Hide</option>
+        <option value="gene" selected>Gene names</option>
+        <option value="gene+pos">Gene & position</option>
+        <option value="desc">Gene description</option>
+      </select>
+      <select id="variant-nt-or-aa" name="variant_nt_or_aa">
+        <option value="nt" selected>Nucleotides</option>
+        <option value="aa">Amino acids</option>
+      </select>
+    </label>
     <div class="clear"></div>
   </div>
 </div>
@@ -79,6 +92,10 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
 <div id="dendro-timeline">
   <svg id="color-scale" width="100" height="300"></svg>
   <svg id="dendro"></svg>
+  
+  <div class="clear">
+    <svg id="dendro-variant-labels" width="100" height="10"></svg>
+  </div>
   
   <div class="toolbar clear">
     <label class="widget">
@@ -148,8 +165,18 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
     v.department_name = fixUnit(v.department_name);
   });
   
+  // Unpack tabular arrays-of-arrays in `variants` into objects and preprocess special fields
+  if (variants.allele_info) {
+    variants.allele_info = tabularIntoObjects(variants.allele_info);
+    _.each(variants.allele_info, function(allele) { 
+      allele.nt_alts = allele.alt.split(',');
+      allele.aa_alts = allele.aa_alt && allele.aa_alt.split(',');
+    });
+    variants.chrom_sizes = tabularIntoObjects(variants.chrom_sizes);
+  }
+  
   $(function() {
-    dendroTimeline(prunedTree, isolates, encounters, '.navbar');
+    dendroTimeline(prunedTree, isolates, encounters, variants, '.navbar');
   });
 </script>
 

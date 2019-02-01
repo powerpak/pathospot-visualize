@@ -340,10 +340,27 @@ text.axis-label {
   font-size: 12px;
 }
 
+#dendro .variant-map rect {
+  stroke: #444;
+  stroke-width: 1px;
+  fill: #ddd;
+}
+#dendro .variant-map text {
+  text-anchor: middle;
+}
+#dendro .variant-map path {
+  stroke: #777;
+  stroke-width: 1px;
+  fill: none;
+}
+
 #dendro .variant rect {
   stroke: white;
   stroke-width: 1px;
-  fill: #777;
+  fill: #999;
+}
+#dendro .variant.nonsyn rect {
+  fill: #335;
 }
 #dendro .variant.ref rect {
   fill: white;
@@ -362,8 +379,14 @@ text.axis-label {
   top: 0;
   left: 80px;
 }
-.fixed #dendro {
+.fixed #dendro, #dendro-variant-labels {
   margin-left: 100px;
+}
+
+#dendro-variant-labels text {
+  font-size: 12px;
+  text-anchor: end;
+  alignment-baseline: hanging;
 }
 
 #timeline-cont {
