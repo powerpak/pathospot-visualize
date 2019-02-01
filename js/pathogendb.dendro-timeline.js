@@ -696,6 +696,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   $(window).scroll(function() {
     var fixed = $(this).scrollTop() > fixColorScaleAfter;
     $dendroTimeline.toggleClass('fixed', fixed);
-    $('#color-scale').css('top', fixed && navbar ? $(navbar).height() : 0);
+    $('#color-scale').css({
+      top: fixed && navbar ? $(navbar).height() : 0,
+      left: fixed ? 80 - $(this).scrollLeft() : '',
+    });
   });
 }
