@@ -402,7 +402,7 @@ text.axis-label {
   fill: #f3f6fa;
 }
 
-#timeline .pt-dividers text {
+#timeline .pt-dividers text, #timeline .single-groups .y.axis text {
   font-size: 12px;
   font-weight: bold;
   fill: #777;

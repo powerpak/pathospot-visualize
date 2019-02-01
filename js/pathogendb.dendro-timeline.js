@@ -416,21 +416,31 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     $('#timeline-clip rect').attr("width", width - yAxisSize);
   }
   
-  function setupYScaleAndGroups(tuples, yScale, rowHeight) {
+  function setupYScaleAndGroups(tuples, yScale, rowHeight, padGroups) {
     var yGroups = [],
       yGrouping = _.map($yGrouping.val().split(","), parseInt10),
       selector = function(tup) { return _.map(yGrouping, function(i) { return tup[i]; }) },
-      domain, 
-      height;
+      paddedDomain = [],
+      domain, height, prevGroup;
     
     domain = _.sortBy(_.uniq(_.map(tuples, selector), false, stringifyTuple), stringifyTuple);
+    if (padGroups) {
+      _.each(domain, function(tup, i) { 
+        if(i > 0 && tup[0] != prevGroup) { paddedDomain.push([prevGroup, null]); }
+        paddedDomain.push(tup);
+        prevGroup = tup[0];
+      });
+      paddedDomain.push([prevGroup, null]);
+      domain = paddedDomain;
+    }
     height = domain.length * rowHeight;
-    yScale.rangePoints([0, height - rowHeight]);
+    yScale.rangePoints(padGroups ? [0.5 * rowHeight, height - rowHeight * 0.5] : [0, height - rowHeight]);
     yScale.domain(domain);
     
     _.each(domain, function(tup) {
       if (!yGroups.length || _.last(yGroups).label !== tup[0]) {
-        yGroups.push({label: tup[0], start: tup, end: tup, length: 1});
+        var initialLength = (yGrouping.length == 1 && padGroups ? 2 : 1);
+        yGroups.push({label: tup[0], start: tup, end: tup, length: initialLength});
       } else if (yGrouping.length > 1) {
         _.last(yGroups).end = tup;
         _.last(yGroups).length += 1;
@@ -447,6 +457,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         rowHeight = 10,
         xAxisSize = 20,
         paddingLeft = 40,
+        padGroups = true,
         zoomCache = {last: null},
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return [enc.eRAP_ID, enc.department_name];
@@ -462,7 +473,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     
     // Setup Y scale and grouping
     yScale = d3.scale.ordinal();
-    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight);
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups);
     height = _.last(yScale.range()) + rowHeight;
     yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
@@ -588,7 +599,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           prevHeight = parseInt10(d3.select("#timeline").attr("height")),
           height;
       if (!firstDraw) {
-        yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight);
+        yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups);
         duration = 500;
       }
       height = _.last(yScale.range()) + rowHeight;
@@ -608,11 +619,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           .attr("dy", rowHeight * 0.5);
           
       ptDividersGG.select("rect").transition().duration(duration)
-          .attr("y", function(yGroup) { return yScale(yGroup.start); })
+          .attr("y", function(yGroup) { return yScale(yGroup.start) - (padGroups ? 0.5 : 0) * rowHeight; })
           .attr("height", function (yGroup) { return rowHeight * yGroup.length; });
       ptDividersGG.select("text")
           .attr("y", function(yGroup) { 
-            return yScale(yGroup.start) + rowHeight * yGroup.length * 0.5;
+            return yScale(yGroup.start) + rowHeight * (yGroup.length * 0.5 + (padGroups ? -0.5 : 0));
           })
           .text(function(yGroup) { return yGroup.label });
       
