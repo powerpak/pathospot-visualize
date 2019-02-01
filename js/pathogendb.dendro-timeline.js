@@ -10,6 +10,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
+    unit: fixUnit,
     gene: function(d) { return d.replace(/^PROKKA_/, 'P_'); },
     chrom: function(d) { 
       return (/^u\d{5}crpx_c_/).test(d) ? "chromosome" : ((/^u\d{5}crpx_p_/).test(d) ? "plas." : "other"); 
@@ -91,7 +92,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     // Tells phylotree to pretend that the branch_names are super long, so it adds extra width to the SVG
     // see https://github.com/veg/phylotree.js/blob/master/examples/leafdata/index.html
     tree.branch_name(function(node) {
-      return Array(Math.floor(variants.allele_info.length * 1.6) + 50).join(" ");
+      return Array(Math.floor(Math.max(variants.allele_info.length, 10) * 1.8) + 50).join(" ");
     });
   }
   
@@ -144,7 +145,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
             .attr("height", variantHeight)
         variantEnter.append("text")
             .attr("x", variantWidth * 0.5)
-            .attr("y", variantHeight * 0.5 + 1)
+            .attr("y", Math.floor(variantHeight * 0.75))
             .text(function(d, i) { 
               return variants.allele_info[i][ntOrAa + "_alts"][d - 1] || "\u2014"; 
             });
@@ -185,7 +186,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     texts.exit().remove();
     texts.enter().append("text");
     texts.attr("transform", function(d, i) { 
-          return "translate(" + (bbox.x + (i + 0.3) * variantWidth) + ",4)rotate(-60)"; 
+          return "translate(" + (bbox.x + (i + 0.8) * variantWidth) + ",4)rotate(-60)"; 
         })
         .text(function(d) { 
           var out = formatter ? formatter(d[whichLabel[0]]) : d[whichLabel[0]];
@@ -689,11 +690,12 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   
   var fixColorScaleAfter = $('#color-scale').position().top;
   if (navbar) { 
-    fixColorScaleAfter -= $(navbar).height(); 
-    $('#color-scale').css('top', $(navbar).height());
+    fixColorScaleAfter -= $(navbar).height();
   }
   
   $(window).scroll(function() {
-    $dendroTimeline.toggleClass('fixed', $(this).scrollTop() > fixColorScaleAfter );
+    var fixed = $(this).scrollTop() > fixColorScaleAfter;
+    $dendroTimeline.toggleClass('fixed', fixed);
+    $('#color-scale').css('top', fixed && navbar ? $(navbar).height() : 0);
   });
 }

@@ -325,6 +325,7 @@ text.axis-label {
 
 #dendro-timeline {
   padding-left: 80px;
+  position: relative;
 }
 
 #dendro-timeline .toolbar {
@@ -332,12 +333,13 @@ text.axis-label {
   padding-left: 100px;
 }
 
-#color-scale, #dendro {
-  float: left;
+#color-scale {
+  position: absolute;
+  font-size: 12px;
 }
 
-#color-scale {
-  font-size: 12px;
+#dendro, #dendro-variant-labels {
+  margin-left: 100px;
 }
 
 #dendro .variant-map rect {
@@ -367,7 +369,6 @@ text.axis-label {
 }
 #dendro .variant text {
   text-anchor: middle;
-  alignment-baseline: middle;
   fill: white;
 }
 #dendro .variant.ref text {
@@ -379,14 +380,10 @@ text.axis-label {
   top: 0;
   left: 80px;
 }
-.fixed #dendro, #dendro-variant-labels {
-  margin-left: 100px;
-}
 
 #dendro-variant-labels text {
   font-size: 12px;
   text-anchor: end;
-  alignment-baseline: hanging;
 }
 
 #timeline-cont {

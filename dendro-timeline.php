@@ -61,8 +61,8 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
     <label class="widget">
       <span class="widget-label">Color by</span>
       <select id="color-nodes" name="color_nodes">
-        <option value="ordered">Order date</option>
         <option value="collection_unit">Collection unit</option>
+        <option value="ordered">Order date</option>
       </select>
     </label>
     <label class="widget">
