@@ -428,7 +428,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     _.each(isolates, function(iso) { 
       sortKeys[0][iso.eRAP_ID] = Math.min(iso.ordered, sortKeys[0][iso.eRAP_ID] || Infinity); 
     });
-    _.each(sortKeys[0], function(v, k) { sortKeys[0][k] = new Date(v).toISOString(); });
+    _.each(sortKeys[0], function(v, k) {
+      // Use the ISO date which sorts alphanumerically; still need the eRAP_ID for tiebreaker
+      sortKeys[0][k] = new Date(v).toISOString() + "\n" + k.toString();
+    });
     return sortKeys;
   }
   
