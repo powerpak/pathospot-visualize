@@ -419,15 +419,36 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     $('#timeline-clip rect').attr("width", width - yAxisSize);
   }
   
-  function setupYScaleAndGroups(tuples, yScale, rowHeight, padGroups) {
+  function createSortKeys(encounters, isolates) {
+    // sortKeys allows the (eRAP_ID, dept) tuples to be sorted by values other than themselves
+    // Each member of the sortKeys array maps to the corresponding index of the tuples.
+    //  => 0 = eRAP_ID; 1 = department_name/collection_unit
+    var sortKeys = [{}, null];
+    // The following causes eRAP_IDs to sort by the first isolate date for that eRAP_ID
+    _.each(isolates, function(iso) { 
+      sortKeys[0][iso.eRAP_ID] = Math.min(iso.ordered, sortKeys[0][iso.eRAP_ID] || Infinity); 
+    });
+    _.each(sortKeys[0], function(v, k) { sortKeys[0][k] = new Date(v).toISOString(); });
+    return sortKeys;
+  }
+  
+  function setupYScaleAndGroups(tuples, yScale, rowHeight, padGroups, sortKeys) {
     var yGroups = [],
+      // yGrouping is a specification "#,#" of the order for sorting the (eRAP_ID, dept) tuples
+      //  => 0 = eRAP_ID; 1 = department_name/collection_unit; leftmost number takes precedence
       yGrouping = _.map($yGrouping.val().split(","), parseInt10),
       selector = function(tup) { return _.map(yGrouping, function(i) { return tup[i]; }) },
       paddedDomain = [],
       domain, height, prevGroup;
     
-    domain = _.sortBy(_.uniq(_.map(tuples, selector), false, stringifyTuple), stringifyTuple);
-    console.log(yGrouping, domain);
+    sortKeys = sortKeys || [];
+    domain = _.uniq(_.map(tuples, selector), false, stringifyTuple);
+    domain = _.sortBy(domain, function(tup) { 
+      return stringifyTuple(_.map(tup, function(v, i) { 
+        return sortKeys[yGrouping[i]] ? sortKeys[yGrouping[i]][v] : v;
+      }));
+    });
+    
     if (padGroups) {
       _.each(domain, function(tup, i) { 
         if(i > 0 && tup[0] != prevGroup) { paddedDomain.push([prevGroup, null]); }
@@ -468,16 +489,15 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })),
-        yGroups,
-        height,
-        yScale, yScaleGrouped;
+        sortKeys = createSortKeys(encounters, isolates),
+        yGroups, height, yScale, yScaleGrouped;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
     $timeline.children(':not(defs)').remove();
     
     // Setup Y scale and grouping
     yScale = d3.scale.ordinal();
-    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups);
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
     height = _.last(yScale.range()) + rowHeight;
     yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
@@ -603,7 +623,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           prevHeight = parseInt10(d3.select("#timeline").attr("height")),
           height;
       if (!firstDraw) {
-        yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups);
+        yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
         duration = 500;
       }
       height = _.last(yScale.range()) + rowHeight;
