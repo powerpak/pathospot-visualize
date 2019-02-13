@@ -390,6 +390,10 @@ text.axis-label {
   margin-left: 60px;
 }
 
+#d3_layout_phylotree_context_menu {
+  display: none !important;
+}
+
 #timeline .x.axis .tick line {
   opacity: 0.2;
 }

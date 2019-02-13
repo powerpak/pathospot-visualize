@@ -430,7 +430,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     });
     _.each(sortKeys[0], function(v, k) {
       // Use the ISO date which sorts alphanumerically; still need the eRAP_ID for tiebreaker
-      sortKeys[0][k] = new Date(v).toISOString() + "\n" + k.toString();
+      sortKeys[0][k] = (_.isNaN(v) ? "9999-01-01" : (new Date(v)).toISOString()) + "\n" + k.toString();
     });
     return sortKeys;
   }
