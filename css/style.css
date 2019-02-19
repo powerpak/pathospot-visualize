@@ -95,13 +95,35 @@ svg {
   background: #1995dc;
 }
 
+#heatmap-order, #cluster-legend {
+  line-height: 24px;
+}
 #cluster-legend {
   display: none;
-  line-height: 24px;
+}
+#cluster-legend a .icon {
+  padding-right: 0.3em;
+}
+
+#cluster-info {
+  margin: 0 0.2em 0 0.4em;
+}
+#cluster-info svg {
+  position: absolute;
+  cursor: pointer;
+}
+#cluster-info .icon {
+  font-size: 150%;
+  position: relative;
+  top: 3px;
+  pointer-events: none;
+}
+
+#download-clusters {
+  margin-left: 0.6em;
 }
 
 #cluster-list {
-  margin-left: 5px;
   position: relative;
   top: -1px;
 }
@@ -121,9 +143,6 @@ svg {
   text-decoration: none;
 }
 
-#download-clusters {
-  margin-left: 1em;
-}
 
 #histo-title {
   position: absolute;
@@ -522,7 +541,6 @@ text.axis-label {
 .d3-tip .dist-value { font-size: 120%; }
 
 .link-info {
-  border-bottom: 1px solid white;
   border-collapse: collapse;
   margin-bottom: 0.5em;
 }
@@ -530,7 +548,7 @@ text.axis-label {
 .link-info th, .link-info td {
   padding: 0.3em 0.5em;
 }
-.link-info .separator {
+.link-info.border-bottom, .link-info .separator {
   border-bottom: 1px solid white;
 }
 .link-info .separator td, .link-info .separator th {

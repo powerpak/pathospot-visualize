@@ -21,7 +21,11 @@ $(function() {
         ordered: formatDate,
         group: formatClusterNumber,
         coreGenomeSize: formatPercentages,
-        clusterCoverageRange: formatPercentages
+        clusterCoverageRange: formatPercentages,
+        "% patients clustered": formatPercentages,
+        "% isolates clustered": formatPercentages,
+        "core genome size range": formatPercentages,
+        "cluster coverage range": formatPercentages
       },
       HOSPITAL_MAP = 'msmc-stacking-gray';
   
@@ -678,8 +682,8 @@ $(function() {
     function tipLinkHtml(ixLeft, ixRight, dist) {
       var leftClust = nodes[ixLeft].samePtMergeParent,
           rightClust = nodes[ixRight].samePtMergeParent,
-          html = '<table class="link-info">'
-          + '<tr class="separator"><th class="row-label">Distance</th><th class="dist" colspan=2><span class="dist-value">' + dist + '</span> SNPs</th></tr>',
+          html = '<table class="link-info bottom-border"><tr class="separator"><th class="row-label">Distance</th>' +
+                 '<th class="dist" colspan=2><span class="dist-value">' + dist + '</span> SNPs</th></tr>',
           snvs_url;
       
       // For each side of the tooltip table, if it is a merged isolate, display info for the *closest* isolate.
@@ -703,7 +707,7 @@ $(function() {
         var val1 = nodes[ixLeft][k],
             val2 = nodes[ixRight][k],
             link, valHasDash;
-        if ((/^-+$/).test(k)) { html += '<tr class="separator"><td colspan=2></td></tr>'; return; }
+        if ((/^-+$/).test(k)) { html += '<tr class="separator"><td colspan="2"></td></tr>'; return; }
         if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[k]) { val1 = PREPROCESS_FIELDS[k](val1); val2 = PREPROCESS_FIELDS[k](val2); }
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
@@ -733,12 +737,14 @@ $(function() {
     }
     
     function tipHtml(d) {
+      if (d.clusterInfo) { return tipClusterInfoHtml(d); }
       return tipLinkHtml(d.y, d.x, d.z);
     }
     
     var tip = d3.tip()
         .attr('class', 'd3-tip')
-        .offset([-10, 0])
+        .offset(function(d) { return d.clusterInfo ? [10, 0]: [-10, 0]; })
+        .direction(function(d) { return d.clusterInfo ? 's': 'n'; })
         .html(tipHtml);
     var selectedCell = null; 
     
@@ -825,7 +831,9 @@ $(function() {
     
     // ******************************* CLUSTER LEGEND **************************************
     
-    var clusterLegend = d3.select("#cluster-legend");
+    var clusterLegend = d3.select("#cluster-legend"),
+        clusterInfoSvg = d3.select('#cluster-info').select('svg');
+    
     function updateDetectedClusters(clusters) {
       clusterLegend.style('display', 'inline');
       clusterLegend.select('.num-clusters').text(clusters.length);
@@ -848,18 +856,19 @@ $(function() {
     }
     
     function updateClustersTSVBlob(clusters) {
-      var rows = [["isolate_ID", "merged_into_isolate_ID", "eRAP_ID", "cluster_num", "cluster_color"]];
+      var rows = [["isolate_ID", "merged_into_isolate_ID", "eRAP_ID", "cluster_num", "cluster_color", 
+          "assembly_name"]];
       _.each(clusters, function(clust, i) {
         _.each(clust.index, function(clustLeaf) {
           var node = clusterableNodes[clustLeaf.index];
-          rows.push([node.isolate_ID, '', node.eRAP_ID, i, c(i)]);
+          rows.push([node.isolate_ID, '', node.eRAP_ID, i, c(i), node.name]);
           // Also include rows for isolates merged into this one, for having the same patient ID.
           if (node.samePtMergeParent) {
             _.each(node.samePtMergeParent, function(childNodeIndex) {
               var childNode = nodes[childNodeIndex];
               // The same-patient clusters include a link back to the parent isolate, which is redundant here
               if (childNode.isolate_ID == node.isolate_ID) { return; }
-              rows.push([childNode.isolate_ID, node.isolate_ID, childNode.eRAP_ID, i, c(i)]);
+              rows.push([childNode.isolate_ID, node.isolate_ID, childNode.eRAP_ID, i, c(i), node.name]);
             });
           }
         });
@@ -868,7 +877,61 @@ $(function() {
       $('#download-clusters').data('tsvBlob', new Blob([tsv], { type: "text/plain;" }));
     }
     
+    function tipClusterInfoHtml(d) { 
+      var html = '<table class="link-info">';
+  
+      _.each(d.clusterInfo, function(value, label) {
+        if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[label]) { value = PREPROCESS_FIELDS[label](value); }
+        if ((/^-+$/).test(label)) { html += '<tr class="separator"><td colspan="2"></td></tr>'; return; }
+        html += '<tr><td class="row-label">' + label + '</td>';
+        if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
+          value = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(value)) + '">' + value + '</a>';
+        }
+        html += '<td>' + value + '</td></tr>';
+      });
+  
+      html += '</table>';
+      return html;
+    }
+    
+    function calculateClusterInfo(clusters) {
+      var clusterNodes = _.map(clusters, function(clust) { 
+          return _.map(clust.index, function(leaf) { return clusterableNodes[leaf.index]; }); 
+        }),
+        coreGenomeSizes = _.pluck(_.flatten(clusterNodes), 'coreGenomeSize'),
+        coverageRanges = _.pluck(_.flatten(clusterNodes), 'clusterCoverageRange');
+      var info = {"# clusters": clusters.length};
+      info["--"] = true;
+      info["# patients in clusters"] = _.uniq(_.compact(_.pluck(_.flatten(clusterNodes), 'eRAP_ID'))).length;
+      info["# patients total"] = _.uniq(_.compact(_.pluck(nodes, 'eRAP_ID'))).length;
+      info["% patients clustered"] = info["# patients in clusters"] / info["# patients total"] * 100;
+      info["---"] = true;
+      info["# isolates in clusters"] = _.uniq(_.compact(_.pluck(_.flatten(clusterNodes), 'isolate_ID'))).length;
+      info["# isolates total"] = _.uniq(_.compact(_.pluck(nodes, 'isolate_ID'))).length;
+      info["% isolates clustered"] = info["# isolates in clusters"] / info["# isolates total"] * 100;
+      info["----"] = true;
+      info["core genome size range"] = [_.min(coreGenomeSizes), _.max(coreGenomeSizes)];
+      info["cluster coverage range"] = [_.min(_.pluck(coverageRanges, 0)), _.max(_.pluck(coverageRanges, 1))];
+      return info;
+    }
+    
+    function initClusterInfoTooltip() {
+      clusterInfoSvg.call(tip);
+      var clusterInfoRect = clusterInfoSvg.append('rect')
+          .style('fill', 'transparent')
+          .attr('width', clusterInfoSvg.attr('width'))
+          .attr('height', clusterInfoSvg.attr('height'));
+      clusterInfoRect.on("mouseover", function() {
+            var clusters = clusterLegend.select('#cluster-list').selectAll('a').data();
+            tip.show({clusterInfo: calculateClusterInfo(clusters)});
+          })
+          .on("mouseout", function() {
+            tip.hide();
+          });
+    }
+    
     updateDetectedClusters(detectedClusters);
+    initClusterInfoTooltip();
     
     
     // ******************************* DENDROGRAM ****************************************
