@@ -68,8 +68,8 @@ foreach ($data_files as $data_file):
     <label class="widget">
       <span class="widget-label">Similarity threshold</span>
       <input id="snps-num" name="snps_num" type="text" size="3" value="10" disabled />
-      <span class="distance-unit units">SNPs</span>
-      <input id="snps" name="snps" class="range" type="range" min="1" step="1"/>
+      <span class="distance-unit units">parsnp SNPs</span>
+      <input id="snps" name="snps" class="range" type="range" min="1" step="1" />
     </label>
     <div class="clear"></div>
     <label class="widget" id="filter-cont">
@@ -104,7 +104,7 @@ foreach ($data_files as $data_file):
       <span class="num-clusters">N</span> clusters detected
       <a id="cluster-info"><svg height="24" width="18"></svg><i class="icon ion-md-help-circle"></i></a>
       <span id="cluster-list"></span>
-      <a href="javascript:void(0)" id="download-clusters"><i class="icon ion-md-download"></i>TSV</a>
+      <a href="javascript:void(0)" id="download-clusters"><i class="icon ion-md-download"></i><span>TSV</span></a>
     </label>
     <div class="clear"></div>
     <label class="widget"><span class="widget-label">Filter genomes by specimen order dates</span></label>
@@ -113,8 +113,8 @@ foreach ($data_files as $data_file):
       <a data-action="pause" class="toggle-btn mini toggle-btn-left active pause"><i class="icon ion-md-pause"></i></a>
       <a data-action="play" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-md-play"></i></a>
       <a data-action="play" data-speed="0.03" class="toggle-btn mini"><i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
-      <a data-action="playexpand" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-md-plus"></i> <i class="icon ion-md-play"></i></a>
-      <a data-action="playexpand" data-speed="0.03" class="toggle-btn mini toggle-btn-right"><i class="icon ion-md-plus"></i> <i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
+      <a data-action="playexpand" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i></a>
+      <a data-action="playexpand" data-speed="0.03" class="toggle-btn mini toggle-btn-right"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
     </label>
     <label id="histo-title">
       Histogram of

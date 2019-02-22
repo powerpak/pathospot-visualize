@@ -65,16 +65,20 @@ function stringifyTuple(tuple) {
   return tuple.join("\n");
 }
 
-function getFilters() {
-  var filters = $('#filter').val(),
-    mlstFilters = _.filter(filters, function(v) { return (/^MLST:/).test(v); }),
-    unitFilters = _.filter(filters, function(v) { return (/^Unit:/).test(v); });
-  return {
-    mergeSamePt: _.contains(filters, 'mergeSamePt'), 
-    clustersOnly: _.contains(filters, 'clustersOnly'),
-    mlsts: _.map(mlstFilters, function(v) { return v.split(':')[1]; }),
-    units: _.map(unitFilters, function(v) { return v.split(':')[1]; })
-  };
+function getFilters(sel) {
+  var filters = $(sel).val(),
+      out = {};
+  _.each(filters, function(filter) {
+    var pair = filter.split(':');
+    if (pair.length > 1) {
+      out[pair[0]] = out[pair[0]] || [];
+      if (!_.isArray(out[pair[0]])) { throw "Cannot have a filter that is both a flag and value-based." }
+      out[pair[0]].push(pair[1]);
+    } else {
+      out[pair[0]] = true;
+    }
+  });
+  return out;
 }
 
 Array.prototype.swap = function(x, y) {

@@ -9,7 +9,7 @@ function valid_assembly_name($name) {
 
 // From a `nodes` array in a `.heatmap.json` file, extract isolate data for only the assemblies
 // specified by $assembly_names
-function get_isolate_data($nodes, $assembly_names) {
+function get_isolate_data($nodes, $assembly_names=null) {
   $isolate_data = array();
   $keys = null;
   if (!key_exists("name", $nodes[0])) {
@@ -18,11 +18,32 @@ function get_isolate_data($nodes, $assembly_names) {
   }
   foreach($nodes as $node) {
     if ($keys !== null) { $node = array_combine($keys, $node); }
-    if (array_search($node["name"], $assembly_names) !== false) {
+    if ($assembly_names === null || array_search($node["name"], $assembly_names) !== false) {
       $isolate_data[$node["name"]] = $node;
     }
   }
   return $isolate_data;
+}
+
+
+// For a given array of `$trees` containing Newick-formatted trees, find the one that contains
+// ALL of the `$assembly_names`. Both the tree itself and its index are returned.
+// If no tree contained every single name in `$assembly_names`, nulls are returned.
+// NOTE: `$assembly_names` can also be a single assembly name, as a string.
+function find_matching_tree($trees, $assembly_names) {
+  $assembly_names = is_array($assembly_names) ? $assembly_names : array($assembly_names);
+  $matching_tree = null;
+  foreach ($trees as $which_tree => $tree) {
+    $num_matches = 0;
+    foreach ($assembly_names as $assembly_name) {
+      $num_matches += preg_match('/[(,]' . preg_quote($assembly_name, '/') . '[:,]/', $tree);
+    }
+    if ($num_matches == count($assembly_names)) {
+      $matching_tree = $tree;
+      break;
+    }
+  }
+  return array($matching_tree, $matching_tree !== null ? $which_tree : null);
 }
 
 
@@ -42,24 +63,29 @@ function load_from_heatmap_json($REQ) {
   }
   
   if (isset($json) && $json && is_array($json["trees"])) {
-    $assembly_names = isset($REQ['assemblies']) ? array_filter(explode(' ', $REQ['assemblies']), 'valid_assembly_name') : null;
-    if (!$assembly_names || !count($assembly_names)) { 
-      $error = "No valid assembly names were given in the `assemblies` parameter";
-    } else {
-      $isolates = get_isolate_data($json["nodes"], $assembly_names);
-      foreach ($json["trees"] as $which_tree => $tree) {
-        $num_matches = 0;
-        foreach ($assembly_names as $assembly_name) {
-          $num_matches += preg_match('/[(,]' . preg_quote($assembly_name, '/') . '[:,]/', $tree);
-        }
-        if ($num_matches == count($assembly_names)) {
-          $matching_tree = $tree;
-          break;
-        }
+    if (isset($REQ['assemblies'])) {
+      // Assemblies already specified. Get data to show the dendro-timeline.
+      $assembly_names = array_filter(explode(' ', $REQ['assemblies']), 'valid_assembly_name');
+      if (!$assembly_names || !count($assembly_names)) {
+        $error = "No valid assembly names were given in the `assemblies` parameter";
+      } else {
+        $isolates = get_isolate_data($json["nodes"], $assembly_names);
+        list($matching_tree, $which_tree) = find_matching_tree($json["trees"], $assembly_names);
       }
+      if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
+    } else {
+      // Picking the assemblies. Get all isolate data.
+      $assembly_select = isset($REQ['select']) ? array_filter(explode(' ', $REQ['select']), 'valid_assembly_name') : null;
+      $isolates = get_isolate_data($json["nodes"]);
+      // When picking the assemblies, `$which_tree` is a map of all assembly names to their tree (mash cluster) numbers
+      $which_tree = array();
+      foreach($isolates as $assembly_name => $isolate) {
+        list($matching_tree, $tree_num) = find_matching_tree($json["trees"], $assembly_name);
+        $which_tree[$assembly_name] = $tree_num;
+      }
+      return array($db, $assembly_select, $isolates, null, $which_tree, null);
     }
   } else { $error = "Could not load valid JSON from `db`. Is there a matching `.heatmap.json` file in `data/`?"; }
-  if (!$matching_tree) { $error = "Could not find a fully-linked tree that connects all the specified assemblies."; }
   
   return array($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error);
 }

@@ -6,11 +6,14 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.dendro-timeline.php');
 
+// Have we already picked assemblies (specified in query string), or do we need to show the UI to do so?
+$picking_assemblies = !isset($_GET['assemblies']);
+
 // Load everything we can from the .heatmap.json.
 // Note that for our purposes, $assembly_names are the primary IDs for each of the $isolates
 list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error) = load_from_heatmap_json($_GET);
 
-if (!$error) {
+if (!$error && !$picking_assemblies) {
   if ($matching_tree) { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
   if (!$pruned_tree) { $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`?"; }
   if ($isolates) { 
@@ -18,6 +21,7 @@ if (!$error) {
     $variants_json = variants_for_assemblies_as_json($db, $which_tree, $assembly_names);
   }
   if (!$encounters) { $error = "Could not load encounter data; is there an `.encounters.tsv` file corresponding to the `.heatmap.json` file?"; }
+  $pick_assemblies_url = basename(__FILE__) . "?db={$db}&select=" . implode('+', $assembly_names);
 }
 
 ?>
@@ -27,6 +31,8 @@ if (!$error) {
 <title>Surveillance Isolates - Dendrogram with Timeline</title>
 
 <link rel="stylesheet" href="css/d3-tip.css" />
+<link rel="stylesheet" href="css/select2.css" />
+<link rel="stylesheet" href="css/ionicons.min.css" />
 <link rel="stylesheet" href="css/phylotree.css">
 <link rel="stylesheet" href="css/phylotree.bootstrap.css">
 <link rel="stylesheet" href="css/style.css">
@@ -52,19 +58,108 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   
 <?php includeBeforeBody(); ?>
 
-<?php if ($error): ?>
+<?php 
+// =============================================
+// = Error occurred: show the message and halt =
+// =============================================
+if ($error): 
+?>
+
 <div class="error"><?= htmlspecialchars($error) ?></div>
-<?php else: ?>
+
+<?php 
+// =========================
+// = Assembly picking mode =
+// =========================
+elseif ($picking_assemblies): 
+?>
+
+<div id="pick-assemblies">
+  <div class="col">
+    <div class="top-section">
+      <label for="filter" class="widget-label">Filter the isolates / assemblies</label>
+      <select id="filter" name="filter" class="select2" multiple="multiple">
+      </select>
+    </div>
+    <table class="assemblies-list" id="list-left">
+      <tr>
+        <th class="tree"><i class="icon ion-md-folder"></i></th>
+        <th>Isolate ID</th><th>Anon Pt ID</th><th class="date">Date</th><th>Unit</th>
+        <th class="btn-col"></th>
+      </tr>
+    </table>
+  </div>
+  <div class="col thin center">
+    <label>
+      <a class="btn toggle-btn toggle-btn-both" id="add-all" href="javascript:void(0)">
+        Add all<br/>
+        <i class="icon ion-md-more"></i><br/>
+        <i class="icon ion-md-add-circle"></i> 
+      </a>
+    </label>
+    <label>
+      <a class="btn toggle-btn toggle-btn-both" id="remove-all" href="javascript:void(0)">
+        Remove all<br/>
+        <i class="icon ion-md-more"></i><br/>
+        <i class="icon ion-md-remove-circle"></i> 
+      </a>
+    </label>
+  </div>
+  <div class="col" id="assemblies-to-plot">
+    <div class="top-section">
+      <label class="widget-label">Isolates that will be plotted</label>
+      <div class="center">
+        <a class="toggle-btn toggle-btn-both btn-primary" href="javascript:void(0)" id="plot-assemblies">
+          Plot these isolates
+          <i class="icon ion-md-checkmark-circle"></i> 
+        </a>
+      </div>
+    </div>
+    <table class="assemblies-list" id="list-right">
+      <tr>
+        <th class="btn-col"></th>
+        <th class="tree"><i class="icon ion-md-folder"></i></th>
+        <th>Isolate ID</th><th>Anon Pt ID</th><th class="date">Date</th><th>Unit</th>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<script src="js/select2.min.js" charset="utf-8"></script>
+<script src="js/pathogendb.pick-assemblies.js"></script>
+<script type="text/javascript">
+  var isolates = <?= json_encode($isolates); ?>;
+  var assemblyNames = <?= json_encode($assembly_names); ?>;
+  var whichTree = <?= json_encode($which_tree); ?>;
+  var db = <?= json_encode($db); ?>;
+  $(function() {
+    pickAssemblies(isolates, assemblyNames, whichTree, db);
+  });
+</script>
+
+<?php
+// ====================================
+// = Show the full dendro-timeline UI =
+// ====================================
+else:
+?>
 
 <div id="controls">
   <div class="toolbar">
     <label class="widget">
+      <a class="toggle-btn toggle-btn-both" href="<?= htmlspecialchars($pick_assemblies_url) ?>">
+        Add/remove isolates...
+      </a>
+    </label>
+    <label class="widget pad-top">
       <span class="widget-label">Color by</span>
       <select id="color-nodes" name="color_nodes">
         <option value="collection_unit">Collection unit</option>
         <option value="ordered">Order date</option>
       </select>
     </label>
+    <!--
+    hide until we implement it
     <label class="widget">
       <span class="widget-label">Scale tree by</span>
       <select id="color-nodes" name="color_nodes" disabled>
@@ -72,7 +167,8 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
         <option value="time">Time</option>
       </select>
     </label>
-    <label class="widget">
+    -->
+    <label class="widget pad-top">
       <span class="widget-label">Variant labels</span>
       <select id="variant-labels" name="variant_labels">
         <option value="">Hide</option>
@@ -180,7 +276,9 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
   });
 </script>
 
-<?php endif; ?>
+<?php
+endif;
+?>
 
 <?php includeAfterBody(); ?>
 

@@ -32,6 +32,9 @@ svg {
   margin-right: 1em;
   line-height: 1.5em;
 }
+.widget.pad-top {
+  margin-top: 9px;
+}
 
 .background {
   fill: #eee;
@@ -53,6 +56,8 @@ svg {
 
 .toggle-btn-left { border-radius: 8px 0 0 8px; }
 .toggle-btn-right { border-radius: 0 8px 8px 0; border-right-width: 1px; }
+.toggle-btn-both { border-radius: 8px; border-right-width: 1px; }
+
 
 .toggle-btn.mini {
   margin-top: -0.3em;
@@ -80,6 +85,9 @@ svg {
 /* = HEATMAP STYLES = */
 /* ================== */
 
+#snps {
+  display: none;
+}
 #snps-num {
   text-align: right;
 }
@@ -106,7 +114,8 @@ svg {
 }
 
 #cluster-info {
-  margin: 0 0.2em 0 0.4em;
+  position: relative;
+  left: 8px;
 }
 #cluster-info svg {
   position: absolute;
@@ -126,6 +135,7 @@ svg {
 #cluster-list {
   position: relative;
   top: -1px;
+  margin-left: 12px;
 }
 
 #cluster-list a {
@@ -463,6 +473,120 @@ text.axis-label {
   fill: url(#diagonal-stripe-5) #fff;
   opacity: 0.2;
 }*/
+
+#pick-assemblies {
+  width: 900px;
+  margin: 30px auto;
+}
+
+#pick-assemblies .col {
+  width: 360px;
+  float: left;
+}
+#pick-assemblies .top-section {
+  min-height: 85px;
+}
+
+#pick-assemblies .center {
+  text-align: center;
+}
+#pick-assemblies .col.thin {
+  width: 140px;
+  padding-top: 150px;
+}
+#pick-assemblies .col .toggle-btn {
+  float: none;
+}
+#pick-assemblies .col.thin label {
+  margin-top: 20px;
+}
+#pick-assemblies .col.thin .toggle-btn {
+  min-width: 120px;
+  border: 1px solid #eee;
+}
+#pick-assemblies .col.thin .toggle-btn:hover {
+  color: #157ab5;
+  border-color: #b0bdc6;
+}
+#pick-assemblies .toggle-btn .icon {
+  font-size: 150%;
+  position: relative;
+  top: 2px;
+  left: 3px;
+  line-height: 6px;
+}
+
+#pick-assemblies .col label {
+  display: block;
+}
+
+#pick-assemblies .col select {
+  width: 100%;
+}
+
+.assemblies-list {
+  background: #fafafa;
+  table-layout: fixed;
+  width: 100%;
+  border-radius: 4px;
+}
+.assemblies-list .date {
+  width: 27%;
+}
+.assemblies-list .tree {
+  width: 20px;
+  font-weight: bold;
+  text-align: center;
+}
+.assemblies-list .tree i {
+  font-size: 130%;
+}
+.assemblies-list .btn-col {
+  width: 30px;
+  font-size: 150%;
+  text-align: center;
+  color: #536570;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+.assemblies-list .btn-col:hover, .assemblies-list .btn-col.active {
+  color: #157ab5;
+}
+.assemblies-list .disabled .btn-col i {
+  color: transparent;
+}
+.assemblies-list .btn-col.active i {
+  position: relative;
+  top: 1px;
+  left: 1px;
+}
+.assemblies-list th {
+  font-size: 80%;
+}
+.assemblies-list td, #pick-assemblies .assemblies-list th {
+  padding: 0 2px 0 6px;
+}
+.assemblies-list td {
+  border-top: 1px solid #ccc;
+}
+
+#pick-assemblies .disabled {
+  opacity: 0.4;
+}
+
+#pick-assemblies .select2-container {
+  margin-top: 8px;
+}
+
+#plot-assemblies {
+  display: block;
+  font-weight: bold;
+}
 
 /* ========================= */
 /* = SELECT2 CUSTOMIZATION = */

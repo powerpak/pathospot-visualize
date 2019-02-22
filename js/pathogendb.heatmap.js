@@ -120,8 +120,8 @@ $(function() {
     // The parameter `filters` is an object with the following possible keys:
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
-    //   `mlsts: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
-    //   `units: ['MICU', ...]` will show only nodes that have these `.collection_unit`s
+    //   `mlst_subtype: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
+    //   `collection_unit: ['MICU', ...]` will show only nodes that have these `.collection_unit`s
     function calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],
@@ -218,12 +218,11 @@ $(function() {
       if (filters.clustersOnly) { 
         visibleNodes = _.reject(visibleNodes, function(node) { return node.count <= 0; }); 
       }
-      if (filters.mlsts && filters.mlsts.length) {
-        visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters.mlsts, node.mlst_subtype); }); 
-      }
-      if (filters.units && filters.units.length) {
-        visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters.units, node.collection_unit); }); 
-      }
+      _.each(['mlst_subtype', 'collection_unit'], function(field) {
+        if (filters[field] && filters[field].length) {
+          visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters[field], node[field]); }); 
+        }
+      });
       
       // We only need to cluster `nodes` that have at least one link below snpThreshold
       // All other nodes could not possibly be within any clusters, and only waste time during `HClust.agnes` below
@@ -257,7 +256,7 @@ $(function() {
     
       fullMatrix = matrix;
     }
-    calculateMatrixAndNodeSubsets(nodes, links, DEFAULT_SNP_THRESHOLD, getFilters());
+    calculateMatrixAndNodeSubsets(nodes, links, DEFAULT_SNP_THRESHOLD, getFilters('#filter'));
 
 
     // ************************* FILTERING AND ORDERING *****************************
@@ -1184,11 +1183,11 @@ $(function() {
     
     var mlsts = _.reject(_.map(_.pluck(nodes, 'mlst_subtype'), function(v) { return parseInt(v, 10); }), _.isNaN);
     _.each(_.sortBy(_.uniq(mlsts)), function(mlst) { 
-      $('#mlsts').append('<option value="MLST:' + mlst + '">MLST: ' + mlst + '</option>'); 
+      $('#mlsts').append('<option value="mlst_subtype:' + mlst + '">MLST: ' + mlst + '</option>'); 
     });
     var units = _.pluck(nodes, 'collection_unit');
     _.each(_.sortBy(_.compact(_.uniq(units))), function(unit) { 
-      $('#units').append('<option value="Unit:' + unit + '">Unit: ' + unit + '</option>'); 
+      $('#units').append('<option value="collection_unit:' + unit + '">Unit: ' + unit + '</option>'); 
     });
     $('#filter').select2({placeholder: "Click to add/remove filters"})
     $('#filter-cont .select2-selection').append(
@@ -1312,7 +1311,7 @@ $(function() {
     function changeSnpThreshold() {
       interruptAllTransitions();
       var snpThreshold = parseInt($('#snps-num').val(), 10);      
-      calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, getFilters());
+      calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, getFilters('#filter'));
     
       z.domain([snpThreshold + 1, 0]);
     
