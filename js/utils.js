@@ -50,7 +50,7 @@ function getURLParameter(name) {
 }
 
 function numberWithCommas(x) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (_.isNull(x) ? '' : x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 function rot13(s) {

@@ -1181,7 +1181,7 @@ $(function() {
     $("#order").on("change", function() { reorder(); });
     $('#db').on('change', function() { window.location.search = '?db=' + $(this).val(); });
     
-    var mlsts = _.reject(_.map(_.pluck(nodes, 'mlst_subtype'), function(v) { return parseInt(v, 10); }), _.isNaN);
+    var mlsts = _.pluck(nodes, 'mlst_subtype');
     _.each(_.sortBy(_.uniq(mlsts)), function(mlst) { 
       $('#mlsts').append('<option value="mlst_subtype:' + mlst + '">MLST: ' + mlst + '</option>'); 
     });
