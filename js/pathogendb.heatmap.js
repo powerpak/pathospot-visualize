@@ -936,7 +936,8 @@ $(function() {
     // ******************************* DENDROGRAM ****************************************
     
     var dendroG = heatmapG.append("g")
-        .attr("class", "dendro");
+        .attr("class", "dendro")
+        .attr("transform", "translate(" + width + ",0)");
         
     dendroG.append("path")
         .attr("d", "M0,0 H" + dendroRight * 0.9)
