@@ -332,7 +332,9 @@ $(function() {
     
     sliderSvg.append("g")
         .attr("class", "beeswarm");
-        
+    
+    // Applies quadratic penalties for points being laid out more than 1px horizontally from their correct
+    // position, and anywhere outside the upper/lower boundaries of the slider.
     function calculateLayoutBadness(nodes, sliderX, sliderHeight) {
       var badness = 0, xTolerance = 1, nodesChecked = 0;
       _.each(nodes, function(node) {

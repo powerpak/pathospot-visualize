@@ -15,7 +15,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     chrom: function(d) { 
       return (/^u\d{5}crpx_c_/).test(d) ? "chromosome" : ((/^u\d{5}crpx_p_/).test(d) ? "plas." : "other"); 
     }
-  }
+  };
+  var isolatePath = function(iso) { 
+    var radius = iso.symbolRadius || nodeRadius;
+    return d3.svg.symbol().size(Math.PI * radius * radius).type(d3.svg.symbolTypes[iso.symbol || 0])(); 
+  };
   
   // D3 scales, formats, and other helpers that are used globally
   var spectralScale = d3.scale.linear()
@@ -100,19 +104,23 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   tree.style_nodes(function(container, node) {
     if (d3.layout.phylotree.is_leafnode(node)) {
       var shiftTip = tree.shift_tip(node)[0],
-          circle = container.selectAll("circle").data([node]),
-          texts = container.selectAll("text").data(isolateColumns),
           isolate = isolates[node.name],
+          symbol = container.selectAll("path").data([isolate]),
+          texts = container.selectAll("text").data(isolateColumns),
           fillColor = colorByFunctions.isolates[$colorBy.val()](isolate),
           strokeColor = d3.rgb(fillColor).darker().toString(),
           ntOrAa = $variantNtOrAa.val(),
           variantG, variantGGs, variantEnter;
     
-      circle.exit().remove();
-      circle.enter().append("circle")
-          .attr("r", nodeRadius)
-          .attr("cx", nodeRadius);
-      circle.style("fill", fillColor)
+      symbol.exit().remove();
+      symbol.enter().append("path")
+          .attr("class", "isolate isolate-" + fixForClass(isolate.assembly_ID))
+          .on("mouseover", function() { mouseEnterIsolate(d3.event.target); })
+          .on("mouseout", function() { mouseLeaveIsolate(d3.event.target); })
+          .on("click", function() { clickIsolate(d3.event.target); });
+      symbol.attr("d", isolatePath(isolate))
+          .attr("transform", "translate(" + (isolate.symbolRadius || nodeRadius) + ',0)')
+          .style("fill", fillColor)
           .style("stroke", strokeColor);
       
       // Add columns of textual metadata according to the spec in `isolateColumns`
@@ -296,9 +304,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   }
   updateColorLegend(tree);
   
-  // ====================================
-  // = Setup tooltips for the timeline  =
-  // ====================================
+  // =====================================================
+  // = Setup tooltips and mouse events for the timeline  =
+  // =====================================================
   
   var tipRows = {
         department_name: "Unit",
@@ -329,46 +337,76 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       .html(tipHtml);
   d3.select("#timeline").call(tip);
   
+  // Generic handlers for mouse events on encounter and isolate SVG elements
+  function mouseLeaveEncounter(el) {
+    $(el).removeClass("hover");
+    $(".encounter").removeClass("hover-highlight");
+    tip.hide(d3.select(el).data()[0], el); 
+  }
+  function mouseEnterEncounter(el) {
+    var $encG = $(el).parent(),
+        hoverAction = $hover.val(),
+        enc, $hoverHighlight;
+    // The .appendTo()'s here move hovered <rect>'s to the end of the parent so they draw on top
+    $(el).addClass("hover").appendTo($encG);
+    enc = d3.select(el).data()[0];
+    hoverAction && tip.show(enc, el);
+    if (hoverAction == 'unit') { 
+      $hoverHighlight = $(".encounter.dept-" + fixForClass(enc.department_name)).not(el)
+    } else if (hoverAction == 'patient') {
+      $hoverHighlight = $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el)
+    }
+    if ($hoverHighlight) { $hoverHighlight.addClass("hover-highlight").appendTo($encG); }
+  }
+  function mouseLeaveIsolate(el) {
+    $(".hover.isolate").removeClass("hover");
+  }
+  function mouseEnterIsolate(el) {
+    var iso = d3.select(el).data()[0];
+    $(".isolate-" + fixForClass(iso.assembly_ID)).addClass("hover");
+  }
+  function clickIsolate(el) {
+    var iso = d3.select(el).data()[0];
+    iso.symbolRadius = nodeRadius * 1.5;
+    iso.symbol = (((iso.symbol || 0) - 1) + d3.svg.symbolTypes.length) % d3.svg.symbolTypes.length;
+    $timeline.trigger("updateSymbols");
+    tree.update();
+  }
+  
   // We have to set up custom mouse event handlers, using `document.elementFromPoint`, because
   // the timeline has a `<rect class="zoom-rect"/>` in front of it to capture mouse events for the zoom
-  // interaction. These functions recalculate mouseover/out targets with the zoom-rect hidden.
+  // interaction. These functions recalculate mouseover/out/click targets with the zoom-rect hidden.
   var prevHoverEl = null;
   $timeline.on("mousemove", function(e) {
     var prevDisplay = $(".zoom-rect").css("display"),
-        hoverAction = $hover.val(),
-        enc, el, $encG, $hoverHighlight;
+        $prevHoverEl = $(prevHoverEl),
+        el;
     $(".zoom-rect").css("display", "none");
     el = document.elementFromPoint(e.clientX, e.clientY);
     if (el !== prevHoverEl) {
-      if ($(prevHoverEl).hasClass("encounter")) { 
-        $(prevHoverEl).removeClass("hover");
-        $(".encounter").removeClass("hover-highlight");
-        tip.hide(d3.select(prevHoverEl).data()[0], prevHoverEl); 
-      }
-      if ($(el).hasClass("encounter")) {
-        $encG = $(el).parent();
-        // The .appendTo()'s here move hovered <rect>'s to the end of the parent so they draw on top
-        $(el).addClass("hover").appendTo($encG);
-        enc = d3.select(el).data()[0];
-        hoverAction && tip.show(enc, el);
-        if (hoverAction == 'unit') { 
-          $hoverHighlight = $(".encounter.dept-" + fixForClass(enc.department_name)).not(el)
-        } else if (hoverAction == 'patient') {
-          $hoverHighlight = $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el)
-        }
-        if ($hoverHighlight) { $hoverHighlight.addClass("hover-highlight").appendTo($encG); }
-      }
+      // mouseleave actions
+      if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
+      else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
+      // mouseenter actions
+      if ($(el).hasClass("encounter")) { mouseEnterEncounter(el); } 
+      else if ($(el).hasClass("isolate")) { mouseEnterIsolate(el); }
       prevHoverEl = el;
     }
     $(".zoom-rect").css("display", prevDisplay);
   });
   $timeline.on("mouseleave", function(e) {
-    if ($(prevHoverEl).hasClass("encounter")) {
-      $(prevHoverEl).removeClass("hover");
-      $(".encounter").removeClass("hover-highlight");
-      tip.hide(d3.select(prevHoverEl).data()[0], prevHoverEl); 
-    }
+    var $prevHoverEl = $(prevHoverEl);
+    if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
+    else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
     prevHoverEl = null;
+  });
+  $timeline.on("click", function(e) {
+    var prevDisplay = $(".zoom-rect").css("display"),
+        el;
+    $(".zoom-rect").css("display", "none");
+    el = document.elementFromPoint(e.clientX, e.clientY);
+    if ($(el).hasClass("isolate")) { clickIsolate(el); }
+    $(".zoom-rect").css("display", prevDisplay);
   });
   
   // ===================================
@@ -573,13 +611,13 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         isolateStroke = function(iso) { return d3.rgb(isolateFill(iso)).darker().toString(); };
     plotAreaG.append("g")
         .attr("class", "isolates")
-      .selectAll("circle")
+      .selectAll("path")
         .data(_.filter(isolates, function(iso) { return !!iso.ordered; }))
-      .enter().append("circle")
-        .attr("r", nodeRadius)
+      .enter().append("path")
+        .attr("class", function(iso) { return "isolate isolate-" + fixForClass(iso.assembly_ID); })
+        .attr("d", isolatePath)
         .style("fill", isolateFill)
-        .style("stroke", isolateStroke)
-        .attr("pointer-events", "none");
+        .style("stroke", isolateStroke);
     
     // Create a placeholder for Y axis labels
     timelineSvg.append("g")
@@ -601,7 +639,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         .call(zoom);
     
     // Bind event handler to redraw axes/data after zooming/panning along the X axis
-    $timeline.unbind("zoomX").on("zoomX", function() {
+    $timeline.unbind("zoomX").on("zoomX", function(e, reorderingY) {
       var e = d3.event || zoomCache.last;
       // NOTE: we used to transform parent <g>'s directly from the d3.event calculations, e.g.
       //   .attr("transform", "translate(" + e.translate[0] + "," + "0)scale(" + e.scale + ",1)");
@@ -609,8 +647,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       // Now, we have to reposition every datapoint.
       xAxis.ticks(Math.floor($timeline.find(".zoom-rect").width() / 100));
       timelineSvg.select("g.x.axis").call(xAxis);
-      timelineSvg.select(".isolates").selectAll("circle")
-          .attr("cx", isolateX);
+      if (!reorderingY) {
+        timelineSvg.select(".isolates").selectAll("path")
+            .attr("transform", function(iso) { return 'translate(' + isolateX(iso) + ',' + isolateY(iso) + ')'; } );
+      }
       timelineSvg.select(".encounters").selectAll("rect")
           .attr("x", encX)
           .attr("width", encWidth);
@@ -666,8 +706,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
             return _.max(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }))
                 + rowHeight;
           });
-      plotAreaG.select(".isolates").selectAll("circle").transition().duration(duration)
-          .attr("cy", isolateY);
+      plotAreaG.select(".isolates").selectAll("path").transition().duration(duration)
+          .attr("transform", function(iso) { return 'translate(' + isolateX(iso) + ',' + isolateY(iso) + ')'; } );
           
       var yAxisLabels = timelineSvg.select(".y.axis")
         .selectAll("text")
@@ -687,14 +727,23 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     });
     
     // Bind event handler to resize the timeline after resizing the browser window
-    $timeline.unbind("resizeWidth").on("resizeWidth", function() {
+    $timeline.unbind("resizeWidth").on("resizeWidth", function(e, reorderingY) {
       resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, zoom);
-      $timeline.trigger("zoomX");
+      $timeline.trigger("zoomX", reorderingY);
+    });
+    
+    // Bind event handler for updating isolate symbols when clicking them
+    $timeline.unbind("updateSymbols").on("updateSymbols", function() {
+      timelineSvg.select(".isolates").selectAll("path")
+          .attr("d", isolatePath);
     });
 
     $timeline.trigger("reorderY", true);
     $timeline.trigger("resizeWidth");
   }
+  
+  // If there are more than three patients, initially collapse the timeline vertically to save space
+  $yGrouping.val(_.pluck(isolates, 'eRAP_ID').length > 3 ? "0" : "0,1");
   updateTimeline(encounters, isolates);
   
   // ==============================================================
@@ -713,7 +762,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   
   $yGrouping.change(function() {
     $timeline.trigger("reorderY", false);
-    $timeline.trigger("resizeWidth");
+    $timeline.trigger("resizeWidth", true);
   });
   
   $variantLabels.change(updateVariantLabels);

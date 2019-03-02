@@ -371,6 +371,10 @@ text.axis-label {
   margin-left: 100px;
 }
 
+#dendro .isolate {
+  cursor: pointer;
+}
+
 #dendro .variant-map rect {
   stroke: #444;
   stroke-width: 1px;
@@ -460,7 +464,6 @@ text.axis-label {
   stroke-width: 2px;
 }
 
-
 #timeline .transfers line {
   stroke: #999;
   stroke-width: 1px;
@@ -473,6 +476,11 @@ text.axis-label {
   fill: url(#diagonal-stripe-5) #fff;
   opacity: 0.2;
 }*/
+
+#timeline .isolate.hover, #dendro .isolate.hover {
+  stroke: #000 !important;
+  stroke-width: 3px;
+}
 
 #pick-assemblies {
   width: 900px;
