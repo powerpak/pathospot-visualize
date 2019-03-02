@@ -360,7 +360,6 @@ $(function() {
         for (var i = 0; i < 120; ++i) { simulation.tick(); }
         if (calculateLayoutBadness(filteredNodes, sliderX, sliderHeight) < threshold) { break; }
       }
-      console.log(radius);
 
       var circle = sliderSvg.select("g.beeswarm").selectAll("circle")
           .attr("title", function(d) { return d.order_date; })
