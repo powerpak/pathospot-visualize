@@ -332,24 +332,44 @@ $(function() {
     
     sliderSvg.append("g")
         .attr("class", "beeswarm");
+        
+    function calculateLayoutBadness(nodes, sliderX, sliderHeight) {
+      var badness = 0, xTolerance = 1, nodesChecked = 0;
+      _.each(nodes, function(node) {
+        if (!node.ordered) { return; }
+        nodesChecked += 1;
+        var clipX = Math.abs(node.x - sliderX(node.ordered));
+        if (clipX > xTolerance) { badness += (clipX - xTolerance) * (clipX - xTolerance); }
+        var clipY = Math.abs(node.y - sliderHeight / 2);
+        if (clipY > sliderHeight / 2) { badness += (clipY - sliderHeight / 2) * (clipY - sliderHeight / 2); }
+      });
+      return badness / nodesChecked;
+    }
   
     function updateNodes(filteredNodes) {
-      var simulation = d3.forceSimulation(filteredNodes)
-          .force("x", d3.forceX(function(d) { return d.ordered ? sliderX(d.ordered) : -1000; }).strength(1))
-          .force("y", d3.forceY(sliderHeight / 2))
-          .force("collide", d3.forceCollide(4.5))
-          .stop();
-          
-      for (var i = 0; i < 120; ++i) simulation.tick();
+      var possibleRadii = [4.0, 3.0, 2.5, 2.0, 1.5, 1.0, 0.8, 0.6], threshold = 3.0, radius, simulation;
+      
+      while (possibleRadii.length) {
+        radius = possibleRadii.shift();
+        simulation = d3.forceSimulation(filteredNodes)
+            .force("x", d3.forceX(function(d) { return d.ordered ? sliderX(d.ordered) : -1000; }).strength(1))
+            .force("y", d3.forceY(sliderHeight / 2))
+            .force("collide", d3.forceCollide(radius + 0.5))
+            .stop();
+        
+        for (var i = 0; i < 120; ++i) { simulation.tick(); }
+        if (calculateLayoutBadness(filteredNodes, sliderX, sliderHeight) < threshold) { break; }
+      }
+      console.log(radius);
 
       var circle = sliderSvg.select("g.beeswarm").selectAll("circle")
           .attr("title", function(d) { return d.order_date; })
           .data(filteredNodes, function(d) { return d.i; });
     
-      var circleEnter = circle.enter().append("circle")
-          .attr("r", 4);
+      var circleEnter = circle.enter().append("circle");
 
       circleEnter.merge(circle)
+          .attr("r", radius)
           .attr("visibility", function(d) { return d.ordered ? "visible" : "hidden"; })
           .attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; })
           .attr("class", function(d) { return d.count > 0 ? 'transmission' : '' })
