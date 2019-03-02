@@ -117,7 +117,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           .attr("class", "isolate isolate-" + fixForClass(isolate.assembly_ID))
           .on("mouseover", function() { mouseEnterIsolate(d3.event.target); })
           .on("mouseout", function() { mouseLeaveIsolate(d3.event.target); })
-          .on("click", function() { clickIsolate(d3.event.target); });
+          .on("click", function() { clickIsolate(d3.event.target, d3.event.altKey); });
       symbol.attr("d", isolatePath(isolate))
           .attr("transform", "translate(" + (isolate.symbolRadius || nodeRadius) + ',0)')
           .style("fill", fillColor)
@@ -125,8 +125,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       
       // Add columns of textual metadata according to the spec in `isolateColumns`
       texts.exit().remove();
-      texts.enter().append("text");
+      texts.enter().append("text")
       texts.attr("x", function(d) { return nodeRadius * 2.5 + d[1]; })
+          .attr("class", "isolate-metadata isolate-" + fixForClass(isolate.assembly_ID))
           .attr("transform", "translate(" + shiftTip + ",0)")
           .attr("dx", nodeRadius)
           .attr("dy", nodeRadius)
@@ -359,16 +360,17 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     if ($hoverHighlight) { $hoverHighlight.addClass("hover-highlight").appendTo($encG); }
   }
   function mouseLeaveIsolate(el) {
-    $(".hover.isolate").removeClass("hover");
+    $(".hover.isolate, .hover.isolate-metadata").removeClass("hover");
   }
   function mouseEnterIsolate(el) {
     var iso = d3.select(el).data()[0];
     $(".isolate-" + fixForClass(iso.assembly_ID)).addClass("hover");
   }
-  function clickIsolate(el) {
-    var iso = d3.select(el).data()[0];
-    iso.symbolRadius = nodeRadius * 1.5;
-    iso.symbol = (((iso.symbol || 0) - 1) + d3.svg.symbolTypes.length) % d3.svg.symbolTypes.length;
+  function clickIsolate(el, reset) {
+    var iso = d3.select(el).data()[0],
+      numSymbols = d3.svg.symbolTypes.length;
+    iso.symbolRadius = reset ? nodeRadius : nodeRadius * 1.5;
+    iso.symbol = reset ? 0 : (((iso.symbol || 0) - 1) + numSymbols) % numSymbols;
     $timeline.trigger("updateSymbols");
     tree.update();
   }
@@ -405,7 +407,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         el;
     $(".zoom-rect").css("display", "none");
     el = document.elementFromPoint(e.clientX, e.clientY);
-    if ($(el).hasClass("isolate")) { clickIsolate(el); }
+    if ($(el).hasClass("isolate")) { clickIsolate(el, e.altKey); }
     $(".zoom-rect").css("display", prevDisplay);
   });
   

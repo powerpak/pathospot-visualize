@@ -374,6 +374,9 @@ text.axis-label {
 #dendro .isolate {
   cursor: pointer;
 }
+#dendro .isolate-metadata.hover {
+  font-weight: bold;
+}
 
 #dendro .variant-map rect {
   stroke: #444;
