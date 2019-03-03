@@ -61,7 +61,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var $yGrouping = $('#timeline-grouping');
   var $hover = $('#hover');
   var $variantLabels = $('#variant-labels');
-  var $variantNtOrAa = $('#variant-nt-or-aa')
+  var $variantNtOrAa = $('#variant-nt-or-aa');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -114,7 +114,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     
       symbol.exit().remove();
       symbol.enter().append("path")
-          .attr("class", "isolate isolate-" + fixForClass(isolate.assembly_ID))
+          .attr("class", "isolate isolate-" + fixForClass(isolate.name))
           .on("mouseover", function() { mouseEnterIsolate(d3.event.target); })
           .on("mouseout", function() { mouseLeaveIsolate(d3.event.target); })
           .on("click", function() { clickIsolate(d3.event.target, d3.event.altKey); });
@@ -127,7 +127,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       texts.exit().remove();
       texts.enter().append("text")
       texts.attr("x", function(d) { return nodeRadius * 2.5 + d[1]; })
-          .attr("class", "isolate-metadata isolate-" + fixForClass(isolate.assembly_ID))
+          .attr("class", "isolate-metadata isolate-" + fixForClass(isolate.name))
           .attr("transform", "translate(" + shiftTip + ",0)")
           .attr("dx", nodeRadius)
           .attr("dy", nodeRadius)
@@ -364,7 +364,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   }
   function mouseEnterIsolate(el) {
     var iso = d3.select(el).data()[0];
-    $(".isolate-" + fixForClass(iso.assembly_ID)).addClass("hover");
+    $(".isolate-" + fixForClass(iso.name)).addClass("hover");
   }
   function clickIsolate(el, reset) {
     var iso = d3.select(el).data()[0],
@@ -564,7 +564,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     // Draw patient Y axis dividers in the very back.
     // For now a placeholder is created that is filled later by the `reorderY` handler below.
     var ptDividersG = timelineSvg.append("g")
-        .attr("class", "pt-dividers");
+        .attr("class", "pt-dividers noselect");
                 
     // Draw X axis in the back
     timelineSvg.append("g")
@@ -616,14 +616,14 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       .selectAll("path")
         .data(_.filter(isolates, function(iso) { return !!iso.ordered; }))
       .enter().append("path")
-        .attr("class", function(iso) { return "isolate isolate-" + fixForClass(iso.assembly_ID); })
+        .attr("class", function(iso) { return "isolate isolate-" + fixForClass(iso.name); })
         .attr("d", isolatePath)
         .style("fill", isolateFill)
         .style("stroke", isolateStroke);
     
     // Create a placeholder for Y axis labels
     timelineSvg.append("g")
-        .attr("class", "y axis");
+        .attr("class", "y axis noselect");
     
     // Add a clipping mask so data that moves outside the plot area is clipped
     timelineSvg.append("clipPath")
@@ -682,7 +682,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       
       var ptDividersGEnter = ptDividersGG.enter().append("g");
       ptDividersGEnter.append("rect")
-          .attr("x", 0)
+          .attr("x", 0);
       ptDividersGEnter.append("text")
           .attr("text-anchor", "end")
           .attr("dy", rowHeight * 0.5);

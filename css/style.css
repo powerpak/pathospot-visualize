@@ -44,6 +44,15 @@ svg {
   clear: both;
 }
 
+.noselect {
+  -webkit-touch-callout: none;
+    -webkit-user-select: none;
+     -khtml-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+
 .toggle-btn {
   float: left;
   display: inline-block;
@@ -57,7 +66,6 @@ svg {
 .toggle-btn-left { border-radius: 8px 0 0 8px; }
 .toggle-btn-right { border-radius: 0 8px 8px 0; border-right-width: 1px; }
 .toggle-btn-both { border-radius: 8px; border-right-width: 1px; }
-
 
 .toggle-btn.mini {
   margin-top: -0.3em;
@@ -436,6 +444,7 @@ text.axis-label {
 
 #timeline .pt-dividers g rect {
   fill: none;
+  cursor: move;
 }
 
 #timeline .pt-dividers g:nth-child(even) rect {
@@ -446,6 +455,8 @@ text.axis-label {
   font-size: 12px;
   font-weight: bold;
   fill: #777;
+  cursor: move;
+  text-select: ;
 }
 #timeline .single-groups .pt-dividers text {
   display: none;
@@ -558,12 +569,6 @@ text.axis-label {
   text-align: center;
   color: #536570;
   cursor: pointer;
-  -webkit-touch-callout: none;
-    -webkit-user-select: none;
-     -khtml-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
 }
 .assemblies-list .btn-col:hover, .assemblies-list .btn-col.active {
   color: #157ab5;

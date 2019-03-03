@@ -91,7 +91,7 @@ function pickAssemblies(isolates, assemblyNames, whichTree) {
     $tab.find('tr:not(:first)').remove();
     _.each(selected, function(iso) {
       var $tr = $('<tr/>').data('assembly_name', iso.name),
-          $btnTd = $('<td/>').addClass('btn-col');
+          $btnTd = $('<td/>').addClass('btn-col noselect');
       
       _.each(cols, function(col) {
         var val = FORMAT_FOR_DISPLAY[col] ? FORMAT_FOR_DISPLAY[col](iso[col]): iso[col];
