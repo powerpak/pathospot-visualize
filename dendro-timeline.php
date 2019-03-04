@@ -195,7 +195,7 @@ else:
   
   <div class="toolbar clear">
     <label class="widget">
-      <span class="widget-label">Filter timeline events</span>
+      <span class="widget-label">Filter events</span>
       <select id="filter" name="filter">
         <option value="inpatient">Inpatient only</option>
         <option value="outpatient">Outpatient only</option>
@@ -203,10 +203,10 @@ else:
       </select>
     </label>
     <label class="widget">
-      <span class="widget-label">Timeline Y axis </span>
+      <span class="widget-label">Y axis </span>
       <select id="timeline-grouping" name="timeline_grouping">
-        <option value="0,1">Group by patient, then by location</option>
-        <option value="1,0">Group by location, then eRAP ID</option>
+        <option value="0,1">Group by patient, then location</option>
+        <option value="1,0">Group by location, then patient</option>
         <option value="0">Group by patient only</option>
         <option value="1">Group by location only</option>
       </select>
