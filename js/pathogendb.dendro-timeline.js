@@ -1,12 +1,12 @@
 function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
-  // Constants.
-  var colors = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 
+  // Global constants.
+  var COLORS = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 
     "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", 
     "#73B583", "#7CB878", "#86BB6E", "#90BC65", "#9ABD5C", "#A4BE56", "#AFBD4F", "#B9BC4A", 
     "#C2BA46", "#CCB742", "#D3B240", "#DAAC3D", "#DFA43B", "#E39B39", "#E68F36", "#E68234", 
     "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
-  var unknownColor = "#AAA";
-  var nodeRadius = 4;
+  var UNKNOWN_COLOR = "#AAA";
+  var NODE_RADIUS = 4;
   
   // Utility functions for formatting various fields for display, or generating a symbol for an isolate.
   var FORMAT_FOR_DISPLAY = {
@@ -24,35 +24,32 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       return d; 
     }
   };
-  var isolatePath = function(iso) { 
-    var radius = iso.symbolRadius || nodeRadius;
+  function isolateSymbolPath(iso) { 
+    var radius = iso.symbolRadius || NODE_RADIUS;
     return d3.svg.symbol().size(Math.PI * radius * radius).type(d3.svg.symbolTypes[iso.symbol || 0])(); 
   };
 
   
   // D3 scales, formats, and other helpers that are used globally
   var spectralScale = d3.scale.linear()
-      .domain(_.range(colors.length))
+      .domain(_.range(COLORS.length))
       .interpolate(d3.interpolateHcl)
-      .range(_.map(colors, function(v) { return d3.rgb(v); }));
+      .range(_.map(COLORS, function(v) { return d3.rgb(v); }));
   var orderedScale = d3.time.scale()
-      .range([0, colors.length - 1]);
+      .range([0, COLORS.length - 1]);
   var orderedFormat = d3.time.format("%b %Y");
   var collectionUnitScale = d3.scale.ordinal()
       .domain(_.uniq(_.compact(_.pluck(isolates, 'collection_unit'))).sort())
-      .rangePoints([0, colors.length - 1]);
+      .rangePoints([0, COLORS.length - 1]);
   var isLeafNode = d3.layout.phylotree.is_leafnode;
-  
-  // jQuery objects for controls that can update the visualization
-  var $colorBy = $('#color-nodes');
   var colorByFunctions = {
     isolates: {
       ordered: function(isolate) { 
-        return isolate.ordered ? spectralScale(orderedScale(isolate.ordered)) : unknownColor; 
+        return isolate.ordered ? spectralScale(orderedScale(isolate.ordered)) : UNKNOWN_COLOR; 
       },
       collection_unit: function(isolate) {
         return isolate.collection_unit ? spectralScale(collectionUnitScale(isolate.collection_unit)) : 
-            unknownColor;
+            UNKNOWN_COLOR;
       }
     }, 
     encounters: {
@@ -64,6 +61,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       }
     }
   }
+  
+  // jQuery objects for controls that can update the visualization
+  var $colorBy = $('#color-nodes');
   var $dendroTimeline = $('#dendro-timeline');
   var $filter = $('#filter');
   var $timeline = $('#timeline');
@@ -126,20 +126,22 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           .attr("class", "isolate isolate-" + fixForClass(isolate.name))
           .on("mouseover", function() { mouseEnterIsolate(d3.event.target); })
           .on("mouseout", function() { mouseLeaveIsolate(d3.event.target); })
-          .on("click", function() { clickIsolate(d3.event.target, d3.event.altKey); });
-      symbol.attr("d", isolatePath(isolate))
-          .attr("transform", "translate(" + (isolate.symbolRadius || nodeRadius) + ',0)')
+          .on("click", function() { 
+            clickIsolate(d3.event.target, d3.event.altKey || d3.event.shiftKey); 
+          });
+      symbol.attr("d", isolateSymbolPath(isolate))
+          .attr("transform", "translate(" + (isolate.symbolRadius || NODE_RADIUS) + ',0)')
           .style("fill", fillColor)
           .style("stroke", strokeColor);
       
       // Add columns of textual metadata according to the spec in `isolateColumns`
       texts.exit().remove();
       texts.enter().append("text")
-      texts.attr("x", function(d) { return nodeRadius * 2.5 + d[1]; })
+      texts.attr("x", function(d) { return NODE_RADIUS * 2.5 + d[1]; })
           .attr("class", "isolate-metadata isolate-" + fixForClass(isolate.name))
           .attr("transform", "translate(" + shiftTip + ",0)")
-          .attr("dx", nodeRadius)
-          .attr("dy", nodeRadius)
+          .attr("dx", NODE_RADIUS)
+          .attr("dy", NODE_RADIUS)
           .style("font-size", "12px")
           .text(function(d) { return isolate[d[0]]; } );
           
@@ -379,16 +381,19 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   function clickIsolate(el, reset) {
     var iso = d3.select(el).data()[0],
       numSymbols = d3.svg.symbolTypes.length;
-    iso.symbolRadius = reset ? nodeRadius : nodeRadius * 1.5;
+    iso.symbolRadius = reset ? NODE_RADIUS : NODE_RADIUS * 1.5;
     iso.symbol = reset ? 0 : (((iso.symbol || 0) - 1) + numSymbols) % numSymbols;
     $timeline.trigger("updateSymbols");
-    tree.update();
+    // Updates only the clicked node in the dendrogram -- this avoids a (slower) tree.update()
+    d3.select('#dendro').select('path.isolate-' + fixForClass(iso.name) + '.isolate')
+        .attr("d", isolateSymbolPath(iso));
   }
   
   // We have to set up custom mouse event handlers, using `document.elementFromPoint`, because
   // the timeline has a `<rect class="zoom-rect"/>` in front of it to capture mouse events for the zoom
   // interaction. These functions recalculate mouseover/out/click targets with the zoom-rect hidden.
   var prevHoverEl = null;
+  
   $timeline.on("mousemove", function(e) {
     var prevDisplay = $(".zoom-rect").css("display"),
         $prevHoverEl = $(prevHoverEl),
@@ -417,7 +422,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         el;
     $(".zoom-rect").css("display", "none");
     el = document.elementFromPoint(e.clientX, e.clientY);
-    if ($(el).hasClass("isolate")) { clickIsolate(el, e.altKey); }
+    if ($(el).hasClass("isolate")) { clickIsolate(el, e.altKey || e.shiftKey); }
     $(".zoom-rect").css("display", prevDisplay);
   });
   
@@ -425,6 +430,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   // = Setup the timeline in #timeline =
   // ===================================
   
+  // Returns a filtered copy of `encounters` with the filter settings applied
   function filterEncounters(encounters, filters) {
     encounters = _.filter(encounters, function(enc) {
       return (enc.department_name && enc.start_time && enc.end_time && enc.end_time > enc.start_time);
@@ -437,7 +443,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     return encounters;
   }
   
-  function resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, zoom) {
+  // Called whenever the window is resized to optimize the width and layout of the timeline
+  function resizeTimelineWidth(paddingLeft, xScale, zoom) {
     var yAxisPadding = 8,
         yAxisSize = 250,
         paddingRight = 80,
@@ -469,6 +476,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     $('#timeline-clip rect').attr("width", width - yAxisSize);
   }
   
+  // Creates a default sorting for encounters and isolates
   function createSortKeys(encounters, isolates) {
     // sortKeys allows the (eRAP_ID, dept) tuples to be sorted by values other than themselves
     // Each member of the sortKeys array maps to the corresponding index of the tuples.
@@ -485,6 +493,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     return sortKeys;
   }
   
+  // For a given set of tuples that will be used as the Y axis, apply the grouping settings in $yGrouping,
+  // and sort them using `sortKeys` <-- see `createSortKeys()` above
   function setupYScaleAndGroups(tuples, yScale, rowHeight, padGroups, sortKeys) {
     var yGroups = [],
       // yGrouping is a specification "#,#" of the order for sorting the (eRAP_ID, dept) tuples
@@ -529,7 +539,13 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     return yGroups;
   }
   
-  function updateTimeline(encounters, isolates) {
+  // This allows the new timeline sortings created by dragging to be preserved across UI updates
+  // Intended to be merged together with _.extend({}, ...) before passing to `setupYScaleAndGroups()`
+  var defaultSortKeys = createSortKeys(encounters, isolates),
+      draggedSortKeys = {};
+  
+  // Updates the timeline given the current encounter filtering, Y axis, and isolate color settings
+  function updateTimeline() {
     var drawableEncounters = filterEncounters(encounters, $filter.val()),
         transfers = _.filter(drawableEncounters, function(enc) { return !!enc.transfer_to; }),
         rowHeight = 10,
@@ -544,22 +560,21 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })),
-        defaultSortKeys = createSortKeys(encounters, isolates),
-        draggedSortKeys = {},
-        yGroups, height, yScale, yScaleGrouped;
+        yGroups, height, yScale, yScaleGrouped, sortKeys;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
     $timeline.children(':not(defs)').remove();
     
     // Setup Y scale and grouping
     yScale = d3.scale.ordinal();
-    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, defaultSortKeys);
+    sortKeys = _.extend({}, defaultSortKeys, draggedSortKeys);
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
     height = _.last(yScale.range()) + rowHeight;
     yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
     // Setup X scale and axis
     var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
-    resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, false);
+    resizeTimelineWidth(paddingLeft, xScale, false);
     var xAxis = d3.svg.axis().scale(xScale).orient("top").tickSize(-height, 0).tickPadding(5),
         zoom = d3.behavior.zoom()
           .x(xScale)
@@ -630,7 +645,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         .data(_.filter(isolates, function(iso) { return !!iso.ordered; }))
       .enter().append("path")
         .attr("class", function(iso) { return "isolate isolate-" + fixForClass(iso.name); })
-        .attr("d", isolatePath)
+        .attr("d", isolateSymbolPath)
         .style("fill", isolateFill)
         .style("stroke", isolateStroke);
     
@@ -675,7 +690,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       if (d3.event) { zoomCache.last = d3.event; }
     });
     
-    // Helper function for binding drag events to each [grouped] row of the timeline
+    // Helper function for binding drag events to each row divider of the timeline
+    // This allows them to be dragged vertically to rearrange the timeline
     function updateRowDragInteractions(rowDividersGG, yDividerTop, yDividerCenter, redrawRows, height) {
       var dragBehavior = d3.behavior.drag()
           .origin(function(yGrp) { 
@@ -711,7 +727,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       rowDividersGG.on(".drag", null).call(dragBehavior);
     }
     
-    // Bind event handler to reorder the yScale after setting a new Y axis sort order
+    // Bind event handler to reorder the yScale after setting a new Y axis grouping +/- sort order
+    // For a first draw, specify `firstDraw` = true to avoid an animated transition.
     $timeline.unbind("reorderY").on("reorderY", function(e, firstDraw) {
       var duration = 0,
           prevHeight = parseInt10(d3.select("#timeline").attr("height")),
@@ -760,8 +777,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           .attr("text-anchor", "end")
           .attr("dy", rowHeight * 0.5);
           
-      // This function does all the actual work of repositioning rows and data along the Y axis
-      // It is called immediately, and also during drag operations--in which case provide the `draggingEl`.
+      // This callback does all the actual work of repositioning rows and data along the Y axis
+      // It is called immediately, and also during drag operations--in which case, provide a `draggingEl`.
       var redrawRows = function(rowDividers, duration, draggingEl) {
         var draggingYGroup = draggingEl ? d3.select(draggingEl).data()[0] : {label: null},
             durationDragMask = function(d) {
@@ -822,7 +839,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       }
       updateRowDragInteractions(rowDividersGG, yDividerTop, yDividerCenter, redrawRows, height);
       redrawRows(rowDividersGG, duration);
-          
+      
+      // Finally, resize the <rect> that receives all zoom interactions, and the plot clipping path
       zoomRect.attr("height", height);
       d3.select("#timeline-clip").select("rect").transition().duration(duration)
           .attr("height", height);
@@ -830,36 +848,37 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     
     // Bind event handler to resize the timeline after resizing the browser window
     $timeline.unbind("resizeWidth").on("resizeWidth", function(e, reorderingY) {
-      resizeTimelineWidth(isolates, encounters, paddingLeft, xScale, zoom);
+      resizeTimelineWidth(paddingLeft, xScale, zoom);
       $timeline.trigger("zoomX", reorderingY);
     });
     
     // Bind event handler for updating isolate symbols when clicking them
-    $timeline.unbind("updateSymbols").on("updateSymbols", function() {
+    $timeline.unbind("updateSymbols").on("updateSymbols", function(e) {
       timelineSvg.select(".isolates").selectAll("path")
-          .attr("d", isolatePath);
+          .attr("d", isolateSymbolPath);
     });
 
+    // Finally, trigger a reordering/resize to kick off an initial draw of the timeline
     $timeline.trigger("reorderY", true);
     $timeline.trigger("resizeWidth");
   }
   
   // If there are more than three patients, initially collapse the timeline vertically to save space
   $yGrouping.val(_.pluck(isolates, 'eRAP_ID').length > 3 ? "0" : "0,1");
-  updateTimeline(encounters, isolates);
+  updateTimeline();
   
-  // ==============================================================
-  // = Setup callbacks for controls that update the visualization =
-  // ==============================================================
+  // ====================================================================
+  // = Setup callbacks for major controls that update the visualization =
+  // ====================================================================
   
   $colorBy.change(function() {
     tree.update();
     updateColorLegend(tree);
-    updateTimeline(encounters, isolates);
+    updateTimeline();
   });
   
   $filter.change(function() {
-    updateTimeline(encounters, isolates);
+    updateTimeline();
   });
   
   $yGrouping.change(function() {
