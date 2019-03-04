@@ -88,10 +88,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var isolateColumns = [
     ["isolate_ID", 0, "Isolate ID"],
     ["eRAP_ID", 60, "Anon Pt ID"],
-    ["order_date", 110, "Order Date"],
-    ["collection_unit", 180, "Unit"]
+    ["order_date", 120, "Order Date"],
+    ["collection_unit", 190, "Unit"]
   ];
-  var variantsX = 260, variantHeight = 15, variantWidth = 14;
+  var variantsX = 280, variantHeight = 15, variantWidth = 14;
   var variantMapPadRatio = 0.2, variantMapStepback = 5,
       variantMapContigHeight = 12, minVariantMapWidth = 200;
   
