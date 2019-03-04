@@ -13,7 +13,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     unit: fixUnit,
     gene: function(d) { return d.replace(/^PROKKA_/, 'P_'); },
     chrom: function(d) { 
-      return (/^u\d{5}crpx_c_/).test(d) ? "chromosome" : ((/^u\d{5}crpx_p_/).test(d) ? "plas." : "other"); 
+      if ((/^u\d{5}crpx_c_/).test(d)) { return "chromosome"; }
+      if ((/^u\d{5}crpx_p_/).test(d)) { return "plas."; }
+      if ((/^u\d{5}[a-z]{4}_[a-z]_/).test(d)) { return "other"; }
+      return d; 
     }
   };
   var isolatePath = function(iso) { 
@@ -146,7 +149,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
             .classed("ref", function(d, i) { return d == variants.by_assembly[earliestNode.name][i]; })
             .classed("nonsyn", function(d, i) {
               var aa_alts = variants.allele_info[i].aa_alts;
-              return aa_alts && aa_alts[d - 1] != aa_alts[variants.by_assembly[earliestNode.name][i] - 1]; 
+              return aa_alts && aa_alts[d] != aa_alts[variants.by_assembly[earliestNode.name][i]]; 
             })
             .attr("transform", function(d, i) { return "translate(" + (i * variantWidth) + ",0)"; });
         variantEnter.append("rect")
@@ -156,7 +159,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
             .attr("x", variantWidth * 0.5)
             .attr("y", Math.floor(variantHeight * 0.75))
             .text(function(d, i) { 
-              return variants.allele_info[i][ntOrAa + "_alts"][d - 1] || "\u2014"; 
+              return variants.allele_info[i][ntOrAa + "_alts"][d] || "\u2014"; 
             });
       }
     }
@@ -199,8 +202,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         })
         .text(function(d) { 
           var out = formatter ? formatter(d[whichLabel[0]]) : d[whichLabel[0]];
-          if (whichLabel[1] == 'pos' && out) { 
-            out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + d[ntOrAa + '_pos']; 
+          if (whichLabel[1] == 'pos' && out) {
+            // Note: NT and AA pos are ZERO-indexed in the .vcf.npz, but we display them as 1-indexed
+            out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + (d[ntOrAa + '_pos'] + 1); 
           }
           return out;
         });
