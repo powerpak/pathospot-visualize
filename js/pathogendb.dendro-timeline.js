@@ -386,7 +386,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     $timeline.trigger("updateSymbols");
     // Updates only the clicked node in the dendrogram -- this avoids a (slower) tree.update()
     d3.select('#dendro').select('path.isolate-' + fixForClass(iso.name) + '.isolate')
-        .attr("d", isolateSymbolPath(iso));
+        .attr("d", isolateSymbolPath(iso))
+        .attr("transform", "translate(" + (iso.symbolRadius || NODE_RADIUS) + ',0)');
   }
   
   // We have to set up custom mouse event handlers, using `document.elementFromPoint`, because
