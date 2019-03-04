@@ -53,6 +53,14 @@ function numberWithCommas(x) {
   return (_.isNull(x) ? '' : x).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+function numberWithLeadingZeros(n, width, z) {
+  z = z || '0';
+  n = n + '';
+  var decimalPos = n.indexOf('.');
+  decimalPos = decimalPos >= 0 ? decimalPos : n.length;
+  return decimalPos >= width ? n : new Array(width - decimalPos + 1).join(z) + n;
+}
+
 function rot13(s) {
   return s.replace(/[a-zA-Z]/g,function(c){return String.fromCharCode((c<="Z"?90:122)>=(c=c.charCodeAt(0)+13)?c:c-26);});
 }
@@ -90,6 +98,15 @@ Array.prototype.swap = function(x, y) {
 
 Array.prototype.sum = function() {
   return _.reduce(this, function(a, b) { return a + b; }, 0);
+}
+
+// Utility function for d3 selections to move the given SVG elements to the front (end) of their parent elem.
+if (d3 && d3.selection) {
+  d3.selection.prototype.moveToFront = function() {
+    return this.each(function(){
+      this.parentNode.appendChild(this);
+    });
+  };
 }
 
 // Given an SVG element, or a d3 selection containing SVG elements, returns the bounding box of the element

@@ -442,13 +442,20 @@ text.axis-label {
   opacity: 0.2;
 }
 
-#timeline .pt-dividers g rect {
-  fill: none;
+.pt-dividers g rect {
+  fill: white;
   cursor: move;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
 }
 
-#timeline .pt-dividers g:nth-child(even) rect {
+#timeline .pt-dividers .even-child rect {
   fill: #f3f6fa;
+}
+
+#timeline .pt-dividers .dragging rect {
+  fill: #dce4ef;
 }
 
 #timeline .pt-dividers text, #timeline .single-groups .y.axis text {
@@ -456,7 +463,9 @@ text.axis-label {
   font-weight: bold;
   fill: #777;
   cursor: move;
-  text-select: ;
+}
+#timeline .y.axis text {
+  pointer-events: none;
 }
 #timeline .single-groups .pt-dividers text {
   display: none;
@@ -482,9 +491,19 @@ text.axis-label {
   stroke: #999;
   stroke-width: 1px;
   stroke-dasharray: 2,1;
+  opacity: 1;
+  transition: opacity 0.5s;
 }
 #timeline .single-groups.grouping-by-pt .transfers line {
   stroke: #000;
+}
+.dragging-row, .dragging-row .pt-dividers g rect {
+  cursor: grabbing;
+  cursor: -moz-grabbing;
+  cursor: -webkit-grabbing;
+}
+.dragging-row #timeline .transfers line {
+  opacity: 0;
 }
 /*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;

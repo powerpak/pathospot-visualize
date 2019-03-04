@@ -7,6 +7,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
   var unknownColor = "#AAA";
   var nodeRadius = 4;
+  
+  // Utility functions for formatting various fields for display, or generating a symbol for an isolate.
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
@@ -26,6 +28,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     var radius = iso.symbolRadius || nodeRadius;
     return d3.svg.symbol().size(Math.PI * radius * radius).type(d3.svg.symbolTypes[iso.symbol || 0])(); 
   };
+
   
   // D3 scales, formats, and other helpers that are used globally
   var spectralScale = d3.scale.linear()
@@ -352,19 +355,19 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     tip.hide(d3.select(el).data()[0], el); 
   }
   function mouseEnterEncounter(el) {
-    var $encG = $(el).parent(),
-        hoverAction = $hover.val(),
+    var hoverAction = $hover.val(),
         enc, $hoverHighlight;
-    // The .appendTo()'s here move hovered <rect>'s to the end of the parent so they draw on top
-    $(el).addClass("hover").appendTo($encG);
+    d3.select(el).classed("hover", true).moveToFront();
     enc = d3.select(el).data()[0];
     hoverAction && tip.show(enc, el);
     if (hoverAction == 'unit') { 
-      $hoverHighlight = $(".encounter.dept-" + fixForClass(enc.department_name)).not(el)
+      $hoverHighlight = $(".dept-" + fixForClass(enc.department_name) + ".encounter").not(el)
     } else if (hoverAction == 'patient') {
-      $hoverHighlight = $(".encounter.erap-" + fixForClass(enc.eRAP_ID)).not(el)
+      $hoverHighlight = $(".erap-" + fixForClass(enc.eRAP_ID)+".encounter").not(el)
     }
-    if ($hoverHighlight) { $hoverHighlight.addClass("hover-highlight").appendTo($encG); }
+    if ($hoverHighlight) { 
+      d3.selectAll($hoverHighlight.get()).classed("hover-highlight", true).moveToFront();
+    }
   }
   function mouseLeaveIsolate(el) {
     $(".hover.isolate, .hover.isolate-metadata").removeClass("hover");
@@ -533,13 +536,16 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         xAxisSize = 20,
         paddingLeft = 40,
         padGroups = true,
+        padRowTop = rowHeight * (padGroups ? -0.5 : 0),
         zoomCache = {last: null},
+        draggingRow = {},
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return [enc.eRAP_ID, enc.department_name];
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })),
-        sortKeys = createSortKeys(encounters, isolates),
+        defaultSortKeys = createSortKeys(encounters, isolates),
+        draggedSortKeys = {},
         yGroups, height, yScale, yScaleGrouped;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
@@ -547,7 +553,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     
     // Setup Y scale and grouping
     yScale = d3.scale.ordinal();
-    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
+    yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, defaultSortKeys);
     height = _.last(yScale.range()) + rowHeight;
     yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
@@ -570,7 +576,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     
     // Draw patient Y axis dividers in the very back.
     // For now a placeholder is created that is filled later by the `reorderY` handler below.
-    var ptDividersG = timelineSvg.append("g")
+    var rowDividersG = timelineSvg.append("g")
         .attr("class", "pt-dividers noselect");
                 
     // Draw X axis in the back
@@ -669,55 +675,62 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       if (d3.event) { zoomCache.last = d3.event; }
     });
     
+    // Helper function for binding drag events to each [grouped] row of the timeline
+    function updateRowDragInteractions(rowDividersGG, yDividerTop, yDividerCenter, redrawRows, height) {
+      var dragBehavior = d3.behavior.drag()
+          .origin(function(yGrp) { 
+            return { y: yDividerTop(yGrp) };
+          })
+          .on("dragstart", function(yGrp) {
+            $(document.body).addClass("dragging-row");
+            draggingRow[yGrp.label] = yDividerTop(yGrp);
+            d3.select(this).classed("dragging", true).moveToFront();
+          })
+          .on("drag", function(yGrp) {
+            var rowDividers = d3.select(this.parentNode).selectAll("g"),
+                sortKeys, yCenter;
+            draggingRow[yGrp.label] = Math.min(height, Math.max(-rowHeight, d3.event.y));
+            yCenter = draggingRow[yGrp.label] + rowHeight * yGrp.length * 0.5
+            draggedSortKeys[yGroups.grouping[0]] = {};
+            rowDividers.each(function(sibYGrp) {
+              // Sort keys post-drag are pixel position. The +0.5 pixel here prevents ties *while* dragging.
+              var sortKey = sibYGrp.label === yGrp.label ? (yCenter + 0.5) : yDividerCenter(sibYGrp);
+              draggedSortKeys[yGroups.grouping[0]][sibYGrp.label] = numberWithLeadingZeros(sortKey, 10);
+            });
+            sortKeys = _.extend({}, defaultSortKeys, draggedSortKeys);
+            yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
+            redrawRows(rowDividers, 150, this);
+          })
+          .on("dragend", function(yGrp) {
+            $(document.body).removeClass("dragging-row");
+            delete draggingRow[yGrp.label];
+            d3.select(this).classed("dragging", false);
+            redrawRows(d3.select(this.parentNode).selectAll("g"), 150);
+          });
+      
+      rowDividersGG.on(".drag", null).call(dragBehavior);
+    }
+    
     // Bind event handler to reorder the yScale after setting a new Y axis sort order
     $timeline.unbind("reorderY").on("reorderY", function(e, firstDraw) {
       var duration = 0,
           prevHeight = parseInt10(d3.select("#timeline").attr("height")),
-          height;
+          height, sortKeys;
+      
       if (!firstDraw) {
+        sortKeys = _.extend({}, defaultSortKeys, draggedSortKeys);
         yGroups = setupYScaleAndGroups(erapIdDeptTuples, yScale, rowHeight, padGroups, sortKeys);
         duration = 500;
       }
       height = _.last(yScale.range()) + rowHeight;
-      d3.select("#timeline").attr("height", Math.max(height + xAxisSize, prevHeight))
+      d3.select("#timeline").attr("height", Math.max(height + xAxisSize, prevHeight));
       xAxis.tickSize(-height, 0);
       
+      // These classes change the behavior/styling of the whole timeline based on the Y axis sort order
       timelineSvg.classed("single-groups", yGroups.grouping.length === 1)
           .classed("grouping-by-pt", yGroups.grouping[0] === 0);
-      var ptDividersGG = ptDividersG.selectAll("g").data(yGroups, function(grp) { return grp.label; });
-      ptDividersGG.exit().remove();
       
-      var ptDividersGEnter = ptDividersGG.enter().append("g");
-      ptDividersGEnter.append("rect")
-          .attr("x", 0);
-      ptDividersGEnter.append("text")
-          .attr("text-anchor", "end")
-          .attr("dy", rowHeight * 0.5);
-          
-      ptDividersGG.select("rect").transition().duration(duration)
-          .attr("y", function(yGroup) { return yScale(yGroup.start) - (padGroups ? 0.5 : 0) * rowHeight; })
-          .attr("height", function (yGroup) { return rowHeight * yGroup.length; });
-      ptDividersGG.select("text")
-          .attr("y", function(yGroup) { 
-            return yScale(yGroup.start) + rowHeight * (yGroup.length * 0.5 + (padGroups ? -0.5 : 0));
-          })
-          .text(function(yGroup) { return yGroup.label });
-      
-      plotAreaG.select(".encounters").selectAll("rect").transition().duration(duration)
-          .attr("y", function(enc) { return yScaleGrouped([enc.eRAP_ID, enc.department_name]); })
-      plotAreaG.select(".transfers").selectAll("line").transition().duration(duration)
-          .attr("y1", function(enc) { 
-            var depts = [enc.department_name, enc.transfer_to];
-            return _.min(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }));
-          })
-          .attr("y2", function(enc) {
-            var depts = [enc.department_name, enc.transfer_to];
-            return _.max(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }))
-                + rowHeight;
-          });
-      plotAreaG.select(".isolates").selectAll("path").transition().duration(duration)
-          .attr("transform", function(iso) { return 'translate(' + isolateX(iso) + ',' + isolateY(iso) + ')'; } );
-          
+      // Bind data for the Y axis labels--the left column of labels on the right edge of the timeline
       var yAxisLabels = timelineSvg.select(".y.axis")
         .selectAll("text")
           .data(yScale.domain());
@@ -726,9 +739,89 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       yAxisLabels.enter().append("text")
           .attr("class", "dept-label")
           .attr("dy", rowHeight - 1);
-      yAxisLabels.transition().duration(duration)
-          .attr("y", yScale)
-          .text(function(v) { return _.last(v); });
+      
+      // Bind data for the row dividers (the alternating stripes that delineate vertical groups)
+      var yDividerTop = function(yGroup) { 
+        if (!_.isUndefined(draggingRow[yGroup.label])) { return draggingRow[yGroup.label]; }
+        return yScale(yGroup.start) - (padGroups ? 0.5 : 0) * rowHeight; 
+      }
+      var yDividerCenter = function(yGroup) { 
+        var yTop = yScale(yGroup.start) + padRowTop;
+        if (!_.isUndefined(draggingRow[yGroup.label])) { yTop = draggingRow[yGroup.label]; }
+        return yTop + rowHeight * (yGroup.length * 0.5);
+      }
+      var rowDividersGG = rowDividersG.selectAll("g").data(yGroups, function(grp) { return grp.label; });
+      rowDividersGG.exit().remove();
+      
+      var rowDividersGEnter = rowDividersGG.enter().append("g");
+      rowDividersGEnter.append("rect")
+          .attr("x", 0);
+      rowDividersGEnter.append("text")
+          .attr("text-anchor", "end")
+          .attr("dy", rowHeight * 0.5);
+          
+      // This function does all the actual work of repositioning rows and data along the Y axis
+      // It is called immediately, and also during drag operations--in which case provide the `draggingEl`.
+      var redrawRows = function(rowDividers, duration, draggingEl) {
+        var draggingYGroup = draggingEl ? d3.select(draggingEl).data()[0] : {label: null},
+            durationDragMask = function(d) {
+              return draggingEl && draggingYGroup.label == yGroups.selector(d)[0] ? 0 : duration;
+            },
+            deltaY = function(d) {
+              if (_.isArray(d)) { d = yGroups.selector(d)[0]; }
+              if (draggingEl && !_.isUndefined(draggingRow[d])) { 
+                return draggingRow[d] - yScale(draggingYGroup.start) - padRowTop;
+              }
+              return 0;
+            };
+        
+        // Reposition the row dividers
+        rowDividers.select("rect").transition()
+            .duration(function() { return this.parentNode == draggingEl ? 0 : duration; })
+            .attr("y", yDividerTop)
+            .attr("height", function (yGroup) { return rowHeight * yGroup.length; });
+        rowDividers.select("text").transition()
+            .duration(function() { return this.parentNode == draggingEl ? 0 : duration; })
+            .attr("y", yDividerCenter)
+            .text(function(yGroup) { return yGroup.label });
+        rowDividers.sort(function(a, b){ return yDividerCenter(a) - yDividerCenter(b); })
+            .classed("even-child", function(yGrp, i) { return i % 2 == 1; })
+        if (draggingEl) { d3.select(draggingEl).moveToFront(); }
+        
+        // Y axis labels
+        yAxisLabels.transition()
+            .duration(function(v) { return draggingEl && _.first(v) === draggingYGroup.label ? 0 : duration; })
+            .attr("y", function(v) { return yScale(v) + deltaY(_.first(v)); })
+            .text(function(v) { return _.last(v); });
+        
+        // Encounters (horizontal bars) and isolates (points)
+        plotAreaG.select(".encounters").selectAll("rect").transition()
+            .duration(function(enc) { return durationDragMask([enc.eRAP_ID, enc.department_name]); })
+            .attr("y", function(enc) {
+              return yScaleGrouped([enc.eRAP_ID, enc.department_name]) + deltaY([enc.eRAP_ID, enc.department_name]); 
+            })
+        plotAreaG.select(".isolates").selectAll("path").transition()
+            .duration(function(iso) { return durationDragMask([iso.eRAP_ID, iso.collection_unit]); })
+            .attr("transform", function(iso) { 
+              var shiftedY = isolateY(iso) + deltaY([iso.eRAP_ID, iso.collection_unit]);
+              return 'translate(' + isolateX(iso) + ',' + shiftedY + ')'; 
+            });
+        
+        // Reposition transfers (dotted lines); note they are hidden (via CSS opacity) during dragging
+        plotAreaG.select(".transfers").selectAll("line").transition()
+            .duration(draggingEl ? 0 : duration)
+            .attr("y1", function(enc) { 
+              var depts = [enc.department_name, enc.transfer_to];
+              return _.min(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }));
+            })
+            .attr("y2", function(enc) {
+              var depts = [enc.department_name, enc.transfer_to];
+              return _.max(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }))
+                  + rowHeight;
+            });
+      }
+      updateRowDragInteractions(rowDividersGG, yDividerTop, yDividerCenter, redrawRows, height);
+      redrawRows(rowDividersGG, duration);
           
       zoomRect.attr("height", height);
       d3.select("#timeline-clip").select("rect").transition().duration(duration)
