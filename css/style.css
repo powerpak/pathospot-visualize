@@ -458,11 +458,14 @@ text.axis-label {
   fill: #dce4ef;
 }
 
-#timeline .pt-dividers text, #timeline .single-groups .y.axis text {
+.pt-dividers text, .single-groups .y.axis text {
   font-size: 12px;
   font-weight: bold;
   fill: #777;
   cursor: move;
+  cursor: grab;
+  cursor: -moz-grab;
+  cursor: -webkit-grab;
 }
 #timeline .y.axis text {
   pointer-events: none;
@@ -497,7 +500,7 @@ text.axis-label {
 #timeline .single-groups.grouping-by-pt .transfers line {
   stroke: #000;
 }
-.dragging-row, .dragging-row .pt-dividers g rect {
+.dragging-row, .dragging-row .pt-dividers g rect, .dragging-row .pt-dividers text {
   cursor: grabbing;
   cursor: -moz-grabbing;
   cursor: -webkit-grabbing;
