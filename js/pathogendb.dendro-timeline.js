@@ -11,7 +11,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
     unit: fixUnit,
-    gene: function(d) { return d.replace(/^PROKKA_/, 'P_'); },
+    gene: function(d) { 
+      if ((/^\d+$/).test(d)) { return d + ' genes'; }
+      return d.replace(/^PROKKA_/, 'P_'); 
+    },
     chrom: function(d) { 
       if ((/^u\d{5}crpx_c_/).test(d)) { return "chromosome"; }
       if ((/^u\d{5}crpx_p_/).test(d)) { return "plas."; }
@@ -202,7 +205,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         })
         .text(function(d) { 
           var out = formatter ? formatter(d[whichLabel[0]]) : d[whichLabel[0]];
-          if (whichLabel[1] == 'pos' && out) {
+          if (whichLabel[1] == 'pos' && out && !(/^\d+/).test(out)) {
             // Note: NT and AA pos are ZERO-indexed in the .vcf.npz, but we display them as 1-indexed
             out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + (d[ntOrAa + '_pos'] + 1); 
           }
