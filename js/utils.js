@@ -109,6 +109,11 @@ if (d3 && d3.selection) {
   };
 }
 
+// Polyfill for Internet Explorer
+Math.log10 = Math.log10 || function(x) {
+  return Math.log(x) * Math.LOG10E;
+};
+
 // Given an SVG element, or a d3 selection containing SVG elements, returns the bounding box of the element
 // in pixel units relative to the top left corner of the containing SVG element
 function getBBox(elem) {
