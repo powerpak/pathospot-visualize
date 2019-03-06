@@ -719,16 +719,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         .attr("class", "plot-area")
         .attr("clip-path", "url(#timeline-clip)");
     
-    // Draw spatiotemporal overlaps
-    plotAreaG.append("g")
-        .attr("class", "overlaps")
-        .attr("opacity", 1)
-      .selectAll("rect")
-        .data(overlaps)
-      .enter().append("path")
-        .classed("marginal", function(ov) { return ov.width < 0; })
-        .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); });
-
     // Draw encounters
     var encX = function(enc) { return xScale(enc.start_time); },
         encWidth = function(enc) { return Math.max(xScale(enc.end_time) - xScale(enc.start_time), 0); },
@@ -757,6 +747,16 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       .enter().append("line")
         .attr("x1", function(enc) { return xScale(enc.end_time); })
         .attr("x2", function(enc) { return xScale(enc.end_time); });
+        
+    // Draw spatiotemporal overlaps
+    plotAreaG.append("g")
+        .attr("class", "overlaps")
+        .attr("opacity", 1)
+      .selectAll("rect")
+        .data(overlaps)
+      .enter().append("path")
+        .classed("marginal", function(ov) { return ov.width < 0; })
+        .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); });
     
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
