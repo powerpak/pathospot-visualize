@@ -7,7 +7,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
   var UNKNOWN_COLOR = "#AAA";
   var NODE_RADIUS = 4;
-  var TOLERANCE_STEPS = _.range(24).concat(_.range(1, 12)).concat(_.range(12, 78, 6));
+  var TOLERANCE_STEPS = _.range(24).concat(_.range(1, 14)).concat(_.range(14, 73, 7));
   var TOLERANCE_UNITS = _.times(24, function() { return "hrs"; })
       .concat(_.times(TOLERANCE_STEPS.length - 24, function() { return "days"; }));
   var TOLERANCE_DEFAULT = 12;
