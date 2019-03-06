@@ -7,6 +7,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     "#E67431", "#E4632E", "#E1512A", "#DF4027", "#DC2F24"];
   var UNKNOWN_COLOR = "#AAA";
   var NODE_RADIUS = 4;
+  var TOLERANCE_STEPS = _.range(24).concat(_.range(1, 12)).concat(_.range(12, 78, 6));
+  var TOLERANCE_UNITS = _.times(24, function() { return "hrs"; })
+      .concat(_.times(TOLERANCE_STEPS.length - 24, function() { return "days"; }));
+  var TOLERANCE_DEFAULT = 12;
   
   // Utility functions for formatting various fields for display, or generating a symbol for an isolate.
   var FORMAT_FOR_DISPLAY = {
@@ -74,6 +78,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var $showOverlaps = $('#show-overlaps');
   var $tolerance = $('#tolerance');
   var $toleranceNum = $('#tolerance-num');
+  var $toleranceUnits = $('#tolerance-units');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -353,7 +358,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       .html(tipHtml);
   d3.select("#timeline").call(tip);
   
-  // Generic handlers for mouse events on encounter and isolate SVG elements
+  // Generic handlers for mouse events on encounter, isolate, and overlap SVG elements
   function mouseLeaveEncounter(el) {
     $(el).removeClass("hover");
     $(".encounter").removeClass("hover-highlight");
@@ -392,6 +397,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         .attr("d", isolateSymbolPath(iso))
         .attr("transform", "translate(" + (iso.symbolRadius || NODE_RADIUS) + ',0)');
   }
+  function mouseLeaveOverlap(el) { $(el).removeClass("hover"); }
+  function mouseEnterOverlap(el) { $(el).addClass("hover"); }
   
   // We have to set up custom mouse event handlers, using `document.elementFromPoint`, because
   // the timeline has a `<rect class="zoom-rect"/>` in front of it to capture mouse events for the zoom
@@ -408,9 +415,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       // mouseleave actions
       if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
       else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
+      else if ($prevHoverEl.hasClass("overlap")) { mouseLeaveOverlap(prevHoverEl); }
       // mouseenter actions
       if ($(el).hasClass("encounter")) { mouseEnterEncounter(el); } 
       else if ($(el).hasClass("isolate")) { mouseEnterIsolate(el); }
+      else if ($(el).hasClass("overlap")) { mouseEnterOverlap(el); }
       prevHoverEl = el;
     }
     $(".zoom-rect").css("display", prevDisplay);
@@ -419,6 +428,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     var $prevHoverEl = $(prevHoverEl);
     if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
     else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
+    else if ($prevHoverEl.hasClass("overlap")) { mouseLeaveOverlap(prevHoverEl); }
     prevHoverEl = null;
   });
   $timeline.on("click", function(e) {
@@ -657,6 +667,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   // Intended to be merged together with _.extend({}, ...) before passing to `setupYScaleAndGroups()`
   var defaultSortKeys = createSortKeys(encounters, isolates),
       draggedSortKeys = {};
+  var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
   
   // Updates the timeline given the current encounter filtering, Y axis, and isolate color settings
   function updateTimeline() {
@@ -675,7 +686,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })),
-        overlaps = findOverlaps(drawableEncounters, isolates, $toleranceNum.val() / 24),
+        toleranceUnits = $toleranceUnits.text() == 'hrs' ? 24 : 1,
+        overlaps = findOverlaps(drawableEncounters, isolates, $toleranceNum.val() / toleranceUnits),
         yGroups, height, yScale, yScaleGrouped, sortKeys;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
@@ -689,7 +701,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     yScaleGrouped = function(tup) { return yScale(yGroups.selector(tup)); }
     
     // Setup X scale and axis
-    var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
     resizeTimelineWidth(paddingLeft, xScale, false);
     var xAxis = d3.svg.axis().scale(xScale).orient("top").tickSize(-height, 0).tickPadding(5),
         zoom = d3.behavior.zoom()
@@ -752,11 +763,14 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     plotAreaG.append("g")
         .attr("class", "overlaps")
         .attr("opacity", 1)
-      .selectAll("rect")
+      .selectAll("path")
         .data(overlaps)
       .enter().append("path")
+        .classed("overlap", true)
         .classed("marginal", function(ov) { return ov.width < 0; })
         .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); });
+    plotAreaG.select(".overlaps").selectAll("path")
+        .sort(function(a, b) { return b.width - a.width; });
     
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
@@ -1008,9 +1022,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   // ====================================================================
   
   // Setup the rangeslider for spatiotemporal overlap tolerance
-  $tolerance.rangeslider({ 
+  $tolerance.attr({min: 0, max: TOLERANCE_STEPS.length - 1, value: TOLERANCE_DEFAULT}).rangeslider({ 
     polyfill: false,
-    onSlide: function(pos, value) { $toleranceNum.val(value); },
+    onSlide: function(pos, value) { 
+      $toleranceNum.val(TOLERANCE_STEPS[value]); $toleranceUnits.text(TOLERANCE_UNITS[value]); 
+    },
     onSlideEnd: function(pos, value) { $toleranceNum.change(); }
   });
   // The SNP threshold input then calls the changeSnpThreshold function for updating the viz

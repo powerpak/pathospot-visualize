@@ -201,8 +201,8 @@ else:
     <label class="widget">
       <span class="units">within</span>
       <input id="tolerance-num" name="tolerance_num" type="text" size="2" value="12" disabled />
-      <span class="units">hrs</span>
-      <input id="tolerance" name="tolerance" class="range" type="range" min="0" step="1" max="72" value="12" />
+      <span class="units" id="tolerance-units">hrs</span>
+      <input id="tolerance" name="tolerance" class="range" type="range" />
     </label>
     <label class="widget">
       <span class="widget-label">Y axis </span>

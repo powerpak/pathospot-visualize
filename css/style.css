@@ -440,6 +440,11 @@ text.axis-label {
   margin-left: 60px;
 }
 
+#tolerance-units {
+  width: 2.5em;
+  display: inline-block;
+}
+
 #d3_layout_phylotree_context_menu {
   display: none !important;
 }
@@ -520,9 +525,14 @@ text.axis-label {
   fill: #dbb;
   transition: opacity 0.5s;
 }
+#timeline .overlaps path.hover {
+  opacity: 1;
+  stroke: #222;
+  stroke-width: 2px;
+}
 #timeline .overlaps path.marginal {
   fill: #aaa;
-} 
+}
 .dragging-row #timeline .overlaps path, #timeline.hide-overlaps .overlaps path {
   opacity: 0;
 }
