@@ -32,6 +32,7 @@ if (!$error && !$picking_assemblies) {
 
 <link rel="stylesheet" href="css/d3-tip.css" />
 <link rel="stylesheet" href="css/select2.css" />
+<link href="css/rangeslider.css" rel="stylesheet" />
 <link rel="stylesheet" href="css/ionicons.min.css" />
 <link rel="stylesheet" href="css/phylotree.css">
 <link rel="stylesheet" href="css/phylotree.bootstrap.css">
@@ -194,13 +195,14 @@ else:
   </div>
   
   <div class="toolbar clear">
+    <label class="widget less-margin">
+      <a id="show-overlaps" class="toggle-btn mini toggle-btn-both active">Show overlaps</a>
+    </label>
     <label class="widget">
-      <span class="widget-label">Filter events</span>
-      <select id="filter" name="filter">
-        <option value="inpatient">Inpatient only</option>
-        <option value="outpatient">Outpatient only</option>
-        <option value="">All encounters</option>
-      </select>
+      <span class="units">within</span>
+      <input id="tolerance-num" name="tolerance_num" type="text" size="2" value="12" disabled />
+      <span class="units">hrs</span>
+      <input id="tolerance" name="tolerance" class="range" type="range" min="0" step="1" max="72" value="12" />
     </label>
     <label class="widget">
       <span class="widget-label">Y axis </span>
@@ -220,6 +222,14 @@ else:
         <option value="">Do nothing</option>
       </select>
     </label>
+    <label class="widget no-display">
+      <span class="widget-label">Filter events</span>
+      <select id="filter" name="filter">
+        <option value="inpatient">Inpatient</option>
+        <option value="outpatient">Outpatient</option>
+        <option value="">Both</option>
+      </select>
+    </label>
   </div>
   
   <div id="timeline-cont" class="clear">
@@ -229,11 +239,15 @@ else:
           <image xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPScxMCcgaGVpZ2h0PScxMCc+CiAgPHJlY3Qgd2lkdGg9JzEwJyBoZWlnaHQ9JzEwJyBmaWxsPSdibGFjaycvPgogIDxwYXRoIGQ9J00tMSwxIGwyLC0yCiAgICAgICAgICAgTTAsMTAgbDEwLC0xMAogICAgICAgICAgIE05LDExIGwyLC0yJyBzdHJva2U9J3doaXRlJyBzdHJva2Utd2lkdGg9JzInLz4KPC9zdmc+" x="0" y="0" width="10" height="10">
           </image>
         </pattern>
+        <marker id="arrow" markerWidth="10" markerHeight="10" refX="0" refY="3" orient="auto" markerUnits="strokeWidth">
+          <path d="M0,0 L0,6 L9,3 z" fill="#f00" />
+        </marker>
       </defs>
     </svg>
   </div>
 </div>
 
+<script src="js/rangeslider.min.js" charset="utf-8"></script>
 <script src="js/pathogendb.dendro-timeline.js"></script>
 <script type="text/javascript">
   var prunedTree = <?= json_encode($pruned_tree); ?>;

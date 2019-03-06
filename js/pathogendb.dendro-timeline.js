@@ -71,6 +71,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var $hover = $('#hover');
   var $variantLabels = $('#variant-labels');
   var $variantNtOrAa = $('#variant-nt-or-aa');
+  var $showOverlaps = $('#show-overlaps');
+  var $tolerance = $('#tolerance');
+  var $toleranceNum = $('#tolerance-num');
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -444,6 +447,118 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     return encounters;
   }
   
+  // Finds all spatiotemporal overlaps between each patient's encounters and any other patients having an
+  // earlier positive isolate, with the overlaps separated by up to `tolerance` days.
+  // Returns an array of overlaps in the form of:
+  // { department_name: String, from_eRAP_ID: String, to_eRAP_ID: String, from_time: Date, 
+  //   to_time: Date, width: Number}
+  // where `width` is the # of days of overlap, and if negative, is an overlap in the `tolerance` zone.
+  function findOverlaps(encounters, isolates, tolerance) {
+    var encountersByPt = _.groupBy(encounters, 'eRAP_ID'),
+        earliestIsolates = {},
+        overlaps = [],
+        mSecInDay = 24 * 60 * 60 * 1000;
+    tolerance = typeof tolerance == 'number' ? tolerance : 0;
+        
+    // For each patient, find the earliest isolate (by its ordered time)
+    _.each(isolates, function(iso) {
+      var eRAP_ID = iso.eRAP_ID && iso.eRAP_ID.toString();
+      if (!eRAP_ID || !iso.ordered || !encountersByPt[eRAP_ID]) { return; }
+      if (!earliestIsolates[eRAP_ID] || earliestIsolates[eRAP_ID].ordered > iso.ordered) {
+        earliestIsolates[eRAP_ID] = iso;
+      }
+    });
+    earliestIsolates = _.sortBy(earliestIsolates, function(iso) { return iso.ordered; });
+    
+    // For each of these isolates, ...
+    _.each(earliestIsolates, function(iso, i) {
+      if (i == 0) { return; }
+      
+      // find all encounters for that isolate's patient before the isolate was collected ...
+      earlierEncounters = [];
+      _.filter(encounters, function(enc) { 
+        if (enc.eRAP_ID.toString() !== iso.eRAP_ID.toString()) { return; }
+        if (enc.start_time > iso.ordered) { return; }
+        if (enc.end_time > iso.ordered) { 
+          enc = _.clone(enc);
+          enc.end_time = iso.ordered;
+        }
+        earlierEncounters.push(enc);
+      });
+      
+      // group them by location,
+      earlierEncounters = _.groupBy(earlierEncounters, 'department_name');
+      
+      // and search for overlaps with any encounters for patients with an earlier positive isolate
+      _.each(earliestIsolates.slice(0, i), function(otherIso) {
+        _.each(encountersByPt[otherIso.eRAP_ID], function(enc) {
+          if (enc.start_time > iso.ordered) { return; }
+          if (!enc.department_name || !earlierEncounters[enc.department_name]) { return; }
+          
+          var startTimePadded = new Date(enc.start_time.getTime() - tolerance * mSecInDay),
+              endTimePadded = new Date(enc.end_time.getTime() + tolerance * mSecInDay);
+              
+          _.each(earlierEncounters[enc.department_name], function (earlierEnc) {
+            if (earlierEnc.start_time > endTimePadded) { return; }
+            if (earlierEnc.end_time < startTimePadded) { return; }
+            
+            var startOverlap = new Date(Math.max(earlierEnc.start_time, enc.start_time)),
+                endOverlap = new Date(Math.min(earlierEnc.end_time, enc.end_time)),
+                avg = new Date((endOverlap.getTime() + startOverlap.getTime()) * 0.5),
+                negOverlap = startOverlap > endOverlap,
+                fromBefore = negOverlap ? earlierEnc.start_time > enc.start_time : null;
+                
+            overlaps.push({
+              department_name: enc.department_name, 
+              from_eRAP_ID: otherIso.eRAP_ID,
+              to_eRAP_ID: iso.eRAP_ID,
+              from_time: negOverlap ? (fromBefore ? enc.end_time : enc.start_time) : avg,
+              to_time: negOverlap ? (fromBefore ? earlierEnc.start_time : earlierEnc.end_time) : avg,
+              width: (endOverlap.getTime() - startOverlap.getTime()) / mSecInDay
+            });
+          });
+        });
+      });
+    });
+    
+    return overlaps;
+  }
+  
+  // Converts the timeline's xScale into the number of pixels corresponding to one day
+  function oneDayInPx(xScale) {
+    var now = new Date();
+    return xScale(d3.time.day.offset(now, 1)) - xScale(now);
+  }
+  
+  // A helper to generate SVG path commands for a left-bending arc for a given spatiotemporal overlap
+  function overlapPath(ovlap, xScale, yScaleGrouped, rowHeight, bendFactor) {
+    var xFrom = xScale(ovlap.from_time),
+        xTo = xScale(ovlap.to_time),
+        marginalOverlap = ovlap.width < 0,
+        width = marginalOverlap ? 2 : ovlap.width * oneDayInPx(xScale),
+        yFrom = yScaleGrouped([ovlap.from_eRAP_ID, ovlap.department_name]),
+        yTo = yScaleGrouped([ovlap.to_eRAP_ID, ovlap.department_name]),
+        bend = Math.abs(yFrom - yTo) * bendFactor,
+        path;
+    yFrom += ((yFrom < yTo) ? 1 : 0) * rowHeight;
+    yTo += ((yFrom < yTo) ? 0 : 1) * rowHeight;
+    path = "M " + (xFrom - width/2) + "," + yFrom;
+    path += " C " + (xFrom - width/2 - bend) + "," + yFrom + " " + (xTo - width/2 - bend) + "," + yTo;
+    path += " " + (xTo - width/2) + "," + yTo;
+    path += " L " + (xTo + width/2) + "," + yTo;
+    path += " C " + (xTo + width/2 - bend) + "," + yTo + " " + (xFrom + width/2 - bend) + "," + yFrom;
+    path += " " + (xFrom + width/2) + "," + yFrom;
+    path += " L " + (xFrom - width/2) + "," + yFrom;
+    // path = "M " + (xFrom - width/2) + "," + yFrom;
+    // path += " Q " + ((xFrom + xTo)/2 - width/2 - bend) + "," + ((yFrom + yTo)/2);
+    // path += " " + (xTo - width/2) + "," + yTo;
+    // path += " L " + (xTo + width/2) + "," + yTo;
+    // path += " Q " + ((xFrom + xTo)/2 + width/2 - bend) + "," + ((yFrom + yTo)/2);
+    // path += " " + (xFrom + width/2) + "," + yFrom;
+    // path += " L " + (xFrom - width/2) + "," + yFrom;
+    return path;
+  }
+  
   // Called whenever the window is resized to optimize the width and layout of the timeline
   function resizeTimelineWidth(paddingLeft, xScale, zoom) {
     var yAxisPadding = 8,
@@ -451,8 +566,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
         paddingRight = 80,
         width = $timeline.parent().innerWidth() - paddingLeft - paddingRight,
         oldXScale = xScale.copy(),
-        now = new Date(),
-        minEncDate, maxEncDate, oneDayInPx, zoomOutLimit;
+        minEncDate, maxEncDate, zoomOutLimit;
     
     // If `zoom` is not provided, we are only resizing and rescaling **before** drawing any elements
     xScale.range([0, width - yAxisSize]);
@@ -465,9 +579,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     zoom.x(xScale);
     minDate = _.min(_.pluck(encounters, 'start_time').concat(_.pluck(isolates, 'ordered'))),
     maxDate = _.max(_.pluck(encounters, 'end_time').concat(_.pluck(isolates, 'ordered'))),
-    oneDayInPx = xScale(d3.time.day.offset(now, 1)) - xScale(now),
     zoomOutLimit = (xScale.domain()[1] - xScale.domain()[0]) / (maxDate - minDate),
-    zoom.scaleExtent([zoomOutLimit, 50 / oneDayInPx])
+    zoom.scaleExtent([zoomOutLimit, 50 / oneDayInPx(xScale)])
     
     $timeline.attr("width", paddingLeft + width);
     $timeline.find(".pt-dividers rect").attr("width", width);
@@ -547,20 +660,22 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   
   // Updates the timeline given the current encounter filtering, Y axis, and isolate color settings
   function updateTimeline() {
-    var drawableEncounters = filterEncounters(encounters, $filter.val()),
-        transfers = _.filter(drawableEncounters, function(enc) { return !!enc.transfer_to; }),
-        rowHeight = 10,
+    var rowHeight = 10,
         xAxisSize = 20,
         paddingLeft = 40,
         padGroups = true,
         padRowTop = rowHeight * (padGroups ? -0.5 : 0),
+        overlapBend = 0.15,
         zoomCache = {last: null},
         draggingRow = {},
+        drawableEncounters = filterEncounters(encounters, $filter.val()),
+        transfers = _.filter(drawableEncounters, function(enc) { return !!enc.transfer_to; }),
         erapIdDeptTuples = _.map(drawableEncounters, function(enc) { 
           return [enc.eRAP_ID, enc.department_name];
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })),
+        overlaps = findOverlaps(drawableEncounters, isolates, $toleranceNum.val() / 24),
         yGroups, height, yScale, yScaleGrouped, sortKeys;
     
     // Every time we call `updateTimeline()` the `#timeline` svg is cleared and rebuilt
@@ -603,6 +718,16 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     var plotAreaG = timelineSvg.append("g")
         .attr("class", "plot-area")
         .attr("clip-path", "url(#timeline-clip)");
+    
+    // Draw spatiotemporal overlaps
+    plotAreaG.append("g")
+        .attr("class", "overlaps")
+        .attr("opacity", 1)
+      .selectAll("rect")
+        .data(overlaps)
+      .enter().append("path")
+        .classed("marginal", function(ov) { return ov.width < 0; })
+        .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); });
 
     // Draw encounters
     var encX = function(enc) { return xScale(enc.start_time); },
@@ -681,13 +806,15 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       if (!reorderingY) {
         timelineSvg.select(".isolates").selectAll("path")
             .attr("transform", function(iso) { return 'translate(' + isolateX(iso) + ',' + isolateY(iso) + ')'; } );
+        timelineSvg.select(".overlaps").selectAll("path")
+            .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); });
       }
       timelineSvg.select(".encounters").selectAll("rect")
           .attr("x", encX)
           .attr("width", encWidth);
       timelineSvg.select(".transfers").selectAll("line")
           .attr("x1", function(enc) { return xScale(enc.end_time); })
-          .attr("x2", function(enc) { return xScale(enc.end_time); })
+          .attr("x2", function(enc) { return xScale(enc.end_time); });
       if (d3.event) { zoomCache.last = d3.event; }
     });
     
@@ -825,7 +952,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
               return 'translate(' + isolateX(iso) + ',' + shiftedY + ')'; 
             });
         
-        // Reposition transfers (dotted lines); note they are hidden (via CSS opacity) during dragging
+        // Reposition transfers and overlaps; note they are hidden (via CSS opacity) during dragging
         plotAreaG.select(".transfers").selectAll("line").transition()
             .duration(draggingEl ? 0 : duration)
             .attr("y1", function(enc) { 
@@ -837,6 +964,14 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
               return _.max(_.map(depts, function(dept) { return yScaleGrouped([enc.eRAP_ID, dept]); }))
                   + rowHeight;
             });
+        plotAreaG.select(".overlaps").transition()
+            .duration(draggingEl ? 0 : duration * 0.2)
+            .attr("opacity", 0)
+            .transition().delay(draggingEl ? 0 : duration * 0.8).duration(draggingEl ? 0 : duration * 0.2)
+            .attr("opacity", 1);
+        plotAreaG.select(".overlaps").selectAll("path").transition()
+            .duration(0).delay(draggingEl ? 0 : duration * 0.5)
+            .attr("d", function(ov) { return overlapPath(ov, xScale, yScaleGrouped, rowHeight, overlapBend); })
       }
       updateRowDragInteractions(rowDividersGG, yDividerTop, yDividerCenter, redrawRows, height);
       redrawRows(rowDividersGG, duration);
@@ -872,10 +1007,25 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   // = Setup callbacks for major controls that update the visualization =
   // ====================================================================
   
+  // Setup the rangeslider for spatiotemporal overlap tolerance
+  $tolerance.rangeslider({ 
+    polyfill: false,
+    onSlide: function(pos, value) { $toleranceNum.val(value); },
+    onSlideEnd: function(pos, value) { $toleranceNum.change(); }
+  });
+  // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
+  $toleranceNum.on('change', updateTimeline);
+  
   $colorBy.change(function() {
     tree.update();
     updateColorLegend(tree);
     updateTimeline();
+  });
+  
+  $variantLabels.change(updateVariantLabels);
+  $variantNtOrAa.change(function() {
+    updateVariantLabels();
+    tree.update();
   });
   
   $filter.change(function() {
@@ -887,10 +1037,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     $timeline.trigger("resizeWidth", true);
   });
   
-  $variantLabels.change(updateVariantLabels);
-  $variantNtOrAa.change(function() {
-    updateVariantLabels();
-    tree.update();
+  $showOverlaps.click(function() {
+    $showOverlaps.toggleClass("active");
+    $timeline.toggleClass("hide-overlaps", !$showOverlaps.hasClass("active"));
   });
   
   $(window).resize(function() {

@@ -35,6 +35,9 @@ svg {
 .widget.pad-top {
   margin-top: 9px;
 }
+.widget.less-margin {
+  margin: 3px 10px 10px 0;
+}
 
 .background {
   fill: #eee;
@@ -52,6 +55,8 @@ svg {
         -ms-user-select: none;
             user-select: none;
 }
+
+input[type="range"].range { display: none; }
 
 .toggle-btn {
   float: left;
@@ -89,13 +94,14 @@ svg {
 }
 .toggle-btn.active:hover + .toggle-btn { border-left-color: #d4dbe0; }
 
+.no-display {
+  display: none;
+}
+
 /* ================== */
 /* = HEATMAP STYLES = */
 /* ================== */
 
-#snps {
-  display: none;
-}
 #snps-num {
   text-align: right;
 }
@@ -508,6 +514,20 @@ text.axis-label {
 .dragging-row #timeline .transfers line {
   opacity: 0;
 }
+
+#timeline .overlaps path {
+  opacity: 0.5;
+  fill: #dbb;
+  transition: opacity 0.5s;
+}
+#timeline .overlaps path.marginal {
+  fill: #aaa;
+} 
+.dragging-row #timeline .overlaps path, #timeline.hide-overlaps .overlaps path {
+  opacity: 0;
+}
+
+
 /*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;
   opacity: 0.2;
