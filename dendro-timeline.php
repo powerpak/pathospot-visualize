@@ -222,7 +222,7 @@ else:
         <option value="">Do nothing</option>
       </select>
     </label>
-    <label class="widget no-display">
+    <label class="widget">
       <span class="widget-label">Filter events</span>
       <select id="filter" name="filter">
         <option value="inpatient">Inpatient</option>
