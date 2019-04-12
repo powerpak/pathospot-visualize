@@ -273,6 +273,11 @@ else:
     v.start_time = timeRegex.test(v.start_time) ? new Date(v.start_time) : null;
     v.end_time = timeRegex.test(v.end_time) ? new Date(v.end_time) : null;
     v.department_name = fixUnit(v.department_name);
+    if (v.encounter_type != "Hospital Encounter") {
+      if (v.start_time && v.end_time && v.start_time.getTime() == v.end_time.getTime()) {
+        v.end_time.setHours(v.end_time.getHours() + 24);
+      }
+    }
   });
   
   // Unpack tabular arrays-of-arrays in `variants` into objects and preprocess special fields
