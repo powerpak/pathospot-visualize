@@ -551,9 +551,17 @@ $(function() {
       if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return c(nodes[d.x].group); }
       return null;
     }
+    function cellStrokeWidth(d, n) {
+      if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { 
+        return n > rowLimitForLabels ? (width / n / 4) : 2; 
+      }
+      return 2;
+    }
     function cellPadding(d, n) {
+      if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) {
+        return (n > rowLimitForLabels) ? (width / n / 8) : 1.5;
+      }
       if (n > rowLimitForLines) { return 0; }
-      if (nodes[d.x].eRAP_ID == nodes[d.y].eRAP_ID && d.x != d.y) { return 1.5; }
       return 0.5;
     }
     function cellClickable(d) {
@@ -629,6 +637,7 @@ $(function() {
       
       var row = rowsColsG.selectAll("g.row")
           .data(matrix, columnKeying);
+      // Defines the columns of metadata that show up to the right of the heatmap per row.
       var rowTextSpec = {
             "row-label pt-id": {x: -6, fn: function(d) { return nodes[d.y].eRAP_ID; }},
             "unit": {x: width + 6, fn: function(d) { return fixUnit(nodes[d.y].collection_unit); }},
@@ -664,7 +673,7 @@ $(function() {
           })
           .each(updateRowCells);
     
-    row.merge(rowEnter).selectAll("text.pt-id.row-label")
+      row.merge(rowEnter).selectAll("text.pt-id.row-label")
           .style("fill", function(d) { return nodes[d.y].group !== null ? c(nodes[d.y].group) : '#ccc'; });
     
       row.merge(rowEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.y) * 1; })
@@ -802,10 +811,12 @@ $(function() {
             mouseoutCell(d);
           })
       
-      cell.merge(cellEnter).classed("clickable", cellClickable);
+      cell.merge(cellEnter).classed("clickable", cellClickable)
+          .style("stroke-width", function(d) { return cellStrokeWidth(d, numRows); });
       
       cell.merge(cellEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.x) * 1; })
           .attr("x", function(d) { return x(d.x) + cellPadding(d, numRows); })
+          .attr("y", function(d) { return cellPadding(d, numRows); })
           .attr("width", function(d) { return x.bandwidth() - cellPadding(d, numRows) * 2; })
           .attr("height", function(d) { return x.bandwidth() - cellPadding(d, numRows) * 2; })
           .style("stroke", cellStrokeColor)
