@@ -16,7 +16,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
+    order_date: function(d) { return d.replace(/[ T].*/g, ''); },
     unit: fixUnit,
+    collection_unit: fixUnit,
     gene: function(d) { 
       if ((/^\d+$/).test(d)) { return d + ' genes'; }
       return d.replace(/^PROKKA_/, 'P_'); 
@@ -151,7 +153,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           .attr("dx", NODE_RADIUS)
           .attr("dy", NODE_RADIUS)
           .style("font-size", "12px")
-          .text(function(d) { return isolate[d[0]]; } );
+          .text(function(d) {
+            var val = isolate[d[0]];
+            return FORMAT_FOR_DISPLAY[d[0]] ? FORMAT_FOR_DISPLAY[d[0]](val) : val;
+          });
           
       // Add genomic variant data for each node, if available in `variants.by_assembly`
       if (variants.by_assembly) {

@@ -5,6 +5,8 @@ function fixUnit(unit) {
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
     unit = unit.replace(/INTERVENTIONAL RADIOLOGY/, 'IR');
+    unit = unit.replace(/-ADMISSION$/, '-ADMIT');
+    unit = unit.replace(/-DISCHARGE$/, '-DISCH');
     unit = unit.replace(/^FPA.*/, 'FPA');
     unit = unit.replace(/^(MSQ \d) (E|W)[AE]ST/, '$1$2');
     if (window.ANON) { unit = rot13(unit); }
