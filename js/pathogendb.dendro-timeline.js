@@ -16,7 +16,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
-    order_date: function(d) { return d.replace(/[ T].*/g, ''); },
+    order_date: function(d) { return _.isString(d) ? d.replace(/[ T].*/g, '') : d; },
     unit: fixUnit,
     collection_unit: fixUnit,
     gene: function(d) { 
