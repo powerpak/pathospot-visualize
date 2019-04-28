@@ -14,6 +14,9 @@ function getHeatmapMetadata($data_file) {
     $meta['generated'] = $matches[1];
     if (preg_match('#"distance_unit"\\s*:\\s*"([^"]*)",#', $head, $matches)) {
       $meta['distance_unit'] = $matches[1];
+      if (preg_match('#"distance_threshold"\\s*:\\s*(\\d+),#', $head, $matches)) {
+        $meta['distance_threshold'] = intval($matches[1]);
+      }
       return $meta;
     }
   }

@@ -6,8 +6,15 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.heatmap.php');
 
-$data_files = array_reverse(glob(dirname(__FILE__).'/data/*.{snv,parsnp}.heatmap.json', GLOB_BRACE));
+$data_dir = dirname(__FILE__).'/data/';
+$data_files = array_reverse(glob($data_dir.'*.{snv,parsnp}.heatmap.json', GLOB_BRACE));
 $epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/data/*.epi.heatmap.json')));
+
+$selected_data_file = reset($data_files);
+if (isset($_GET['db']) && in_array($data_dir . $_GET['db'] . ".heatmap.json", $data_files)) {
+  $selected_data_file = $data_dir . $_GET['db'] . ".heatmap.json";
+}
+$snp_threshold = 10;
 
 ?>
 <head>
@@ -54,6 +61,9 @@ foreach ($data_files as $data_file):
   $meta = getHeatmapMetadata($data_file);
   $filename = basename(substr($data_file, 0, -13));
   $units = htmlspecialchars($meta['distance_unit']);
+  if ($data_file === $selected_data_file && isset($meta['distance_threshold'])) {
+    $snp_threshold = $meta['distance_threshold'];
+  }
   $title = preg_replace('#\\..*#', '', $filename);
   $date = strftime('%b %d %Y', strtotime($meta['generated']));
   $epi_filename = "";
@@ -67,7 +77,7 @@ foreach ($data_files as $data_file):
     </label>
     <label class="widget">
       <span class="widget-label">Similarity threshold</span>
-      <input id="snps-num" name="snps_num" type="text" size="3" value="10" disabled />
+      <input id="snps-num" name="snps_num" type="text" size="3" value="<?= $snp_threshold ?>" disabled />
       <span class="distance-unit units">parsnp SNPs</span>
       <input id="snps" name="snps" class="range" type="range" min="1" step="1" />
     </label>
