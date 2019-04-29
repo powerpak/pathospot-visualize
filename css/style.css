@@ -116,6 +116,9 @@ input[type="range"].range { display: none; }
 .rangeslider__fill {
   background: #1995dc;
 }
+.pathospot-heatmap .rangeslider--horizontal {
+  width: 200px;
+}
 
 #heatmap-order, #cluster-legend {
   line-height: 24px;
