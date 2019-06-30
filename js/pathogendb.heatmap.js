@@ -16,8 +16,12 @@ $(function() {
       REDRAW_INTERVAL = 1000,
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
-      PREPROCESS_FIELDS = {
+      HOSPITAL_MAP = 'msmc-stacking-gray';
+  
+  // Utility functions for formatting various fields for display.
+  var FORMAT_FOR_DISPLAY = {
         collection_unit: fixUnit,
+        hospitalAndUnit: fixUnit,
         ordered: formatDate,
         group: formatClusterNumber,
         coreGenomeSize: formatPercentages,
@@ -26,8 +30,7 @@ $(function() {
         "% isolates clustered": formatPercentages,
         "core genome size range": formatPercentages,
         "cluster coverage range": formatPercentages
-      },
-      HOSPITAL_MAP = 'msmc-stacking-gray';
+      };
   
   window.ANON = getURLParameter('anon');
   window.rand20 = Math.floor(Math.random() * 20);
@@ -121,7 +124,7 @@ $(function() {
     //   `mergeSamePt: true` will merge nodes with the same eRAP_ID
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
     //   `mlst_subtype: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
-    //   `collection_unit: ['MICU', ...]` will show only nodes that have these `.collection_unit`s
+    //   `hospitalAndUnit: ['MSH MICU', ...]` will show only nodes that have these `.hospitalAndUnit`s
     function calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],
@@ -138,12 +141,16 @@ $(function() {
         node.groupSize = null;
         node.samePtMergeParent = false;
         node.samePtMergeChild = false;
+        node.mlst_subtype = node.mlst_subtype == "No Match" ? "??" : node.mlst_subtype;
         if (_.isUndefined(node.ordered)) {
           node.ordered = null;
           if ((/\d{4}-\d{2}-\d{2}/).test(node.order_date) && node.order_date > '1901-00-00') { 
             node.ordered = new Date(node.order_date);
             if (ANON) { node.ordered = node.ordered.setMonth(node.ordered.getMonth() + rand20 + 10); }
           }
+        }
+        if (_.isUndefined(node.hospitalAndUnit)) {
+          node.hospitalAndUnit = getHospitalAndUnit(node);
         }
         if (_.isUndefined(node.contig_N50_format)) {
           node.contig_N50_format = numberWithCommas(node.contig_N50);
@@ -218,7 +225,7 @@ $(function() {
       if (filters.clustersOnly) { 
         visibleNodes = _.reject(visibleNodes, function(node) { return node.count <= 0; }); 
       }
-      _.each(['mlst_subtype', 'collection_unit'], function(field) {
+      _.each(['mlst_subtype', 'hospitalAndUnit'], function(field) {
         if (filters[field] && filters[field].length) {
           visibleNodes = _.filter(visibleNodes, function(node) { return _.contains(filters[field], node[field]); }); 
         }
@@ -270,9 +277,9 @@ $(function() {
             return d3.ascending(nodes[a].order_date, nodes[b].order_date)
                 || d3.ascending(nodes[a].groupOrder, nodes[b].groupOrder);
           });
-        case 'collection_unit':
+        case 'hospitalAndUnit':
           return indices.sort(function(a, b) {
-            return d3.ascending(nodes[a].collection_unit, nodes[b].collection_unit)
+            return d3.ascending(nodes[a].hospitalAndUnit, nodes[b].hospitalAndUnit)
                 || d3.ascending(nodes[a].groupOrder, nodes[b].groupOrder);
           });
         case 'mlst_subtype':
@@ -576,8 +583,9 @@ $(function() {
         .attr("height", height)
     var rowsColsG = heatmapG.append("g").attr("class", "rows-cols");
     
-    var axisLabels = {"Anon Pt ID": -6, "Unit": width + 6, "Order Date": width + 70, 
-                      "MLST": width + 150, "Isolate ID": width + 210};
+    var axisLabelPos = [-6, width + 6, width + 100, width + 170, width + 210];
+    var axisLabels = {"Anon Pt ID": axisLabelPos[0], "Unit": axisLabelPos[1], "Order Date": axisLabelPos[2], 
+                      "MLST": axisLabelPos[3], "Isolate ID": axisLabelPos[4]};
     _.each(axisLabels, function(xPos, label) {
       heatmapG.append("text")
           .attr("class", "axis-label axis-label-expanded")
@@ -639,12 +647,12 @@ $(function() {
           .data(matrix, columnKeying);
       // Defines the columns of metadata that show up to the right of the heatmap per row.
       var rowTextSpec = {
-            "row-label pt-id": {x: -6, fn: function(d) { return nodes[d.y].eRAP_ID; }},
-            "unit": {x: width + 6, fn: function(d) { return fixUnit(nodes[d.y].collection_unit); }},
-            "date": {x: width + 70, fn: function(d) { return formatDate(nodes[d.y].ordered); }},
-            "mlst": {x: width + 150, fn: function(d) { return nodes[d.y].mlst_subtype; }},
+            "row-label pt-id": {x: axisLabelPos[0], fn: function(d) { return nodes[d.y].eRAP_ID; }},
+            "unit": {x: axisLabelPos[1], fn: function(d) { return fixUnit(nodes[d.y].hospitalAndUnit); }},
+            "date": {x: axisLabelPos[2], fn: function(d) { return formatDate(nodes[d.y].ordered); }},
+            "mlst": {x: axisLabelPos[3], fn: function(d) { return nodes[d.y].mlst_subtype; }},
             "isolate-id row-label": {
-              x: width + 210, 
+              x: axisLabelPos[4], 
               fn: function(d) { 
                 return nodes[d.y].samePtMergeParent ? "MERGED" : nodes[d.y].isolate_ID; 
               }
@@ -688,7 +696,7 @@ $(function() {
     
     var tipRows = {
           eRAP_ID: "Anon Pt ID",
-          collection_unit: "Unit",
+          hospitalAndUnit: "Unit",
           ordered: "Order Date",
           mlst_subtype: "MLST", 
           isolate_ID: "Isolate ID",
@@ -737,7 +745,7 @@ $(function() {
             val2 = nodes[ixRight][k],
             link, valHasDash;
         if ((/^-+$/).test(k)) { html += '<tr class="separator"><td colspan="2"></td></tr>'; return; }
-        if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[k]) { val1 = PREPROCESS_FIELDS[k](val1); val2 = PREPROCESS_FIELDS[k](val2); }
+        if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[k]) { val1 = FORMAT_FOR_DISPLAY[k](val1); val2 = FORMAT_FOR_DISPLAY[k](val2); }
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[k])) {
           val1 = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(val1)) + '">' + val1 + '</a>';
@@ -750,14 +758,16 @@ $(function() {
       
       html += '</table>'
       if (leftClust || rightClust) { html += '<div class="merge-warn">For merged isolates, closest isolate is shown.</div>'; }
-      html += '<div class="more"><span class="instructions">click for links</span><span class="links">Open: ';
-      snvs_url = assemblies.out_dir + '/' + nodes[ixLeft].name + '/' + nodes[ixLeft].name + '_' + nodes[ixRight].name + '.snv.bed',
-      snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
-      if (IGB_DIR && CHROMOZOOM_URL && TRACKS_DIR) {
-        snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[ixLeft].name) + '&customTracks=' + snvs_url;
-        snvs_url += '';
+      html += '<div class="more"><span class="instructions">click for links</span><span class="links">';
+      if (assemblies.out_dir) {
+        snvs_url = assemblies.out_dir + '/' + nodes[ixLeft].name + '/' + nodes[ixLeft].name + '_' + nodes[ixRight].name + '.snv.bed',
+        snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
+        if (IGB_DIR && CHROMOZOOM_URL && TRACKS_DIR) {
+          snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[ixLeft].name) + '&customTracks=' + snvs_url;
+          snvs_url += '';
+        }
+        html += '<a href="' + snvs_url + '" target="_blank">Open SNP track</a>';
       }
-      html += '<a href="' + snvs_url + '" target="_blank">SNP track</a>';
       if (nodes[ixLeft].group === nodes[ixRight].group) {
         html += ' <a href="' + $('a.cluster-' + nodes[ixLeft].group).attr('href') + '" target="_blank">Explore this cluster</a>';
       }
@@ -912,7 +922,7 @@ $(function() {
       var html = '<table class="link-info">';
   
       _.each(d.clusterInfo, function(value, label) {
-        if (PREPROCESS_FIELDS && PREPROCESS_FIELDS[label]) { value = PREPROCESS_FIELDS[label](value); }
+        if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[label]) { value = FORMAT_FOR_DISPLAY[label](value); }
         if ((/^-+$/).test(label)) { html += '<tr class="separator"><td colspan="2"></td></tr>'; return; }
         html += '<tr><td class="row-label">' + label + '</td>';
         if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
@@ -1084,11 +1094,11 @@ $(function() {
         .force("link", d3.forceLink().id(function(d) { return d.i; }).distance(400).strength(0))
         .force("collision", d3.forceCollide(5.5))
         .force("stickyX", d3.forceX().strength(0.1).x(function(d) { 
-          var coords = unitCoords[d.data.collection_unit || ''];
+          var coords = unitCoords[d.data.hospitalAndUnit || ''];
           return coords ? coords[0] : networkCenter.x; 
         }))
         .force("stickyY", d3.forceY().strength(0.2).y(function(d) { 
-          var coords = unitCoords[d.data.collection_unit || ''];
+          var coords = unitCoords[d.data.hospitalAndUnit || ''];
           return coords ? coords[1] : networkCenter.y; 
         }));
     
@@ -1112,12 +1122,13 @@ $(function() {
       _.each(simulation.nodes(), function(node) { previousNodes[node.i] = node; });
       
       var filteredNodes = _.map(_.pick(nodes, filteredDomain), function(node) {
-            var prev = previousNodes[node.i];
+            var prev = previousNodes[node.i],
+                nodeCoords = unitCoords[node.hospitalAndUnit || ''] || [0, 0];
             return {
               i: node.i, 
               data: node, 
-              x: (prev ? prev.x : unitCoords[node.collection_unit || ''][0] || networkCenter.x), 
-              y: (prev ? prev.y : unitCoords[node.collection_unit || ''][1] || networkCenter.y)
+              x: (prev ? prev.x : nodeCoords[0] || networkCenter.x), 
+              y: (prev ? prev.y : nodeCoords[1] || networkCenter.y)
             }; 
           }),
           filteredLinks = linksFromFilteredDomain(filteredDomain);
@@ -1218,9 +1229,9 @@ $(function() {
     _.each(_.sortBy(_.uniq(mlsts)), function(mlst) { 
       $('#mlsts').append('<option value="mlst_subtype:' + mlst + '">MLST: ' + mlst + '</option>'); 
     });
-    var units = _.pluck(nodes, 'collection_unit');
+    var units = _.pluck(nodes, 'hospitalAndUnit');
     _.each(_.sortBy(_.compact(_.uniq(units))), function(unit) { 
-      $('#units').append('<option value="collection_unit:' + unit + '">Unit: ' + unit + '</option>'); 
+      $('#units').append('<option value="hospitalAndUnit:' + unit + '">Unit: ' + unit + '</option>'); 
     });
     $('#filter').select2({placeholder: "Click to add/remove filters"})
     $('#filter-cont .select2-selection').append(
@@ -1369,11 +1380,23 @@ $(function() {
       EPI_FILE && d3.json("data/" + EPI_FILE, function(epiFileData) { 
         epiData = epiFileData;
         if (epiData.isolates) {
-          epiData.isolates = _.compact(_.map(epiData.isolates, function(isolate) { 
-            var coords = unitCoords[isolate[1]];
-            if ((/\d{4}-\d{2}-\d{2}/).test(isolate[0]) && isolate[0] > '1901-00-00') {
+          // compatibility shim for previous version of .epi.heatmap.json format
+          if (epiData.isolates[0] && epiData.isolates[0][0] !== "order_date") {
+            epiData.isolates.unshift(["order_date", "collection_unit"]);
+          }
+          epiData.isolates = tabularIntoObjects(epiData.isolates);
+          epiData.isolates = _.compact(_.map(epiData.isolates, function(isolate) {
+            isolate.hospitalAndUnit = getHospitalAndUnit(isolate);
+            var coords = unitCoords[isolate.hospitalAndUnit];
+            if ((/\d{4}-\d{2}-\d{2}/).test(isolate.order_date) && isolate.order_date > '1901-00-00') {
               if (coords && coords[0] != unitCoords[''][0] && coords[1] != unitCoords[''][1]) {
-                var d = {ordered: new Date(isolate[0]), unit: isolate[1], value: 1, x: coords[0], y: coords[1]};
+                var d = {
+                  ordered: new Date(isolate.order_date),
+                  unit: isolate.hospitalAndUnit,
+                  value: 1,
+                  x: coords[0],
+                  y: coords[1]
+                };
                 if (ANON) { d.ordered.setMonth(d.ordered.getMonth() + rand20 + 10); }
                 return d;
               }

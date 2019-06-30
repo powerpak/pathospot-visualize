@@ -1,7 +1,9 @@
+// Fixes up complex/strange unit names for display
 function fixUnit(unit) {
   if (unit) {
-    unit = unit.replace(/MOUNT SINAI HOSPITAL +/, 'HOSP ');
+    unit = unit.replace(/MOUNT SINAI HOSPITAL +/, 'MSH ');
     unit = unit.replace(/EMERGENCY (DEPARTMENT|DEPT)/, 'ED');
+    unit = unit.replace(/OPERATING ROOM/, 'O.R.');
     unit = unit.replace(/INITIAL DEPARTMENT/, '??');
     unit = unit.replace(/NS INTERNAL MEDICINE/, 'NS IM');
     unit = unit.replace(/INTERVENTIONAL RADIOLOGY/, 'IR');
@@ -12,6 +14,15 @@ function fixUnit(unit) {
     if (window.ANON) { unit = rot13(unit); }
   }
   return unit;
+}
+
+// Gets the unit name from an object prefixed with `.hospital_abbreviation` if it exists
+function getHospitalAndUnit(d, prop) {
+  prop = prop || "collection_unit";
+  if (d.hospital_abbreviation && d[prop].indexOf(d.hospital_abbreviation + ' ') !== 0) {
+    return d.hospital_abbreviation + ' ' + d[prop];
+  }
+  return d[prop];
 }
 
 // turns an array of arrays, where the first is a list of fieldnames, into an array of objects

@@ -263,7 +263,7 @@ else:
     if (dateRegex.test(v.order_date) && v.order_date > '1901-00-00') { 
       v.ordered = new Date(v.order_date);
     }
-    v.collection_unit = fixUnit(v.collection_unit);
+    v.collection_unit = fixUnit(getHospitalAndUnit(v));
   });
   
   // Preprocess `encounters` into an array of objects (unpacking it from an array-of-arrays with a header row)
@@ -272,7 +272,7 @@ else:
   _.each(encounters, function(v) {
     v.start_time = timeRegex.test(v.start_time) ? new Date(v.start_time) : null;
     v.end_time = timeRegex.test(v.end_time) ? new Date(v.end_time) : null;
-    v.department_name = fixUnit(v.department_name);
+    v.department_name = fixUnit(getHospitalAndUnit(v, "department_name"));
     if (v.encounter_type != "Hospital Encounter") {
       if (v.start_time && v.end_time && v.start_time.getTime() == v.end_time.getTime()) {
         v.end_time.setHours(v.end_time.getHours() + 24);

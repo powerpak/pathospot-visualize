@@ -98,13 +98,17 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       oldBranchLength = tree.branch_length();
   
   // Constants for positioning
+  var max_eRAP_ID = _.max(_.pluck(isolates, 'eRAP_ID')),
+      eRAP_ID_width = max_eRAP_ID.toString().length * 7 + 12,
+      max_unit_length = _.max(_.map(isolates, function(iso) { return iso.collection_unit.length; })),
+      unit_width = max_unit_length * 9 + 12;
   var isolateColumns = [
     ["isolate_ID", 0, "Isolate ID"],
-    ["eRAP_ID", 60, "Anon Pt ID"],
-    ["order_date", 120, "Order Date"],
-    ["collection_unit", 190, "Unit"]
+    ["eRAP_ID", 62, "Pt ID"],
+    ["order_date", 62 + eRAP_ID_width, "Order Date"],
+    ["collection_unit", 62 + eRAP_ID_width + 73, "Unit"]
   ];
-  var variantsX = 280, variantHeight = 15, variantWidth = 14;
+  var variantsX = 62 + eRAP_ID_width + 73 + unit_width, variantHeight = 15, variantWidth = 14;
   var variantMapPadRatio = 0.2, variantMapStepback = 5,
       variantMapContigHeight = 12, minVariantMapWidth = 200;
   
@@ -115,7 +119,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     // Tells phylotree to pretend that the branch_names are super long, so it adds extra width to the SVG
     // see https://github.com/veg/phylotree.js/blob/master/examples/leafdata/index.html
     tree.branch_name(function(node) {
-      return Array(Math.floor(Math.max(variants.allele_info.length, 10) * 1.8) + 50).join(" ");
+      return Array(Math.floor(Math.max(variants.allele_info.length, 10) * 1.8 + variantsX / 5.5)).join(" ");
     });
   }
   
@@ -200,9 +204,28 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   tree.reroot(earliestNode);
   tree.layout();
 
-  // ================================================================
-  // = Plot variant labels and the genome map next to the phylotree =
-  // ================================================================
+  // =================================================================================
+  // = Plot metadata labels, variant labels and the genome map next to the phylotree =
+  // =================================================================================
+  
+  function updateIsolateColumnLabels() {
+    var bbox = getBBox(d3.select("#dendro .isolate-metadata"));
+    
+    columnLabelsG = d3.select('#dendro .column-labels');
+    if (columnLabelsG.node() === null) { 
+      columnLabelsG = d3.select('#dendro').append("g").attr("class", "column-labels");
+      columnLabelsG.attr("transform", "translate(" + bbox.x + "," + bbox.y + ")"); 
+    }
+    
+    labelTexts = columnLabelsG.selectAll("text").data(isolateColumns);
+    labelTexts.exit().remove();
+    labelTexts.enter().append("text")
+        .attr("class", "axis-label")
+        .attr("x", function(d) { return d[1]; })
+        .attr("dy", -5)
+        .text(function(d) { return d[2]; })
+  }
+  updateIsolateColumnLabels();
 
   function updateVariantLabels() {
     if (!variants.by_assembly || !variants.allele_info) { return; }
@@ -272,7 +295,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     chromEnter.append("text")
         .attr("x", function(d) { return xScaleChromPos(chromSizes[0].chrom, d.size) * 0.5; })
         .attr("y", variantMapContigHeight * 0.8)
-        .text(function(d) { return FORMAT_FOR_DISPLAY.chrom(d.chrom); })
+        .text(function(d) { return FORMAT_FOR_DISPLAY.chrom(d.chrom); });
     
     mappingPaths = variantMapG.selectAll("path").data(variants.allele_info);
     mappingPaths.exit().remove();

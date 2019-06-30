@@ -193,6 +193,7 @@ text.label {
 
 text.axis-label {
   font-weight: bold;
+  fill: #777;
 }
 
 .active text {
@@ -393,6 +394,10 @@ text.axis-label {
 }
 #dendro .isolate-metadata.hover {
   font-weight: bold;
+}
+
+#dendro .tree-scale-bar line, #dendro .tree-scale-bar path {
+  stroke: #aaa;
 }
 
 #dendro .variant-map rect {
@@ -825,6 +830,7 @@ text.axis-label {
 }
 .more .instructions, .show-more .more .links { display: inline; }
 .show-more .more .instructions, .more .links { display: none; }
+.more .instructions, .more .links { font-size: 120%; font-weight: bold; }
 
 .d3-tip .merge-warn {
   text-align: center;
