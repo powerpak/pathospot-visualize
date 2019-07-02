@@ -76,6 +76,17 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     }
   }
   
+  // D3 tooltip object
+  function tipHtml(d) {
+    if (d.referenceGenomeInfo) { return tipGenomeInfoHtml(d); }
+    return tipEncHtml(d);
+  }
+  
+  var tip = d3.tip()
+      .attr("class", "d3-tip")
+      .offset([-10, 0])
+      .html(tipHtml);
+  
   // jQuery objects for controls that can update the visualization
   var $colorBy = $('#color-nodes');
   var $dendroTimeline = $('#dendro-timeline');
@@ -275,7 +286,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     var variantLabelsSvg = d3.select("#dendro-variant-labels"),
         whichLabel = $variantLabels.val().split('+'),
         ntOrAa = $variantNtOrAa.val(),
-        formatter = FORMAT_FOR_DISPLAY[whichLabel[0]],
+        formatter = whichLabel[0] == 'chrom' ? null : FORMAT_FOR_DISPLAY[whichLabel[0]],
         bbox = getBBox(d3.select("#dendro .variants")),
         texts = variantLabelsSvg.selectAll("text").data(variants.allele_info),
         newHeight;
@@ -288,9 +299,13 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         })
         .text(function(d) { 
           var out = formatter ? formatter(d[whichLabel[0]]) : d[whichLabel[0]];
-          if (whichLabel[1] == 'pos' && out && !(/^\d+/).test(out)) {
-            // Note: NT and AA pos are ZERO-indexed in the .vcf.npz, but we display them as 1-indexed
-            out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + (d[ntOrAa + '_pos'] + 1); 
+          if (whichLabel[1] == 'pos' && out) {
+            if (whichLabel[0] == 'gene' && !(/^\d+/).test(out)) {
+              // Note: NT and AA pos are ZERO-indexed in the .vcf.npz, but we display them as 1-indexed
+              out += ":" + (ntOrAa == 'aa' ? 'p' : 'c') + "." + (d[ntOrAa + '_pos'] + 1); 
+            } else {
+              out += ":" + d['pos'];
+            }
           }
           return out;
         });
@@ -409,7 +424,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       };
   
   // Generates tooltip HTML for a given encounter datum, using the above tipRows spec
-  function tipHtml(d) {
+  function tipEncHtml(d) {
     html = '<table class="link-info enc-info">';
     _.each(tipRows, function(label, k) {
       var val = d[k];
@@ -422,10 +437,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     return html;
   }
   
-  var tip = d3.tip()
-      .attr("class", "d3-tip")
-      .offset([-10, 0])
-      .html(tipHtml);
   d3.select("#timeline").call(tip);
   
   // Generic handlers for mouse events on encounter, isolate, and overlap SVG elements
@@ -845,7 +856,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     plotAreaG.append("g")
         .attr("class", "isolate-tests")
       .selectAll("path")
-        .data(epi.isolate_test_results)
+        .data(epi.isolate_test_results || [])
       .enter().append("path")
         .attr("class", "isolate-test")
         .attr("d", isolateTestSymbolPath);

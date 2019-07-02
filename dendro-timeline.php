@@ -10,7 +10,7 @@ require(dirname(__FILE__).'/php/lib.dendro-timeline.php');
 $picking_assemblies = !isset($_GET['assemblies']);
 
 // Load everything we can from the .heatmap.json.
-// Note that for our purposes, $assembly_names are the primary IDs for each of the $isolates
+// Note that for our purposes, $assembly_names serve as the primary IDs for each of the $isolates
 list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error) = load_from_heatmap_json($_GET);
 
 if (!$error && !$picking_assemblies) {
@@ -177,6 +177,7 @@ else:
         <option value="gene" selected>Gene names</option>
         <option value="gene+pos">Gene & position</option>
         <option value="desc">Gene description</option>
+        <option value="chrom+pos">Genomic position</option>
       </select>
       <select id="variant-nt-or-aa" name="variant_nt_or_aa">
         <option value="nt" selected>Nucleotides</option>

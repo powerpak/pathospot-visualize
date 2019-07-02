@@ -18,7 +18,8 @@ function pickAssemblies(isolates, assemblyNames, whichTree) {
         {pluck: 'assembly_ID', option_text: 'assembly ID'}
       ];
   var FORMAT_FOR_DISPLAY = {
-        collection_unit: fixUnit
+        collection_unit: fixUnit,
+        order_date: function(d) { return _.isString(d) ? d.replace(/[ T].*/g, '') : d; }
       };
       
   _.each(whichTree, function(treeNum, assemblyName) {
