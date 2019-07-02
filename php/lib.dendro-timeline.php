@@ -185,3 +185,28 @@ function variants_for_assemblies_as_json($db_or_npz, $which_tree, $assembly_name
   }
   return json_encode(array("error" => isset($stderr) ? $stderr : "Error running the Python interpreter."));
 }
+
+
+
+// Loads the .epi.heatmap.json data corresponding to the current `$db` parameter and
+// filters it to only the data with eRAP_IDs corresponding to those in `$isolates`
+function load_epi_for_isolates($db, $isolates) {
+  $eRAP_IDs = array();
+  $epi_filename = preg_replace('/\.\w+$/', '', $db) . ".epi.heatmap.json";
+  $epi = array("isolate_test_results" => null);
+  
+  foreach ($isolates as $isolate) { $eRAP_IDs[$isolate["eRAP_ID"]] = true; }
+  
+  $epi_json = json_decode(@file_get_contents(dirname(dirname(__FILE__)) . "/data/$epi_filename"), true);
+  if (isset($epi_json) && $epi_json && is_array($epi_json["isolate_test_results"])) {
+    $eRAP_ID_col = array_search("eRAP_ID", $epi_json["isolate_test_results"][0]);
+    $epi["isolate_test_results"] = array($epi_json["isolate_test_results"][0]);
+    foreach($epi_json["isolate_test_results"] as $i => $row) {
+      if ($i === 0) { continue; }
+      if ($eRAP_IDs[$row[$eRAP_ID_col]]) {
+        array_push($epi["isolate_test_results"], $row);
+      }
+    }
+  }
+  return $epi;
+}

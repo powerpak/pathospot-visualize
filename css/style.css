@@ -531,7 +531,7 @@ text.axis-label {
 #timeline .overlaps path {
   opacity: 0.5;
   fill: #dbb;
-  transition: opacity 0.5s;
+  transition: opacity visibility 0.5s;
 }
 #timeline .overlaps path.hover {
   opacity: 1;
@@ -543,8 +543,13 @@ text.axis-label {
 }
 .dragging-row #timeline .overlaps path, #timeline.hide-overlaps .overlaps path {
   opacity: 0;
+  pointer-events: none;
 }
 
+#timeline .isolate-test {
+  stroke: #666;
+  fill: none;
+}
 
 /*#timeline .encounter.outpatient {
   fill: url(#diagonal-stripe-5) #fff;

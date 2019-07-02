@@ -19,6 +19,7 @@ if (!$error && !$picking_assemblies) {
   if ($isolates) { 
     $encounters = load_encounters_for_isolates($db, $isolates);
     $variants_json = variants_for_assemblies_as_json($db, $which_tree, $assembly_names);
+    $epi = load_epi_for_isolates($db, $isolates);
   }
   if (!$encounters) { $error = "Could not load encounter data; is there an `.encounters.tsv` file corresponding to the `.heatmap.json` file?"; }
   $pick_assemblies_url = basename(__FILE__) . "?db={$db}&select=" . implode('+', $assembly_names);
@@ -254,16 +255,20 @@ else:
   var isolates = <?= json_encode($isolates); ?>;
   var encounters = <?= json_encode($encounters); ?>;
   var variants = <?= $variants_json ?>;
+  var epi = <?= json_encode($epi); ?>;
   
-  var dateRegex = (/\d{4}-\d{2}-\d{2}/);
-  var timeRegex = (/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}/);
+  var dateRegex = (/^\d{4}-\d{2}-\d{2}/);
+  var timeRegex = (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}/);
+  var timeSuffixForDates = 'T12:00:00-04:00';
   
   // Preprocess specially formatted fields in `isolates`
   _.each(isolates, function(v) {
-    if (dateRegex.test(v.order_date) && v.order_date > '1901-00-00') { 
+    if (dateRegex.test(v.order_date) && v.order_date > '1901-00-00') {
+      if (!timeRegex.test(v.order_date)) { v.ordered += timeSuffixForDates; }
       v.ordered = new Date(v.order_date);
     }
     v.collection_unit = fixUnit(getHospitalAndUnit(v));
+    v.eRAP_ID = v.eRAP_ID.toString();
   });
   
   // Preprocess `encounters` into an array of objects (unpacking it from an array-of-arrays with a header row)
@@ -290,8 +295,20 @@ else:
     variants.chrom_sizes = tabularIntoObjects(variants.chrom_sizes);
   }
   
+  // Unpack tabular arrays-of-arrays in `epi` into objects and preprocess special fields
+  if (epi.isolate_test_results) {
+    epi.isolate_test_results = tabularIntoObjects(epi.isolate_test_results);
+    _.each(epi.isolate_test_results, function(v) {
+      if (dateRegex.test(v.test_date) && !timeRegex.test(v.test_date)) {
+        v.test_date += timeSuffixForDates;
+      }
+      v.test_date = timeRegex.test(v.test_date) ? new Date(v.test_date) : null;
+      v.eRAP_ID = v.eRAP_ID.toString();
+    });
+  }
+  
   $(function() {
-    dendroTimeline(prunedTree, isolates, encounters, variants, '.navbar');
+    dendroTimeline(prunedTree, isolates, encounters, variants, epi, '.navbar');
   });
 </script>
 

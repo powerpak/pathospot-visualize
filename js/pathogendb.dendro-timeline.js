@@ -1,4 +1,4 @@
-function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
+function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar) {
   // Global constants.
   var COLORS = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 
     "#4379CD", "#4784C7", "#4B8FC1", "#5098B9", "#56A0AF", "#5CA7A4", "#63AC99", "#6BB18E", 
@@ -12,7 +12,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       .concat(_.times(TOLERANCE_STEPS.length - 24, function() { return "days"; }));
   var TOLERANCE_DEFAULT = 12;
   
-  // Utility functions for formatting various fields for display, or generating a symbol for an isolate.
+  // Utility functions for formatting various fields for display, or generating symbols for isolates/tests
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
@@ -30,12 +30,20 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       return d; 
     }
   };
+  function symbolLineX(radius) {
+    d = radius / Math.sqrt(2);
+    return ["M-", ",-", "L", ",", "M-", ",", "L", ",-", ""].join(d);
+  }
   function isolateSymbolPath(iso) { 
     var radius = iso.symbolRadius || NODE_RADIUS;
     return d3.svg.symbol().size(Math.PI * radius * radius).type(d3.svg.symbolTypes[iso.symbol || 0])(); 
   };
+  function isolateTestSymbolPath(test) { 
+    var negative = test.test_result.toLowerCase() == 'no growth',
+        circle = d3.svg.symbol().size(Math.PI * NODE_RADIUS * NODE_RADIUS).type("circle");
+    return negative ? symbolLineX(NODE_RADIUS / 1.5) : circle(); 
+  };
 
-  
   // D3 scales, formats, and other helpers that are used globally
   var spectralScale = d3.scale.linear()
       .domain(_.range(COLORS.length))
@@ -81,6 +89,40 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
   var $tolerance = $('#tolerance');
   var $toleranceNum = $('#tolerance-num');
   var $toleranceUnits = $('#tolerance-units');
+  
+  
+  // ======================================================================================
+  // = Impute locations for isolate test results (unsequenced positive/negative cultures) =
+  // ======================================================================================
+  
+  function imputeTestResultLocations(testResults, encounters) {
+    var encountersByPt = _.groupBy(encounters, 'eRAP_ID');
+    _.each(testResults, function(result) {
+      var ptEncs = encountersByPt[result.eRAP_ID] || [],
+        testTime = result.test_date,
+        nearestPtEncs;
+      // Sorts encounters for this patient by...
+      //   - Longest encounter overlapping the testTime, followed by
+      //   - Closest encounter to the testTime, from either start or end (whichever is closer).
+      nearestPtEncs = _.sortBy(ptEncs, function(enc) { 
+        if (testTime >= enc.start_time && testTime < enc.end_time) {
+          return -(enc.end_time - enc.start_time);
+        } else if (testTime < enc.start_time) {
+          return enc.start_time - testTime;
+        }
+        return testTime - enc.end_time;
+      });
+      // After sorting, use the first (best/closest) encounter for imputing location.
+      // FIXME: could set a maximum time window outside which imputation is ridiculous
+      if (nearestPtEncs.length > 0) {
+        result.imputed_unit = nearestPtEncs[0].department_name;
+      }
+    });
+  }
+  if (epi && _.isArray(epi.isolate_test_results)) {
+    imputeTestResultLocations(epi.isolate_test_results, encounters)
+  }
+  
   
   // =====================================
   // = Setup the phylotree.js in #dendro =
@@ -587,13 +629,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     path += " C " + (xTo + width/2 - bend) + "," + yTo + " " + (xFrom + width/2 - bend) + "," + yFrom;
     path += " " + (xFrom + width/2) + "," + yFrom;
     path += " L " + (xFrom - width/2) + "," + yFrom;
-    // path = "M " + (xFrom - width/2) + "," + yFrom;
-    // path += " Q " + ((xFrom + xTo)/2 - width/2 - bend) + "," + ((yFrom + yTo)/2);
-    // path += " " + (xTo - width/2) + "," + yTo;
-    // path += " L " + (xTo + width/2) + "," + yTo;
-    // path += " Q " + ((xFrom + xTo)/2 + width/2 - bend) + "," + ((yFrom + yTo)/2);
-    // path += " " + (xFrom + width/2) + "," + yFrom;
-    // path += " L " + (xFrom - width/2) + "," + yFrom;
     return path;
   }
   
@@ -713,6 +748,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
           return [enc.eRAP_ID, enc.department_name];
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
+        })).concat(_.map(epi.isolate_test_results || [], function(test) {
+          return [test.eRAP_ID, test.imputed_unit];
         })),
         toleranceUnits = $toleranceUnits.text() == 'hrs' ? 24 : 1,
         overlaps = findOverlaps(drawableEncounters, isolates, $toleranceNum.val() / toleranceUnits),
@@ -800,6 +837,19 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
     plotAreaG.select(".overlaps").selectAll("path")
         .sort(function(a, b) { return b.width - a.width; });
     
+    // Draw isolate test results (unsequenced positive/negative cultures)
+    var isolateTestX = function(test) { return xScale(test.test_date); },
+        isolateTestY = function(test) { 
+          return yScaleGrouped([test.eRAP_ID, test.imputed_unit]) + rowHeight * 0.5;
+        };
+    plotAreaG.append("g")
+        .attr("class", "isolate-tests")
+      .selectAll("path")
+        .data(epi.isolate_test_results)
+      .enter().append("path")
+        .attr("class", "isolate-test")
+        .attr("d", isolateTestSymbolPath);
+    
     // Draw isolates
     var isolateX = function(iso) { return xScale(iso.ordered); },
         isolateY = function(iso) { 
@@ -846,6 +896,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
       xAxis.ticks(Math.floor($timeline.find(".zoom-rect").width() / 100));
       timelineSvg.select("g.x.axis").call(xAxis);
       if (!reorderingY) {
+        timelineSvg.select(".isolate-tests").selectAll("path")
+            .attr("transform", function(test) { 
+              return 'translate(' + isolateTestX(test) + ',' + isolateTestY(test) + ')';
+            });
         timelineSvg.select(".isolates").selectAll("path")
             .attr("transform", function(iso) { return 'translate(' + isolateX(iso) + ',' + isolateY(iso) + ')'; } );
         timelineSvg.select(".overlaps").selectAll("path")
@@ -981,12 +1035,18 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, navbar) {
             .attr("y", function(v) { return yScale(v) + deltaY(_.first(v)); })
             .text(function(v) { return _.last(v); });
         
-        // Encounters (horizontal bars) and isolates (points)
+        // Encounters (horizontal bars) and isolates (points) and isolate tests (points)
         plotAreaG.select(".encounters").selectAll("rect").transition()
             .duration(function(enc) { return durationDragMask([enc.eRAP_ID, enc.department_name]); })
             .attr("y", function(enc) {
               return yScaleGrouped([enc.eRAP_ID, enc.department_name]) + deltaY([enc.eRAP_ID, enc.department_name]); 
-            })
+            });
+        plotAreaG.select(".isolate-tests").selectAll("path").transition()
+            .duration(function(test) { return durationDragMask([test.eRAP_ID, test.imputed_unit]); })
+            .attr("transform", function(test) { 
+              var shiftedY = isolateTestY(test) + deltaY([test.eRAP_ID, test.imputed_unit]);
+              return 'translate(' + isolateTestX(test) + ',' + shiftedY + ')'; 
+            });
         plotAreaG.select(".isolates").selectAll("path").transition()
             .duration(function(iso) { return durationDragMask([iso.eRAP_ID, iso.collection_unit]); })
             .attr("transform", function(iso) { 
