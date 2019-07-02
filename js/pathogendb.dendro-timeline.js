@@ -140,8 +140,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       oldBranchLength = tree.branch_length();
   
   // Constants for positioning
-  var max_eRAP_ID = _.max(_.pluck(isolates, 'eRAP_ID')),
-      eRAP_ID_width = max_eRAP_ID.toString().length * 7 + 12,
+  var max_eRAP_ID_length = _.max(_.map(isolates, function(iso) { return iso.eRAP_ID.toString().length; })),
+      eRAP_ID_width = max_eRAP_ID_length * 7 + 12,
       max_unit_length = _.max(_.map(isolates, function(iso) { return iso.collection_unit.length; })),
       unit_width = max_unit_length * 9 + 12;
   var isolateColumns = [
