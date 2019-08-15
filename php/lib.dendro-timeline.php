@@ -166,9 +166,10 @@ function variants_for_assemblies_as_json($db_or_npz, $which_tree, $assembly_name
   );
   
   $npz = preg_match('/\.vcfs\.npz$/', $db_or_npz) ? $db_or_npz : "{$db_or_npz}.vcfs.npz";
+  $npz = escapeshellarg(dirname(dirname(__FILE__)) . "/data/$npz");
   $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
   $script = dirname(dirname(__FILE__)) . '/scripts/vcfs-npz-to-json.py';
-  $process = proc_open("$PYTHON $script data/$npz $which_tree $assembly_args", $descriptorspec, $pipes);
+  $process = proc_open("$PYTHON $script $npz $which_tree $assembly_args", $descriptorspec, $pipes);
 
   if (is_resource($process)) {
     fclose($pipes[0]);
