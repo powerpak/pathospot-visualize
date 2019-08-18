@@ -269,7 +269,7 @@ else:
       v.ordered = new Date(v.order_date);
     }
     v.collection_unit = fixUnit(getHospitalAndUnit(v));
-    v.eRAP_ID = v.eRAP_ID.toString();
+    v.eRAP_ID = _.isUndefined(v.eRAP_ID) || v.eRAP_ID === null ? '' : v.eRAP_ID.toString();
   });
   
   // Preprocess `encounters` into an array of objects (unpacking it from an array-of-arrays with a header row)
