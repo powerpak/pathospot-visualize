@@ -1089,17 +1089,17 @@ $(function() {
     var networkNodes = networkG.append("g")
         .attr("class", "network-nodes")
     
-    var networkCenter = {x: (width + margin.left + margin.right) / 2, y: height / 2};
+    var networkOrigin = {x: (width + margin.left + margin.right) / 2, y: height * 0.1};
     var simulation = d3.forceSimulation()
         .force("link", d3.forceLink().id(function(d) { return d.i; }).distance(400).strength(0))
         .force("collision", d3.forceCollide(5.5))
         .force("stickyX", d3.forceX().strength(0.1).x(function(d) { 
           var coords = unitCoords[d.data.hospitalAndUnit || ''];
-          return coords ? coords[0] : networkCenter.x; 
+          return coords ? coords[0] : networkOrigin.x; 
         }))
         .force("stickyY", d3.forceY().strength(0.2).y(function(d) { 
           var coords = unitCoords[d.data.hospitalAndUnit || ''];
-          return coords ? coords[1] : networkCenter.y; 
+          return coords ? coords[1] : networkOrigin.y; 
         }));
     
     var simulationCooldown = null;
@@ -1127,8 +1127,8 @@ $(function() {
             return {
               i: node.i, 
               data: node, 
-              x: (prev ? prev.x : nodeCoords[0] || networkCenter.x), 
-              y: (prev ? prev.y : nodeCoords[1] || networkCenter.y)
+              x: (prev ? prev.x : nodeCoords[0] || networkOrigin.x), 
+              y: (prev ? prev.y : nodeCoords[1] || networkOrigin.y)
             }; 
           }),
           filteredLinks = linksFromFilteredDomain(filteredDomain);
