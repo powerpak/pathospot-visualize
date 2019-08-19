@@ -236,8 +236,8 @@ else:
       <span class="widget-label">Filter culture results</span>
       <select id="isolate-tests" name="isolateTests">
         <option value="" selected>Sequenced only</option>
-        <option value="seq-and-same-species">All positives and negatives for this species</option>
-        <option value="seq-and-any-species">All positives and negatives, any species</option>
+        <option value="seq-and-same-species">Same species (+) and all (-)</option>
+        <option value="seq-and-any-species">All (+) and (-)</option>
       </select>
     </label>
   </div>
