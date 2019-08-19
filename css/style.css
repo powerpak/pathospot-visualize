@@ -547,8 +547,15 @@ text.axis-label {
 }
 
 #timeline .isolate-test {
+  display: none;
   stroke: #666;
   fill: none;
+}
+#timeline.seq-and-any-species .isolate-test {
+  display: inline;
+}
+#timeline.seq-and-same-species .isolate-test.same-species {
+  display: inline;
 }
 
 /*#timeline .encounter.outpatient {

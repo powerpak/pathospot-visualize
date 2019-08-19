@@ -100,6 +100,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   var $tolerance = $('#tolerance');
   var $toleranceNum = $('#tolerance-num');
   var $toleranceUnits = $('#tolerance-units');
+  var $isolateTests = $('#isolate-tests');
   
   
   // ======================================================================================
@@ -859,6 +860,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         .data(epi.isolate_test_results || [])
       .enter().append("path")
         .attr("class", "isolate-test")
+        .classed("same-species", function(test) { return false; }) // FIXME: propagate taxonomy_ID's to implement this
         .attr("d", isolateTestSymbolPath);
     
     // Draw isolates
@@ -1145,6 +1147,12 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   
   $filter.change(function() {
     updateTimeline();
+  });
+  
+  $isolateTests.change(function() {
+    var classes = $(this).find('option').map(function() { return $(this).val(); }).get();
+    $timeline.removeClass(classes.join(' '));
+    $timeline.addClass($(this).val());
   });
   
   $yGrouping.change(function() {
