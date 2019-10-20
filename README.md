@@ -1,4 +1,8 @@
-# PathogenDB visualization
+# pathoSPOT-visualize
+
+This web interface is used to explore phylogenomic evidence of outbreaks and is the visualization component of PathoSPOT, the **Patho**gen **S**equencing **P**hylogenomic **O**utbreak **T**oolkit.
+
+The [pathoSPOT-compare][] pipeline must first be used to run the analyses that supply this web interface. Typically, you will want to run the **parsnp**, **encounters**, and **epi** tasks.  Please refer to the [pathoSPOT-compare documentation][pathoSPOT-compare] to get started.
 
 ## Requirements
 
@@ -9,7 +13,7 @@ Python is required for running the contents of `scripts/`, which some of the PHP
 ## Usage
 
 1. Clone this repository into a web-accessible directory.
-2. Supply analysis output from [pathogendb-comparison][] by placing it in `data/`. All the output files read by this package include a YYYY-MM-DD formatted date in the filename and have one of the following endings:
+2. Supply analysis output from [pathoSPOT-compare][] by placing it in `data/`. All the output files read by this package include a YYYY-MM-DD formatted date in the filename and have one of the following endings:
     - `.snv.heatmap.json` -> produced by [pathogendb-comparison][]'s `heatmap` task
     - `.parsnp.heatmap.json` -> produced by [pathogendb-comparison][] `parsnp` task
     - `.parsnp.vcfs.npz` -> produced by [pathogendb-comparison][] `parsnp` task
@@ -17,7 +21,7 @@ Python is required for running the contents of `scripts/`, which some of the PHP
     - `.epi.heatmap.json` -> produced by [pathogendb-comparison][] `epi` task
 3. Access `heatmap.php` via a web browser.
 
-[pathogendb-comparison]: https://github.com/powerpak/pathogendb-comparison
+[pathoSPOT-compare]: https://github.com/powerpak/pathospot-compare
 
 ### Optional configuration
 
