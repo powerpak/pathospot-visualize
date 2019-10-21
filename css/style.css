@@ -549,7 +549,7 @@ text.axis-label {
 #timeline .isolate-test {
   display: none;
   stroke: #666;
-  fill: none;
+  fill: rgba(0,0,0,0.1);
 }
 #timeline.seq-and-any-species .isolate-test {
   display: inline;
@@ -566,6 +566,11 @@ text.axis-label {
 #timeline .isolate.hover, #dendro .isolate.hover {
   stroke: #000 !important;
   stroke-width: 3px;
+}
+
+#timeline .isolate-test.hover {
+  stroke: #000 !important;
+  stroke-width: 2px;
 }
 
 #pick-assemblies {

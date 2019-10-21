@@ -11,7 +11,7 @@ $picking_assemblies = !isset($_GET['assemblies']);
 
 // Load everything we can from the .heatmap.json.
 // Note that for our purposes, $assembly_names serve as the primary IDs for each of the $isolates
-list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error) = load_from_heatmap_json($_GET);
+list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $db_json, $error) = load_from_heatmap_json($_GET);
 
 if (!$error && !$picking_assemblies) {
   if ($matching_tree) { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
@@ -19,7 +19,7 @@ if (!$error && !$picking_assemblies) {
   if ($isolates) { 
     $encounters = load_encounters_for_isolates($db, $isolates);
     $variants_json = variants_for_assemblies_as_json($db, $which_tree, $assembly_names);
-    $epi = load_epi_for_isolates($db, $isolates);
+    $epi = load_epi_for_isolates($db, $isolates, $db_json["taxonomy_IDs"]);
   }
   if (!$encounters) { $error = "Could not load encounter data; is there an `.encounters.tsv` file corresponding to the `.heatmap.json` file?"; }
   $pick_assemblies_url = basename(__FILE__) . "?db={$db}&select=" . implode('+', $assembly_names);
@@ -307,14 +307,19 @@ else:
   // Unpack tabular arrays-of-arrays in `epi` into objects and preprocess special fields
   if (epi.isolate_test_results) {
     epi.isolate_test_results = tabularIntoObjects(epi.isolate_test_results);
-    _.each(epi.isolate_test_results, function(v) {
+    epi.isolate_test_results = _.filter(epi.isolate_test_results, function(v) {
       if (dateRegex.test(v.test_date) && !timeRegex.test(v.test_date)) {
         v.test_date += timeSuffixForDates;
       }
+      v.collection_unit = fixUnit(getHospitalAndUnit(v));
       v.test_date = timeRegex.test(v.test_date) ? new Date(v.test_date) : null;
       v.eRAP_ID = v.eRAP_ID.toString();
+      v.negative = v.test_result === "negative";
+      return !_.isNull(v.test_date);
     });
   }
+  
+  d3.json("js/organisms.json", function(organisms) { epi.organisms = organisms; });
   
   $(function() {
     dendroTimeline(prunedTree, isolates, encounters, variants, epi, '.navbar');

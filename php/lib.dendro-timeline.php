@@ -87,7 +87,7 @@ function load_from_heatmap_json($REQ) {
     }
   } else { $error = "Could not load valid JSON from `db`. Is there a matching `.heatmap.json` file in `data/`?"; }
   
-  return array($db, $assembly_names, $isolates, $matching_tree, $which_tree, $error);
+  return array($db, $assembly_names, $isolates, $matching_tree, $which_tree, $json, $error);
 }
 
 
@@ -191,10 +191,13 @@ function variants_for_assemblies_as_json($db_or_npz, $which_tree, $assembly_name
 
 // Loads the .epi.heatmap.json data corresponding to the current `$db` parameter and
 // filters it to only the data with eRAP_IDs corresponding to those in `$isolates`
-function load_epi_for_isolates($db, $isolates) {
+function load_epi_for_isolates($db, $isolates, $taxonomy_ids=null) {
   $eRAP_IDs = array();
   $epi_filename = preg_replace('/\.\w+$/', '', $db) . ".epi.heatmap.json";
-  $epi = array("isolate_test_results" => null);
+  $epi = array("taxonomy_IDs" => array(), "isolate_test_results" => null);
+  
+  if (!is_array($taxonomy_ids)) { $taxonomy_ids = array(); }
+  foreach ($taxonomy_ids as $taxonomy_id) { $epi["taxonomy_IDs"][strval($taxonomy_id)] = true; }
   
   foreach ($isolates as $isolate) { $eRAP_IDs[$isolate["eRAP_ID"]] = true; }
   

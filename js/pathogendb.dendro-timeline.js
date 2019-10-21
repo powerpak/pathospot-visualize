@@ -15,7 +15,17 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // Utility functions for formatting various fields for display, or generating symbols for isolates/tests
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
+    from_time: function(d) { return d.toLocaleString(); },
     end_time: function(d) { return d.toLocaleString(); },
+    to_time: function(d) { return d.toLocaleString(); },
+    test_date: function(d) { return d.toLocaleString(); },
+    num_days: function(d) {
+      var desc = d > 0 ? "for " : "within ";
+      var hours = Math.abs(d) * 24, 
+          days = Math.floor(hours / 24);
+      if (days > 0) { desc += days + "d "; hours -= days * 24; }
+      return desc + Math.ceil(hours) + "h"; 
+    },
     order_date: function(d) { return _.isString(d) ? d.replace(/[ T].*/g, '') : d; },
     unit: fixUnit,
     collection_unit: fixUnit,
@@ -28,20 +38,32 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       if ((/^u\d{5}crpx_p_/).test(d)) { return "plas."; }
       if ((/^u\d{5}[a-z]{4}_[a-z]_/).test(d)) { return "other"; }
       return d; 
-    }
+    },
+    taxonomy_ID: function(d) { return epi.organisms[d] ? epi.organisms[d] : ""; },
+    contig_N50: numberWithCommas,
+    contig_maxlength: numberWithCommas
   };
   function symbolLineX(radius) {
     d = radius / Math.sqrt(2);
     return ["M-", ",-", "L", ",", "M-", ",", "L", ",-", ""].join(d);
   }
+  function symbolDiamond(radius) {
+    d = radius / Math.sqrt(2);
+    return ["M0,-", "L", ",0L0,", "L-", ",0L0,-","L0,-", ""].join(d);
+  }
   function isolateSymbolPath(iso) { 
     var radius = iso.symbolRadius || NODE_RADIUS;
     return d3.svg.symbol().size(Math.PI * radius * radius).type(d3.svg.symbolTypes[iso.symbol || 0])(); 
   };
+  function isolateTestSameSpecies(test) { 
+    return test.negative || !!epi.taxonomy_IDs[test.taxonomy_ID]; 
+  }
   function isolateTestSymbolPath(test) { 
-    var negative = test.test_result.toLowerCase() == 'no growth',
+    var negative = !!test.negative,
         circle = d3.svg.symbol().size(Math.PI * NODE_RADIUS * NODE_RADIUS).type("circle");
-    return negative ? symbolLineX(NODE_RADIUS / 1.5) : circle(); 
+    return negative ? symbolLineX(NODE_RADIUS / 1.5) : (
+          isolateTestSameSpecies(test) ? circle() : symbolDiamond(NODE_RADIUS / 1.2)
+        );
   };
 
   // D3 scales, formats, and other helpers that are used globally
@@ -79,6 +101,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // D3 tooltip object
   function tipHtml(d) {
     if (d.referenceGenomeInfo) { return tipGenomeInfoHtml(d); }
+    if (!_.isUndefined(d.assembly_ID)) { return tipIsolateHtml(d); }
+    if (_.isArray(d) && d.length > 0 && d[0].test_ID) { return tipIsolateTestsHtml(d); }
+    if (d.from_eRAP_ID) { return tipOverlapHtml(d); }
     return tipEncHtml(d);
   }
   
@@ -107,6 +132,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // = Impute locations for isolate test results (unsequenced positive/negative cultures) =
   // ======================================================================================
   
+  // FIXME: Now that we have proper collection_unit data for each isolate test result, can deprecate this.
   function imputeTestResultLocations(testResults, encounters) {
     var encountersByPt = _.groupBy(encounters, 'eRAP_ID');
     _.each(testResults, function(result) {
@@ -125,7 +151,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         return testTime - enc.end_time;
       });
       // After sorting, use the first (best/closest) encounter for imputing location.
-      // FIXME: could set a maximum time window outside which imputation is ridiculous
       if (nearestPtEncs.length > 0) {
         result.imputed_unit = nearestPtEncs[0].department_name;
       }
@@ -415,32 +440,36 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // = Setup tooltips and mouse events for the timeline  =
   // =====================================================
   
-  var tipRows = {
+  d3.select("#timeline").call(tip);
+  
+  function createTipTableRows(rowSpec, datum) {
+    var html = [];
+    _.each(rowSpec, function(label, k) {
+      var val = datum[k];
+      if (FORMAT_FOR_DISPLAY[k]) { val = FORMAT_FOR_DISPLAY[k](val); }
+      if (!_.isUndefined(val) && val !== null && val !== "") {
+        html.push('<tr><td class="row-label">' + label + '</td><td>' + val + '</td></tr>');
+      }
+    });
+    return html.join('');
+  }
+  
+  // ** 
+  // ** Encounters (horizontal bars)
+  // ** 
+  
+  // Generates tooltip HTML for a given encounter datum, using the tipEncRows spec
+  var tipEncRows = {
         department_name: "Unit",
-        eRAP_ID: "Patient #",
+        eRAP_ID: "Anon Pt ID",
         encounter_type: "Encounter Type",
         start_time: "Start Time", 
         end_time: "End Time",
         transfer_to: "Pt Transfers To"
       };
-  
-  // Generates tooltip HTML for a given encounter datum, using the above tipRows spec
   function tipEncHtml(d) {
-    html = '<table class="link-info enc-info">';
-    _.each(tipRows, function(label, k) {
-      var val = d[k];
-      if (FORMAT_FOR_DISPLAY[k]) { val = FORMAT_FOR_DISPLAY[k](val); }
-      if (!_.isUndefined(val) && val !== null && val !== "") {
-        html += '<tr><td class="row-label">' + label + '</td><td>' + val + '</td></tr>';
-      }
-    });
-    html += '</table>';
-    return html;
+    return '<table class="link-info enc-info">' + createTipTableRows(tipEncRows, d) + '</table>';
   }
-  
-  d3.select("#timeline").call(tip);
-  
-  // Generic handlers for mouse events on encounter, isolate, and overlap SVG elements
   function mouseLeaveEncounter(el) {
     $(el).removeClass("hover");
     $(".encounter").removeClass("hover-highlight");
@@ -461,12 +490,32 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       d3.selectAll($hoverHighlight.get()).classed("hover-highlight", true).moveToFront();
     }
   }
+  
+  // ** 
+  // ** Isolates (filled symbols on the dendrogram and timeline)
+  // ** 
+  var tipIsolateRows = {
+        isolate_ID: "Isolate ID",
+        assembly_ID: "Assembly_ID",
+        eRAP_ID: "Anon Pt ID",
+        collection_unit: "Unit",
+        order_date: "Collection Time",
+        mlst_subtype: "MLST",
+        contig_count: "# contigs",
+        contig_N50: "Contig N50",
+        contig_maxlength: "Longest contig"
+      };
+  function tipIsolateHtml(d) {
+    return '<table class="link-info isolate-info">' + createTipTableRows(tipIsolateRows, d) + '</table>';
+  }
   function mouseLeaveIsolate(el) {
     $(".hover.isolate, .hover.isolate-metadata").removeClass("hover");
+    tip.hide(d3.select(el).data()[0], el);
   }
   function mouseEnterIsolate(el) {
     var iso = d3.select(el).data()[0];
     $(".isolate-" + fixForClass(iso.name)).addClass("hover");
+    if ($(el).closest('#timeline').length) { tip.show(iso, el); }
   }
   function clickIsolate(el, reset) {
     var iso = d3.select(el).data()[0],
@@ -479,8 +528,65 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         .attr("d", isolateSymbolPath(iso))
         .attr("transform", "translate(" + (iso.symbolRadius || NODE_RADIUS) + ',0)');
   }
-  function mouseLeaveOverlap(el) { $(el).removeClass("hover"); }
-  function mouseEnterOverlap(el) { $(el).addClass("hover"); }
+  
+  // ** 
+  // ** Overlaps (arcs on the timeline)
+  // ** 
+  var tipOverlapRows = {
+        num_days: "Overlapped",
+        department_name: "Unit Involved",
+        from_eRAP_ID: "Anon Pt ID 1",
+        to_eRAP_ID: "Anon Pt ID 2",
+        from_time: "Overlap Starts",
+        to_time: "Overlap Ends"
+      };
+  function tipOverlapHtml(d) {
+    return '<table class="link-info overlap-info">' + createTipTableRows(tipOverlapRows, d) + '</table>';
+  }
+  function mouseLeaveOverlap(el) { 
+    $(el).removeClass("hover");
+    tip.hide(d3.select(el).data()[0], el);
+  }
+  function mouseEnterOverlap(el) { 
+    $(el).addClass("hover");
+    tip.show(d3.select(el).data()[0], el);
+  }
+  
+  // ** 
+  // ** Micro test results that were not sequenced (open symbols on the timeline)
+  // ** 
+  var tipIsolateTestRows = {
+        procedure_name: "Test Performed",
+        test_result: "Result",
+        description: "Result Details",
+        taxonomy_ID: "Species",
+        eRAP_ID: "Anon Pt ID",
+        collection_unit: "Unit",
+        test_date: "Collection Time"
+      };
+  function tipIsolateTestsHtml(d) {
+    html = '<table class="link-info isolate-test-info">';
+    _.each(d, function(isolateTest, i) {
+      if (i > 0) { html += '<tr class="separator"><td colspan="2"></td></tr>'; }
+      html += createTipTableRows(tipIsolateTestRows, isolateTest);
+    });
+    html += '</table>';
+    return html;
+  }
+  function mouseLeaveIsolateTest(el) {
+    $(".hover.isolate-test").removeClass("hover");
+    tip.hide([d3.select(el).data()[0]], el); 
+  }
+  function mouseEnterIsolateTest(el) {
+    var test = d3.select(el).data()[0],
+        sel = ".isolate-test-time-" + Math.floor(test.test_date.getTime() / 1000);
+    _.each($yGrouping.val().split(','), function(tupIndex) {
+      if (tupIndex == '0') { sel += ".isolate-test-0-" + fixForClass(test.eRAP_ID.toString()); }
+      else if (tupIndex == '1') { sel += ".isolate-test-1-" + fixForClass(test.collection_unit); }
+    });
+    $(sel).addClass("hover");
+    tip.show($(sel).map(function() { return d3.select(this).data()[0]; }).get(), el);
+  }
   
   // We have to set up custom mouse event handlers, using `document.elementFromPoint`, because
   // the timeline has a `<rect class="zoom-rect"/>` in front of it to capture mouse events for the zoom
@@ -498,10 +604,12 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
       else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
       else if ($prevHoverEl.hasClass("overlap")) { mouseLeaveOverlap(prevHoverEl); }
+      else if ($prevHoverEl.hasClass("isolate-test")) { mouseLeaveIsolateTest(prevHoverEl); }
       // mouseenter actions
       if ($(el).hasClass("encounter")) { mouseEnterEncounter(el); } 
       else if ($(el).hasClass("isolate")) { mouseEnterIsolate(el); }
       else if ($(el).hasClass("overlap")) { mouseEnterOverlap(el); }
+      else if ($(el).hasClass("isolate-test")) { mouseEnterIsolateTest(el); }
       prevHoverEl = el;
     }
     $(".zoom-rect").css("display", prevDisplay);
@@ -511,6 +619,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     if ($prevHoverEl.hasClass("encounter")) { mouseLeaveEncounter(prevHoverEl); }
     else if ($prevHoverEl.hasClass("isolate")) { mouseLeaveIsolate(prevHoverEl); }
     else if ($prevHoverEl.hasClass("overlap")) { mouseLeaveOverlap(prevHoverEl); }
+    else if ($prevHoverEl.hasClass("isolate-test")) { mouseLeaveIsolateTest(prevHoverEl); }
     prevHoverEl = null;
   });
   $timeline.on("click", function(e) {
@@ -606,7 +715,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
               to_eRAP_ID: iso.eRAP_ID,
               from_time: negOverlap ? (fromBefore ? enc.end_time : enc.start_time) : avg,
               to_time: negOverlap ? (fromBefore ? earlierEnc.start_time : earlierEnc.end_time) : avg,
-              width: (endOverlap.getTime() - startOverlap.getTime()) / mSecInDay
+              num_days: (endOverlap.getTime() - startOverlap.getTime()) / mSecInDay
             });
           });
         });
@@ -626,8 +735,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   function overlapPath(ovlap, xScale, yScaleGrouped, rowHeight, bendFactor) {
     var xFrom = xScale(ovlap.from_time),
         xTo = xScale(ovlap.to_time),
-        marginalOverlap = ovlap.width < 0,
-        width = marginalOverlap ? 2 : ovlap.width * oneDayInPx(xScale),
+        marginalOverlap = ovlap.num_days < 0,
+        width = marginalOverlap ? 2 : ovlap.num_days * oneDayInPx(xScale),
         yFrom = yScaleGrouped([ovlap.from_eRAP_ID, ovlap.department_name]),
         yTo = yScaleGrouped([ovlap.to_eRAP_ID, ovlap.department_name]),
         bend = Math.abs(yFrom - yTo) * bendFactor,
@@ -761,7 +870,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         }).concat(_.map(isolates, function(iso) {
           return [iso.eRAP_ID, iso.collection_unit];
         })).concat(_.map(epi.isolate_test_results || [], function(test) {
-          return [test.eRAP_ID, test.imputed_unit];
+          return [test.eRAP_ID, test.collection_unit];
         })),
         toleranceUnits = $toleranceUnits.text() == 'hrs' ? 24 : 1,
         overlaps = findOverlaps(drawableEncounters, isolates, $toleranceNum.val() / toleranceUnits),
@@ -852,15 +961,21 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     // Draw isolate test results (unsequenced positive/negative cultures)
     var isolateTestX = function(test) { return xScale(test.test_date); },
         isolateTestY = function(test) { 
-          return yScaleGrouped([test.eRAP_ID, test.imputed_unit]) + rowHeight * 0.5;
+          return yScaleGrouped([test.eRAP_ID, test.collection_unit]) + rowHeight * 0.5;
+        },
+        isolateTestClass = function(test) { 
+          var cls = "isolate-test isolate-test-time-" + Math.floor(test.test_date.getTime() / 1000);
+          cls += " isolate-test-0-" + fixForClass(test.eRAP_ID.toString());
+          cls += " isolate-test-1-" + fixForClass(test.collection_unit);
+          return cls;
         };
     plotAreaG.append("g")
         .attr("class", "isolate-tests")
       .selectAll("path")
         .data(epi.isolate_test_results || [])
       .enter().append("path")
-        .attr("class", "isolate-test")
-        .classed("same-species", function(test) { return false; }) // FIXME: propagate taxonomy_ID's to implement this
+        .attr("class", isolateTestClass)
+        .classed("same-species", isolateTestSameSpecies)
         .attr("d", isolateTestSymbolPath);
     
     // Draw isolates
