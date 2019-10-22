@@ -157,7 +157,15 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     });
   }
   if (epi && _.isArray(epi.isolate_test_results)) {
-    imputeTestResultLocations(epi.isolate_test_results, encounters)
+    imputeTestResultLocations(epi.isolate_test_results, encounters);
+    
+    epi.isolate_tests_by_id = {};
+    _.each(epi.isolate_test_results, function(res) { 
+      if (res.isolate_ID) { 
+        epi.isolate_tests_by_id[res.isolate_ID] = epi.isolate_tests_by_id[res.isolate_ID] || [];
+        epi.isolate_tests_by_id[res.isolate_ID].push(res); 
+      }
+    });
   }
   
   
@@ -504,22 +512,36 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         contig_count: "# contigs",
         contig_N50: "Contig N50",
         contig_maxlength: "Longest contig"
+      },
+      tipIsolateExtraRows = {
+        procedure_name: "Test Performed",
+        test_result: "Result",
+        description: "Result Details",
+        taxonomy_ID: "Species"
       };
   function tipIsolateHtml(d) {
-    return '<table class="link-info isolate-info">' + createTipTableRows(tipIsolateRows, d) + '</table>';
+    var rowsHtml = createTipTableRows(tipIsolateRows, d),
+        divider = '<tr class="separator"><td colspan="2"></td></tr>';
+    _.each(d.testResults, function(res) {
+      rowsHtml += divider + createTipTableRows(tipIsolateExtraRows, res);
+    });
+    return '<table class="link-info isolate-info">' + rowsHtml + '</table>';
   }
   function mouseLeaveIsolate(el) {
     $(".hover.isolate, .hover.isolate-metadata").removeClass("hover");
     tip.hide(d3.select(el).data()[0], el);
   }
   function mouseEnterIsolate(el) {
-    var iso = d3.select(el).data()[0];
+    var iso = d3.select(el).data()[0],
+        testResultsForIso = epi.isolate_tests_by_id && epi.isolate_tests_by_id[iso.isolate_ID];
     $(".isolate-" + fixForClass(iso.name)).addClass("hover");
-    if ($(el).closest('#timeline').length) { tip.show(iso, el); }
+    if ($(el).closest('#timeline').length) { 
+      tip.show(_.extend({}, iso, {testResults: testResultsForIso}), el); 
+    }  
   }
   function clickIsolate(el, reset) {
     var iso = d3.select(el).data()[0],
-      numSymbols = d3.svg.symbolTypes.length;
+        numSymbols = d3.svg.symbolTypes.length;
     iso.symbolRadius = reset ? NODE_RADIUS : NODE_RADIUS * 1.5;
     iso.symbol = reset ? 0 : (((iso.symbol || 0) - 1) + numSymbols) % numSymbols;
     $timeline.trigger("updateSymbols");
@@ -537,8 +559,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         department_name: "Unit Involved",
         from_eRAP_ID: "Anon Pt ID 1",
         to_eRAP_ID: "Anon Pt ID 2",
-        from_time: "Overlap Starts",
-        to_time: "Overlap Ends"
+        from_time: "Overlap Starts"
       };
   function tipOverlapHtml(d) {
     return '<table class="link-info overlap-info">' + createTipTableRows(tipOverlapRows, d) + '</table>';
