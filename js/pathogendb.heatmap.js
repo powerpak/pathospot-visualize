@@ -666,13 +666,12 @@ $(function() {
           .attr("x2", width);
           
       _.each(rowTextSpec, function(spec, cls) {
-          rowEnter.append("text")
-              .attr("class", cls)
-              .attr("x", spec.x)
-              .attr("y", idealBandWidth / 2)
-              .attr("dy", ".32em")
-              .attr("text-anchor", spec.x < 0 ? "end" : "start")
-              .text(spec.fn);
+        rowEnter.append("text")
+            .attr("class", cls)
+            .attr("x", spec.x)
+            .attr("y", idealBandWidth / 2)
+            .attr("dy", ".32em")
+            .attr("text-anchor", spec.x < 0 ? "end" : "start");
       });
     
       row.merge(rowEnter)
@@ -683,6 +682,10 @@ $(function() {
     
       row.merge(rowEnter).selectAll("text.pt-id.row-label")
           .style("fill", function(d) { return nodes[d.y].group !== null ? c(nodes[d.y].group) : '#ccc'; });
+      
+      _.each(rowTextSpec, function(spec, cls) {
+        row.merge(rowEnter).selectAll("text." + cls.replace(/ /g, '.')).text(spec.fn);
+      });
     
       row.merge(rowEnter).transition().duration(transitionDuration).delay(function(d) { return x(d.y) * 1; })
           .attr("transform", function(d) { return "translate(0," + x(d.y) + ")"; })
@@ -1310,6 +1313,8 @@ $(function() {
           showingWhat = $(this).data('show');
       if (showingWhat == 'network') { $('#network-show').prop('checked', true); }
       if (activating) {
+        deselectCell();
+        tip.hide();
         $(this).addClass('active').siblings('.toggle-btn').removeClass('active');
         $('.main-view.' + showingWhat).data('active', true).fadeIn();
         $('.main-view:not(.' + showingWhat + ')').data('active', false).fadeOut(function() {
