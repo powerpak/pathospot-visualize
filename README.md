@@ -6,7 +6,7 @@ The [pathoSPOT-compare][] pipeline must first be used to run the analyses that s
 
 ## Requirements
 
-Apache, PHP, and Python. Could be readily hosted in a [Minerva](http://hpc.mssm.edu/) www directory.
+Apache, PHP, and Python. Could be readily hosted in a [Minerva](https://labs.icahn.mssm.edu/minervalab/) www directory.
 
 Python is required for running the contents of `scripts/`, which some of the PHP pages will need to do for each page request. They require two 3rd party modules: NumPy and ete3.
 
