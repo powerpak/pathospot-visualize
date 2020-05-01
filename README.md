@@ -13,12 +13,12 @@ Python is required for running the contents of `scripts/`, which some of the PHP
 ## Usage
 
 1. Clone this repository into a web-accessible directory.
-2. Supply analysis output from [pathoSPOT-compare][] by placing it in `data/`. All the output files read by this package include a YYYY-MM-DD formatted date in the filename and have one of the following endings:
-    - `.snv.heatmap.json` -> produced by [pathogendb-comparison][]'s `heatmap` task
-    - `.parsnp.heatmap.json` -> produced by [pathogendb-comparison][] `parsnp` task
-    - `.parsnp.vcfs.npz` -> produced by [pathogendb-comparison][] `parsnp` task
-    - `.encounters.tsv` -> produced by [pathogendb-comparison][] `encounters` task
-    - `.epi.heatmap.json` -> produced by [pathogendb-comparison][] `epi` task
+2. Supply analysis outputted from [pathoSPOT-compare][] by placing it in `data/`. All the output files read by this package include a YYYY-MM-DD formatted date in the filename and have one of the following endings:
+    - `.snv.heatmap.json` -> produced by [pathoSPOT-compare][]'s `heatmap` task
+    - `.parsnp.heatmap.json` -> produced by [pathoSPOT-compare][] `parsnp` task
+    - `.parsnp.vcfs.npz` -> produced by [pathoSPOT-compare][] `parsnp` task
+    - `.encounters.tsv` -> produced by [pathoSPOT-compare][] `encounters` task
+    - `.epi.heatmap.json` -> produced by [pathoSPOT-compare][] `epi` task
 3. Access `heatmap.php` via a web browser.
 
 [pathoSPOT-compare]: https://github.com/powerpak/pathospot-compare
@@ -33,7 +33,7 @@ Python is required for running the contents of `scripts/`, which some of the PHP
 
 ### heatmap
 
-Visualizes the output of [pathogendb-comparison][]'s `parsnp`, `heatmap`, and `epi` tasks.
+Visualizes the output of [pathoSPOT-compare][]'s `parsnp`, `heatmap`, and `epi` tasks.
 
 TODO: document further here.
 
