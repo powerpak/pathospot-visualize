@@ -105,7 +105,7 @@ $ vagrant up
 $ vagrant ssh</pre>
       </div>
       <p>
-        If everything worked so far, you should see <code>vagrant@stretch:/vagrant$</code> which is a bash shell running on the Linux VM. To kick off the analysis, run:
+        If everything worked, you should see <code>vagrant@stretch:/vagrant$</code> which is a shell running on your brand new Linux VM. To kick off the analysis, run:
       </p>
       <div class="code-block">
         <pre>$ rake all
