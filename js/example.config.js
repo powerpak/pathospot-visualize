@@ -25,3 +25,7 @@ var TRACKS_DIR = 'https://pakt01.u.hpc.mssm.edu/comparison-tracks/'
 // What URL for ChromoZoom to use when linking to genome browser views of IGB Quickload genomes
 
 var CHROMOZOOM_URL = 'https://pakt01.u.hpc.mssm.edu/chromozoom/?db=igb:100:%s&tracks=ruler:25|total_reads:50|Annotation:100'
+
+// What map to use for the network diagram. These are stored in the maps/ directory as a .json and .png.
+
+var HOSPITAL_MAP = 'anon-hospital-gray';

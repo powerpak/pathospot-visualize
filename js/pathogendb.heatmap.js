@@ -16,7 +16,7 @@ $(function() {
       REDRAW_INTERVAL = 1000,
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
-      HOSPITAL_MAP = 'msmc-stacking-gray';
+      HOSPITAL_MAP = HOSPITAL_MAP || 'anon-hospital-gray';
   
   // Utility functions for formatting various fields for display.
   var FORMAT_FOR_DISPLAY = {
