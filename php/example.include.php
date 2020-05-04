@@ -15,9 +15,7 @@ function includeBeforeBody() {
 ?>
   <div class="fixed-header">
     <div class="header-links">
-      <div class="logo">
-    
-      </div>
+      <a href="index.php" class="logo"></a>
       <a href="heatmap.php"><span class="extra">Live </span>Demo</a>
       <a href="index.php#get-started">Get Started</a>
       <a href="index.php#how-it-works">How It Works</a>
