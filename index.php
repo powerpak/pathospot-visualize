@@ -28,11 +28,11 @@
     <div class="logo">
       
     </div>
-    <a href="#live-demo">Live Demo</a>
+    <a href="#live-demo"><span class="extra">Live </span>Demo</a>
     <a href="#get-started">Get Started</a>
     <a href="#how-it-works">How It Works</a>
     <a href="#team">Team</a>
-    <a href="https://github.com/powerpak/pathospot-compare">GitHub</a>
+    <span class="extra"><a href="https://github.com/powerpak/pathospot-compare">GitHub</a></span>
   </div>
   
   <div class="main">
