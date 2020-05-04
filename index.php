@@ -28,11 +28,11 @@
     <div class="logo">
       
     </div>
-    <a href="#live-demo"><span class="extra">Live </span>Demo</a>
+    <a href="#live-demo">Live Demo</a>
     <a href="#get-started">Get Started</a>
     <a href="#how-it-works">How It Works</a>
     <a href="#team">Team</a>
-    <span class="extra"><a href="https://github.com/powerpak/pathospot-compare">GitHub</a></span>
+    <a href="https://github.com/powerpak/pathospot-compare">GitHub</a>
   </div>
   
   <div class="main">
@@ -44,7 +44,7 @@
       <a id="about">Pathogen Sequencing<br/>Phylogenomic Outbreak Toolkit</a>
     </h2>
     <p class="center mid-width">
-      pathoSPOT is an open-source bioinformatics pipeline that turns pathogen genome sequences sampled from patients into interactive visualizations of probable transmission scenarios.
+      <span class="regular">pathoSPOT</span> is an open-source bioinformatics pipeline that turns pathogen genome sequences sampled from patients into interactive visualizations of probable transmission scenarios.
     </p>
   
     <h2 class="center mid-width new-section">
@@ -84,13 +84,13 @@
     </h2>
     <div class="container cols-1">
       <p>
-        You can use pathoSPOT to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in Berbal Caban &amp; Pak et al. starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
+        You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in Berbal Caban &amp; Pak et al. starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
       </p>
       <p>
         This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://www.sqlite.org/index.html">SQLite</a> database with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
       </p>
       <p>
-        pathoSPOT is designed to run on Linux; however, we provide a Vagrant configuration so that anybody, including Mac and Windows users, can quickly create a virtual machine (VM) that runs the pipeline either on their personal computer or on the <a href="https://aws.amazon.com/ec2/">Amazon EC2 cloud</a>. We'll use VirtualBox to run the VM locally for this example; you'll need 5GB of disk space and 8GB of RAM.
+        <span class="regular">pathoSPOT</span> is designed to run on Linux; however, we provide a Vagrant configuration so that anybody, including Mac and Windows users, can quickly create a virtual machine (VM) that runs the pipeline either on their personal computer or on the <a href="https://aws.amazon.com/ec2/">Amazon EC2 cloud</a>. We'll use VirtualBox to run the VM locally for this example; you'll need 5GB of disk space and 8GB of RAM.
       </p>
       <p>
         To get started, install <a href="https://www.vagrantup.com/downloads.html">Vagrant</a> and <a href="https://www.virtualbox.org/wiki/Downloads">VirtualBox</a>. Then open your terminal program and run the following commands:
@@ -122,7 +122,7 @@ $</pre>
       <a id="how-it-works">How it works</a>
     </h2>
     <p class="center mid-width">
-      pathoSPOT is made of two components. One runs the comparative genomics analysis, and the other drives the visualization engine.
+      <span class="regular">pathoSPOT</span> is made of two components. One runs the comparative genomics analysis, and the other drives the visualization engine.
     </p>
     <div class="container cols-2">
       <div class="col">
@@ -132,7 +132,8 @@ $</pre>
             <img src="images/pathospot-compare-diagram.svg" width="70%" style="margin-top: 12px"/>
           </p>
           <p>Prefilters FASTA sequences, clusters them by estimating nucleotide identity, and then creates multisequence alignments for each cluster of genomes to calculate SNP distances.</p>
-          <p><a href="https://github.com/powerpak/pathospot-compare">View this project on
+          <p><a href="https://github.com/powerpak/pathospot-compare">
+            View pathospot-compare on
             GitHub</a>.</p>
         </div>
       </div>
@@ -143,7 +144,8 @@ $</pre>
             <img src="images/pathospot-visualize-diagram.svg" width="60%"/>
           </p>
           <p>Converts calculated SNP distances and metadata on sample collection and patient movements to produce interactive heatmap and timeline visualizations viewable in a web browser.</p>
-          <p><a href="https://github.com/powerpak/pathospot-visualize">View this project on
+          <p><a href="https://github.com/powerpak/pathospot-visualize">
+            View pathospot-visualize on
             GitHub</a>.</p>
         </div>
       </div>
@@ -159,6 +161,11 @@ $</pre>
       <p>It currently supports active surveillance of transmissible pathogens in facilities throughout the <a href="https://www.mountsinai.org/">Mount Sinai Health System.</a></p>
       <p>Contributing developers include: <a href="https://tedpak.com">Theodore Pak</a>, <a href="http://mjsull.github.io/">Mitchell Sullivan</a>, <a href="https://bakellab.mssm.edu/">Harm van Bakel</a>, and <a href="https://github.com/webste01">Elizabeth Webster</a>. On GitHub, you can also view the list of contributors for <a href="https://github.com/powerpak/pathospot-compare/graphs/contributors">each</a> <a href="https://github.com/powerpak/pathospot-visualize/graphs/contributors">project</a>.</p>
       <p><strong>Questions?</strong> Please contact <a href="mailto:theodore.r.pak@gmail.com">Theodore Pak</a> or <a href="mailto:harm.vanbakel@mssm.edu">Harm van Bakel</a>.</p>
+      <p><strong>Bugs?</strong> Please file an issue on our GitHub projects:</p>
+      <ul>
+        <li><a href="https://github.com/powerpak/pathospot-compare/issues">pathospot-compare</a></li>
+        <li><a href="https://github.com/powerpak/pathospot-visualize/issues">pathospot-visualize</a></li>
+      </ul>
     </div>
     
   </div><!-- /div.main -->

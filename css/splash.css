@@ -38,7 +38,9 @@ code {
   font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", Times, Symbola, Aegyptus, Code2000, Code2001, Code2002, Musica, serif, LastResort;
 }
 
+.regular { font-weight: 400; }
 em { font-weight: 400; font-style: italic; }
+strong { color: #666; }
 
 .secondary { opacity: 0.5; font-weight: 400; font-style: italic; }
 
