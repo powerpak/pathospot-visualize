@@ -113,6 +113,7 @@ em { font-weight: 400; font-style: italic; }
   background-image: url('../images/pathospot-logo.svg');
   background-size: contain;
   background-repeat: no-repeat;
+  background-position: center;
 }
 
 .logo h1 { visibility: hidden; }
@@ -192,9 +193,48 @@ a:hover .shadow {
   background: #f0f0f0;
   border-radius: 6px;
   padding: 15px;
+  overflow-x: scroll;
 }
 
 .footer {
   clear: both;
   height: 100px;
+}
+
+/* ======================= */
+/* = Mobile-specific CSS = */
+/* ======================= */
+
+@media (max-width: 720px) {
+  .header-links .logo, .header-links .extra {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .main .logo {
+    background-image: url('../images/pathospot-logo-medium.svg');
+  }
+  .code-block pre {
+    white-space: pre-wrap;
+  }
+  .container.cols-2, .container.cols-3 {
+    left: 0;
+  }
+  .cols-2 .col, .cols-3 .col {
+    float: none;
+    width: 100%;
+  }
+  .col .col-content {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .header-links a {
+    font-size: 80%;
+  }
+  .main .logo {
+    height: 80px;
+  }
 }
