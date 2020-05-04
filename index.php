@@ -156,7 +156,7 @@ $</pre>
       <a id="team">Team</a>
     </h2>
     <div class="container cols-1">
-      <p>pathoSPOT is developed, used, and maintained by the <a href="https://icahn.mssm.edu/research/genomics/research/pathogen-surveillance">Pathogen Surveillance Program</a> and the <a href="https://bakellab.mssm.edu/">Bakel Lab</a> at the <a href="https://icahn.mssm.edu/">Icahn School of Medicine at Mount Sinai</a>.
+      <p><span class="regular">pathoSPOT</a> is developed, used, and maintained by the <a href="https://icahn.mssm.edu/research/genomics/research/pathogen-surveillance">Pathogen Surveillance Program</a> and the <a href="https://bakellab.mssm.edu/">Bakel Lab</a> at the <a href="https://icahn.mssm.edu/">Icahn School of Medicine at Mount Sinai</a>.
       </p>
       <p>It currently supports active surveillance of transmissible pathogens in facilities throughout the <a href="https://www.mountsinai.org/">Mount Sinai Health System.</a></p>
       <p>Contributing developers include: <a href="https://tedpak.com">Theodore Pak</a>, <a href="http://mjsull.github.io/">Mitchell Sullivan</a>, <a href="https://bakellab.mssm.edu/">Harm van Bakel</a>, and <a href="https://github.com/webste01">Elizabeth Webster</a>. On GitHub, you can also view the list of contributors for <a href="https://github.com/powerpak/pathospot-compare/graphs/contributors">each</a> <a href="https://github.com/powerpak/pathospot-visualize/graphs/contributors">project</a>.</p>
