@@ -578,6 +578,11 @@ text.axis-label {
   margin: 30px auto;
 }
 
+#pick-assemblies .widget-label {
+  font-size: 120%;
+  font-weight: bold;
+}
+
 #pick-assemblies .col {
   width: 360px;
   float: left;
@@ -600,7 +605,7 @@ text.axis-label {
   margin-top: 20px;
 }
 #pick-assemblies .col.thin .toggle-btn {
-  min-width: 120px;
+  min-width: 100px;
   border: 1px solid #eee;
 }
 #pick-assemblies .col.thin .toggle-btn:hover {

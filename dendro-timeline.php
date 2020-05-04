@@ -56,7 +56,7 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
 
 </head>
 
-<body>
+<body class="pathospot-dendro-timeline">
   
 <?php includeBeforeBody(); ?>
 

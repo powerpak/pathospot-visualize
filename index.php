@@ -23,7 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link href="css/splash.css" rel="stylesheet" type="text/css" />
 </head>
-<body>
+<body class="pathospot-splash">
   <div class="header-links">
     <div class="logo">
       

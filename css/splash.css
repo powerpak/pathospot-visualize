@@ -1,5 +1,8 @@
 body {
   background: #fcfcfc;
+}
+
+body.pathospot-splash, .header-links {
   font-family: 'Jost', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   font-weight: 300;
   font-size: 18px;
@@ -19,15 +22,15 @@ a:link:hover {
   text-decoration: underline;
 }
 
-pre, code { 
+.pathospot-splash pre, .pathospot-splash code { 
   font-family: 'Roboto Mono', 'Bitstream Vera Sans Mono', Courier, monospace; 
   font-size: 80%;
 }
-pre .output {
+.pathospot-splash pre .output {
   opacity: 0.5;
 }
-pre { margin: 0; }
-code {
+.pathospot-splash pre { margin: 0; }
+.pathospot-splash code {
   padding: 0.2em 0.4em;
   background-color: #f0f0f0;
   border-radius: 3px;
@@ -118,9 +121,9 @@ strong { color: #666; }
   background-position: center;
 }
 
-.logo h1 { visibility: hidden; }
+.pathospot-splash .logo h1 { visibility: hidden; }
 
-h2 {
+.pathospot-splash h2 {
   font-weight: 600;
   color: #666;
   line-height: 1.2em;
@@ -129,21 +132,21 @@ h2 {
   text-transform: uppercase;
   font-size: 22px;
 }
-h3 {
+.pathospot-splash h3 {
   color: #666;
 }
 
-.center {
+.pathospot-splash .center {
   text-align: center;
 }
 
-.mid-width {
+.pathospot-splash .mid-width {
   max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
 
-.new-section {
+.pathospot-splash .new-section {
   margin-top: 80px;
   clear: both;
 }
@@ -205,8 +208,11 @@ a:hover .shadow {
 
 /* Styling for the demo visualization pages */
 
-#controls {
+#controls, #pick-assemblies {
   margin-top: 80px;
+}
+#pick-assemblies {
+  font-size: 80%;
 }
 
 /* ======================= */
