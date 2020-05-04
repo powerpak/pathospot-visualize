@@ -203,6 +203,12 @@ a:hover .shadow {
   height: 100px;
 }
 
+/* Styling for the demo visualization pages */
+
+#controls {
+  margin-top: 80px;
+}
+
 /* ======================= */
 /* = Mobile-specific CSS = */
 /* ======================= */

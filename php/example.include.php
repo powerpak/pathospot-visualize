@@ -6,11 +6,26 @@ date_default_timezone_set('America/New_York');
 $PYTHON = '/usr/bin/env python';
   
 function includeAfterHead() {
-  return;
+?>
+  <link href="css/splash.css" rel="stylesheet" type="text/css" />
+<?php
 }
   
 function includeBeforeBody() {
-  return;
+?>
+  <div class="fixed-header">
+    <div class="header-links">
+      <div class="logo">
+    
+      </div>
+      <a href="heatmap.php"><span class="extra">Live </span>Demo</a>
+      <a href="index.php#get-started">Get Started</a>
+      <a href="index.php#how-it-works">How It Works</a>
+      <a href="index.php#team">Team</a>
+      <span class="extra"><a href="https://github.com/powerpak/pathospot-compare">GitHub</a></span>
+    </div>
+  </div>
+<?php
 }
 
 function includeAfterBody() {
