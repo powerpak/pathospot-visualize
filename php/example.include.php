@@ -7,6 +7,7 @@ $PYTHON = '/usr/bin/env python';
   
 function includeAfterHead() {
 ?>
+  <link href="fonts/Jost.css" rel="stylesheet" type="text/css" charset="utf-8" />
   <link href="css/splash.css" rel="stylesheet" type="text/css" />
 <?php
 }

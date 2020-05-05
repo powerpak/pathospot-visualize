@@ -128,6 +128,10 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   var $isolateTests = $('#isolate-tests');
   
   
+  // FIXME: Could save: colorNodes, filter, timelineGrouping, isolateTests, variantLabels, variantNtOrAa,
+  //        showOverlaps, tolerance, ... and draggedSortKeys
+  
+  
   // ======================================================================================
   // = Impute locations for isolate test results (unsequenced positive/negative cultures) =
   // ======================================================================================
