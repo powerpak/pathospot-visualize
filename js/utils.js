@@ -185,3 +185,25 @@ function animLoop(render, element) {
   }
   loop();
 };
+
+// Given a specification `spec`, reads current URL params and updates DOM elements with their values
+// `spec` is an object of the form { paramName1: getterSetter, paramName2: ... }
+// Only params found in the URL are updated, unless default values are provided in defaultValues
+// If getterSetter is `false` or `null`, the param is simply ignored
+// If it's a function, it's called with the URL param value as the argument and should update the DOM accordingly
+// Otherwise the default setter of `$('#' + paramName).val(value).trigger('change')` is used
+//
+// NOTE: If the param value contains pipe characters '|', then it is split into an array of values.
+//       If the param value is a single pipe character, then it is reserialized as the empty array.
+function syncQueryParamsToDOM(spec, defaultValues) {
+  _.each(spec, function(getterSetter, paramName) {
+    var value = getURLParameter(paramName);
+    if ((/\|/).test(value)) { value = value == '|' ? [] : value.split("|"); }
+    value = value === null && _.has(defaultValues, paramName) ? defaultValues[paramName] : value;
+    
+    if (value !== null && getterSetter !== false && getterSetter !== null) {
+      if (_.isFunction(getterSetter)) { getterSetter(value); }
+      else { $('#' + paramName).val(value).trigger('change'); }
+    }
+  });
+}

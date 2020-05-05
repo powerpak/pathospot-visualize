@@ -6,6 +6,9 @@ $(function() {
       networkMargin = {top: 15, topPad: 30}
       width = 600,
       height = 600,
+      // Specifies URL query parameters that should map to DOM element values
+      // see `syncQueryParamsToDOM` in utils.js for more details
+      queryParamSpec = {db: false, filter: true, snps: true, range: false},
       sliderHeight = 80,
       dendroRight = 140,
       DEFAULT_SNP_THRESHOLD = parseInt($('#snps-num').val(), 10),
@@ -86,8 +89,6 @@ $(function() {
         });
       });
     }
-    window.nodes = nodes; // FIXME: helps with debugging.
-    window.links = links;
     
     var n = nodes.length,
         idealBandWidth = Math.max(width / n, IDEAL_LABEL_HEIGHT),
@@ -405,11 +406,20 @@ $(function() {
       sliderSvg.select("g.beeswarm").selectAll("circle")
         .classed("selected", function(d) { return _.contains(filteredDomain, d.i); });
     }
-    var brushMoveDebounced = _.debounce(brushMove, 200);
 
     function brushEnd(event) {
       return brushMove(event);
     }
+    
+    function brushVal(range) {
+      if (range && _.isArray(range) && range.length >= 2) {
+        brush.move(brushG, [width * parseFloat(range[0]), width * parseFloat(range[1])]);
+      }
+      return _.map(d3.brushSelection(brushG.node()), function(x) { return x / width; });
+    }
+    
+    // Provides a setter so that the query parameter `range` will be bound to the brush selection
+    queryParamSpec.range = brushVal;
     
 
     // ******************************* HISTOGRAM *************************************
@@ -1031,12 +1041,7 @@ $(function() {
       
       cutClusters = _.filter(cutClusters, function(clust) { return !!clust.children; });
       
-      dendroG.transition().duration(transitionDuration * 0.1)
-          .attr("opacity", 0)
-        .transition().duration(1).delay(transitionDuration * 0.1)
-          .attr("transform", "translate(" + (width + marginRight) + ",0)")
-        .transition().duration(transitionDuration * 0.5).delay(transitionDuration * 0.5)
-          .attr("opacity", 1);
+      dendroG.attr("transform", "translate(" + (width + marginRight) + ",0)");
       dendroX.domain([0, MAX_SNP_THRESHOLD]);
       
       var dendroPath = dendroG.selectAll(".link")
@@ -1323,7 +1328,7 @@ $(function() {
         });
       }
     });
-
+    
 
     // ************************** UPDATING UI FROM THE DATA **********************************
 
@@ -1369,17 +1374,24 @@ $(function() {
       updateDetectedClusters(detectedClusters);
     }
     var changeSnpThresholdDebounced = _.debounce(changeSnpThreshold, 200);
-  
-  
+
+
     // **************************** START THE VISUALIZATION ************************************
+    
+    // Syncs URL params to DOM elements that control the visualization.
+    // This is also how we kick off an initial data update to perform the first draw of heatmap
+    var queryParams = syncQueryParamsToDOM(queryParamSpec, {range: [0.7, 1.0]});
+    // brushVal() triggers that first draw; if there is no `range` query param, it won't have been triggered
+    if (!queryParams.range) { brushVal([0.7, 1.0]); }
+
+
+    // ************************* DOWNLOAD SPATIOTEMPORAL AND EPI DATA **************************
+    
+    // This can occur after the first UI update, because it affects the network map (initially hidden)
   
     // Download the coordinates for units on the map
     d3.json("maps/" + HOSPITAL_MAP + ".json", function(coords) {
       unitCoords = coords;
-      
-      // This is how we kick off an initial data update to setup the UI
-      function start() { brush.move(brushG, [width * 0.7, width]); }
-      start();
       
       // Download the spatiotemporal data for all isolates, if it's available
       EPI_FILE && d3.json("data/" + EPI_FILE, function(epiFileData) { 
