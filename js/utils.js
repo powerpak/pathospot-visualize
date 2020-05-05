@@ -191,7 +191,7 @@ function animLoop(render, element) {
 // Only params found in the URL are updated, unless default values are provided in defaultValues
 // If getterSetter is `false` or `null`, the param is simply ignored
 // If it's a function, it's called with the URL param value as the argument and should update the DOM accordingly
-// Otherwise the default setter of `$('#' + paramName).val(value).trigger('change')` is used
+// Otherwise the default setter of `$('#' + paramName).val(value).trigger('change')` is used.
 //
 // NOTE: If the param value contains pipe characters '|', then it is split into an array of values.
 //       If the param value is a single pipe character, then it is reserialized as the empty array.
@@ -206,4 +206,25 @@ function syncQueryParamsToDOM(spec, defaultValues) {
       else { $('#' + paramName).val(value).trigger('change'); }
     }
   });
+}
+
+// Given a specification `spec` similar to `syncQueryParamsToDOM`, update the current URL's query string
+// to match the values of the DOM elements.
+// In this case, if the getterSetter is a function, it is called with no arguments to retrive the value.
+// If getterSetter is `false` or `null`, the param is left as-is, if it already exists in the query string
+function syncDOMToQueryParams(spec) {
+  queryParams = [];
+  _.each(spec, function(getterSetter, paramName) {
+    var value = null;
+    if (_.isFunction(getterSetter)) { value = getterSetter(value); }
+    else if (getterSetter !== false && getterSetter !== null) { value = $('#' + paramName).val(); }
+    else { value = getURLParameter(paramName); }
+    if (value !== null) {
+      if (_.isArray(value)) { value = value.length ? value.join('|') : '|'; }
+      queryParams.push(paramName + '=' + encodeURIComponent(value))
+    }
+  });
+  if (window.history && window.history.replaceState) {
+    window.history.replaceState({}, document.title, window.location.pathname + '?'+ queryParams.join('&'));
+  }
 }

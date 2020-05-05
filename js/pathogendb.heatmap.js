@@ -6,9 +6,6 @@ $(function() {
       networkMargin = {top: 15, topPad: 30}
       width = 600,
       height = 600,
-      // Specifies URL query parameters that should map to DOM element values
-      // see `syncQueryParamsToDOM` in utils.js for more details
-      queryParamSpec = {db: false, filter: true, snps: true, range: false},
       sliderHeight = 80,
       dendroRight = 140,
       DEFAULT_SNP_THRESHOLD = parseInt($('#snps-num').val(), 10),
@@ -20,6 +17,13 @@ $(function() {
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
       HOSPITAL_MAP = window.HOSPITAL_MAP || 'anon-hospital-gray';
+  
+  // Specifies URL query parameters that should map to DOM element values
+  //     (see `syncQueryParamsToDOM` in utils.js for more details)
+  // Some of the parameters have `false` getterSetters as they can only be defined and activated
+  //     later on in the initial load process
+  var queryParamSpec = {db: false, filter: true, snps: true, order: true, range: false, mode: false},
+      syncDOMToQueryParamsDebounced = _.debounce(syncDOMToQueryParams, 200);
   
   // Utility functions for formatting various fields for display.
   var FORMAT_FOR_DISPLAY = {
@@ -66,6 +70,7 @@ $(function() {
       .css("height", height + margin.top + margin.bottom - networkMargin.top - networkMargin.topPad)
       .css("background-image", 'url(maps/' + HOSPITAL_MAP + '.png)');
   
+  // The db <select> input requires special setup because all further UI depends on the dataset it selects
   var db = (getURLParameter('db') || $('#db').val()).replace(/[^\w_.-]+/g, '');
   $('#db').val(db);
   var EPI_FILE = $('#db > option:selected').data('epi');
@@ -1252,6 +1257,7 @@ $(function() {
       onSlide: function(pos, value) { $('#snps-num').val(value); updateHistoCutoff(value); },
       onSlideEnd: function(pos, value) { $('#snps-num').change(); }
     });
+    $('#snps').on('change', function() { $('#snps-num').change(); });
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
     
@@ -1329,7 +1335,6 @@ $(function() {
       }
     });
     
-
     // ************************** UPDATING UI FROM THE DATA **********************************
 
     function reorder() {    
@@ -1360,6 +1365,8 @@ $(function() {
         updateEpiHeatmap(_.values(_.pick(epiData.isolates, filteredIsolateIds)));
         updateNetwork(filteredDomain);
       }
+      
+      syncDOMToQueryParamsDebounced(queryParamSpec);
     }
   
     function changeSnpThreshold() {
@@ -1417,6 +1424,14 @@ $(function() {
             }
           }));
         }
+        
+        // If any of these URL parameters are given, automatically open the network view and/or animate it
+        if (getURLParameter('mode') == 'network') { $('#toggle-main [data-show="network"]').click(); }
+        if (getURLParameter('play')) { $('#daterange-animate [data-action="play"]').eq(0).click(); }
+        if (getURLParameter('playexpand')) { $('#daterange-animate [data-action="playexpand"]').eq(0).click(); }
+        
+        // Allow the view mode to be reflected in the current query string
+        queryParamSpec.mode = function() { return $('.main-view.network').data('active') ? 'network' : ''; }
       });
     });
     

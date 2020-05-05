@@ -57,7 +57,7 @@
       <div class="col">
         <div class="col-content center">
           <p>
-            <a target="_blank" href="heatmap.php?db=<?= htmlentities($mrsa_db) ?>&range=0.0|1.0&filter=clustersOnly">
+            <a target="_blank" href="heatmap.php?db=<?= htmlentities($mrsa_db) ?>&filter=clustersOnly&snps=15&range=0.0|1.0">
               <img src="images/heatmap.png" class="figure shadow"/>
             </a>
           </p>
