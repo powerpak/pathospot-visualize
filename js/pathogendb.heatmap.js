@@ -1380,10 +1380,7 @@ $(function() {
     
     // Syncs URL params to DOM elements that control the visualization.
     // This is also how we kick off an initial data update to perform the first draw of heatmap
-    var queryParams = syncQueryParamsToDOM(queryParamSpec, {range: [0.7, 1.0]});
-    // brushVal() triggers that first draw; if there is no `range` query param, it won't have been triggered
-    if (!queryParams.range) { brushVal([0.7, 1.0]); }
-
+    syncQueryParamsToDOM(queryParamSpec, {range: [0.7, 1.0]});
 
     // ************************* DOWNLOAD SPATIOTEMPORAL AND EPI DATA **************************
     

@@ -20,7 +20,7 @@ function includeBeforeBody() {
       <a href="index.php#get-started">Get Started</a>
       <a href="index.php#how-it-works">How It Works</a>
       <a href="index.php#team">Team</a>
-      <span class="extra"><a href="https://github.com/powerpak/pathospot-compare">GitHub</a></span>
+      <span class="extra"><a href="https://github.com/powerpak/pathospot-compare" target="_blank">GitHub</a></span>
     </div>
   </div>
 <?php
