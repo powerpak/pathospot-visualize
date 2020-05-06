@@ -53,6 +53,7 @@
     <p class="center mid-width">
       Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System.
     </p>
+    <p class="center secondary">Dates have been shifted during data anonymization.</p>
     <div class="container cols-2">
       <div class="col">
         <div class="col-content center">
@@ -78,7 +79,32 @@
       </div>
       <div class="clear"></div>
     </div>
-    
+    <div class="container cols-2">
+      <div class="col">
+        <div class="col-content center">
+          <p>
+            <a target="_blank" href="heatmap.php?db=<?= htmlentities($mrsa_db) ?>&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1">
+              <img src="images/network.png" class="figure shadow"/>
+            </a>
+          </p>
+          <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
+          <p class="secondary"><strong>Figure S#</strong> in Berbel Caban &amp; Pak, et al.</p>
+        </div>
+      </div>
+      <div class="col">
+        <div class="col-content center">
+          <p>
+            <a target="_blank" href="dendro-timeline.php?db=<?= htmlentities($mrsa_db) ?>&assemblies=S_aureus_ER10871_3A_026677%20S_aureus_ER05215_3A_023863%20S_aureus_ER05295_3A_024902&colorNodes=ordered&filter=&timelineGrouping=0&isolateTests=&variantLabels=gene&variantNtOrAa=nt&showOverlaps=1&tolerance=12&sort=()">
+              <img src="images/dendro-timeline.png" class="figure shadow"/>
+            </a>
+          </p>
+          <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
+          <p class="secondary"><strong>Figure S#</strong> in Berbel Caban &amp; Pak, et al.</p>
+        </div>
+      </div>
+      <div class="clear"></div>
+    </div>
+        
     <h2 class="center mid-width new-section">
       <a id="get-started">Get Started</a>
     </h2>

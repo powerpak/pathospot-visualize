@@ -21,8 +21,9 @@ $(function() {
   // Specifies URL query parameters that should map to DOM element values
   //     (see `syncQueryParamsToDOM` in utils.js for more details)
   // Some of the parameters have `false` getterSetters as they can only be defined and activated
-  //     later on in the initial load process
-  var queryParamSpec = {db: false, filter: true, snps: true, order: true, range: false, mode: false},
+  //     later on in the initial load process, or have special behavior
+  var queryParamSpec = {db: false, filter: true, snps: true, order: true, range: false, 
+          mode: false, play: false},
       syncDOMToQueryParamsDebounced = _.debounce(syncDOMToQueryParams, 200);
   
   // Utility functions for formatting various fields for display.
@@ -1427,8 +1428,10 @@ $(function() {
         
         // If any of these URL parameters are given, automatically open the network view and/or animate it
         if (getURLParameter('mode') == 'network') { $('#toggle-main [data-show="network"]').click(); }
-        if (getURLParameter('play')) { $('#daterange-animate [data-action="play"]').eq(0).click(); }
-        if (getURLParameter('playexpand')) { $('#daterange-animate [data-action="playexpand"]').eq(0).click(); }
+        var playMode = getURLParameter('play');
+        if (playMode && playMode != "0") { 
+          $('#daterange-animate [data-action]').eq(parseInt(playMode, 10)).click();
+        }
         
         // Allow the view mode to be reflected in the current query string
         queryParamSpec.mode = function() { return $('.main-view.network').data('active') ? 'network' : ''; }
