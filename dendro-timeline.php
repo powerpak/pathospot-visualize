@@ -29,7 +29,7 @@ if (!$error && !$picking_assemblies) {
 <head>
   
 <meta charset="utf-8" />
-<title>Surveillance Isolates - Dendrogram with Timeline</title>
+<title>pathoSPOT - Surveillance Isolates - Dendrogram with Timeline</title>
 
 <link rel="stylesheet" href="css/d3-tip.css" />
 <link rel="stylesheet" href="css/select2.css" />

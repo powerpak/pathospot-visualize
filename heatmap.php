@@ -20,7 +20,7 @@ $snp_threshold = 10;
 <head>
   
 <meta charset="utf-8" />
-<title>Surveillance Isolates - Heatmap</title>
+<title>pathoSPOT - Surveillance Isolates - Heatmap</title>
 <link href="css/d3-tip.css" rel="stylesheet" />
 <link href="css/ionicons.min.css" rel="stylesheet" />
 <link href="css/rangeslider.css" rel="stylesheet" />
