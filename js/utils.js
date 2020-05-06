@@ -86,6 +86,11 @@ function stringifyTuple(tuple) {
   return tuple.join("\n");
 }
 
+function camelCaseToDashed(s) {
+  return s.replace(/(?:^|\.?)([A-Z])/g, function (x, y){ return "-" + y.toLowerCase(); });
+}
+
+// Parses the #filters select2 value, currently only used in heatmap.php
 function getFilters(sel) {
   var filters = $(sel).val(),
       out = {};
@@ -191,7 +196,7 @@ function animLoop(render, element) {
 // Only params found in the URL are updated, unless default values are provided in defaultValues
 // If getterSetter is `false` or `null`, the param is simply ignored
 // If it's a function, it's called with the URL param value as the argument and should update the DOM accordingly
-// Otherwise the default setter of `$('#' + paramName).val(value).trigger('change')` is used.
+// Otherwise the default setter of `$('#' + camelCaseToDashed(paramName)).val(...).trigger('change')` is used.
 //
 // NOTE: If the param value contains pipe characters '|', then it is split into an array of values.
 //       If the param value is a single pipe character, then it is reserialized as the empty array.
@@ -203,7 +208,7 @@ function syncQueryParamsToDOM(spec, defaultValues) {
     
     if (value !== null && getterSetter !== false && getterSetter !== null) {
       if (_.isFunction(getterSetter)) { getterSetter(value); }
-      else { $('#' + paramName).val(value).trigger('change'); }
+      else { $('#' + camelCaseToDashed(paramName)).val(value).trigger('change'); }
     }
   });
 }
@@ -215,9 +220,10 @@ function syncQueryParamsToDOM(spec, defaultValues) {
 function syncDOMToQueryParams(spec) {
   queryParams = [];
   _.each(spec, function(getterSetter, paramName) {
-    var value = null;
+    var value = null,
+        paramNameDashed = camelCaseToDashed(paramName);
     if (_.isFunction(getterSetter)) { value = getterSetter(value); }
-    else if (getterSetter !== false && getterSetter !== null) { value = $('#' + paramName).val(); }
+    else if (getterSetter !== false && getterSetter !== null) { value = $('#' + paramNameDashed).val(); }
     else { value = getURLParameter(paramName); }
     if (value !== null) {
       if (_.isArray(value)) { value = value.length ? value.join('|') : '|'; }

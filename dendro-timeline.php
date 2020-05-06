@@ -45,6 +45,7 @@ if (!$error && !$picking_assemblies) {
 <script src="js/phylotree.js"></script>
 <script src="js/d3-tip.js"></script>
 <script src="js/utils.js"></script>
+<script src="js/JSONCrush.js"></script>
 
 
 <?php

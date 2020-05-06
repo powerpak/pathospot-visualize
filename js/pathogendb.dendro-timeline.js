@@ -12,6 +12,25 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       .concat(_.times(TOLERANCE_STEPS.length - 24, function() { return "days"; }));
   var TOLERANCE_DEFAULT = 12;
   
+  // Specifies URL query parameters that should map to DOM element values
+  //     (see `syncQueryParamsToDOM` in utils.js for more details)
+  // Some of the parameters have `false` getterSetters as they are not reflected directly in the DOM
+  //     e.g. db is passed in from externally; others need to be defined later in this script
+  var queryParamSpec = {
+    db: false,
+    assemblies: false,
+    colorNodes: true, 
+    filter: true, 
+    timelineGrouping: true, 
+    isolateTests: true, 
+    variantLabels: true,
+    variantNtOrAa: true,
+    showOverlaps: false, // A custom getterSetter for this button is defined later
+    tolerance: true,
+    sort: false // Preserves manual dragging of timeline rows; also defined later
+  };
+  var syncDOMToQueryParamsDebounced = _.debounce(syncDOMToQueryParams, 200);
+  
   // Utility functions for formatting various fields for display, or generating symbols for isolates/tests
   var FORMAT_FOR_DISPLAY = {
     start_time: function(d) { return d.toLocaleString(); },
@@ -126,11 +145,6 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   var $toleranceNum = $('#tolerance-num');
   var $toleranceUnits = $('#tolerance-units');
   var $isolateTests = $('#isolate-tests');
-  
-  
-  // FIXME: Could save: colorNodes, filter, timelineGrouping, isolateTests, variantLabels, variantNtOrAa,
-  //        showOverlaps, tolerance, ... and draggedSortKeys
-  
   
   // ======================================================================================
   // = Impute locations for isolate test results (unsequenced positive/negative cultures) =
@@ -878,6 +892,18 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       draggedSortKeys = {};
   var xScale = d3.time.scale.utc().domain(orderedScale.domain()).nice();
   
+  // Adds the ability to preserve timeline sortings across page loads in the URL parameter `sort`
+  queryParamSpec.sort = function(val) {
+    if (!_.isUndefined(val) && !_.isNull(val)) {
+      var oldVal = JSONCrush(JSON.stringify(draggedSortKeys), true);
+      if (oldVal != val) {
+        draggedSortKeys = JSON.parse(JSONUncrush(val));
+        updateTimeline();
+      }
+    }
+    return JSONCrush(JSON.stringify(draggedSortKeys), true);
+  }
+  
   // Updates the timeline given the current encounter filtering, Y axis, and isolate color settings
   function updateTimeline() {
     var rowHeight = 10,
@@ -1099,6 +1125,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
             delete draggingRow[yGrp.label];
             d3.select(this).classed("dragging", false);
             redrawRows(d3.select(this.parentNode).selectAll("g"), 150);
+            // saves the new sort order to the `sort` URL param
+            syncDOMToQueryParamsDebounced(queryParamSpec);
           });
       
       rowDividersGG.on(".drag", null).call(dragBehavior);
@@ -1270,6 +1298,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     },
     onSlideEnd: function(pos, value) { $toleranceNum.change(); }
   });
+  $tolerance.on('change', function() { $toleranceNum.change(); });
   // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
   $toleranceNum.on('change', updateTimeline);
   
@@ -1302,8 +1331,17 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   
   $showOverlaps.click(function() {
     $showOverlaps.toggleClass("active");
+    $showOverlaps.trigger("change");
+  });
+  $showOverlaps.on("change", function() {
     $timeline.toggleClass("hide-overlaps", !$showOverlaps.hasClass("active"));
   });
+  queryParamSpec.showOverlaps = function(val) {
+    if (!_.isUndefined(val) && !_.isNull(val)) { 
+      $showOverlaps.toggleClass("active", val == "1").trigger("change"); 
+    }
+    return $showOverlaps.hasClass("active") ? "1" : "0";
+  }
   
   $(window).resize(function() {
     $timeline.trigger("resizeWidth");
@@ -1320,6 +1358,19 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     $('#color-scale').css({
       top: fixed && navbar ? $(navbar).height() : 0,
       left: fixed ? 80 - $(this).scrollLeft() : '',
+    });
+  });
+  
+  // =======================================================
+  // = Finally, sync URL parameters to all of the controls =
+  // =======================================================
+  
+  syncQueryParamsToDOM(queryParamSpec);
+  
+  _.each(queryParamSpec, function(getterSetter, paramName){
+    if (getterSetter === false || getterSetter === null) { return; }
+    $('#' + camelCaseToDashed(paramName)).change(function() {
+      syncDOMToQueryParamsDebounced(queryParamSpec);
     });
   });
 }
