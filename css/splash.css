@@ -242,6 +242,7 @@ a:hover .shadow {
     width: 100%;
   }
   .col .col-content {
+    margin-top: 60px;
     padding-right: 0;
   }
 }
