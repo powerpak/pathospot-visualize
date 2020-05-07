@@ -116,7 +116,7 @@
         This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://www.sqlite.org/index.html">SQLite</a> database with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
       </p>
       <p>
-        <span class="regular">pathoSPOT</span> is designed to run on Linux; however, we provide a Vagrant configuration so that anybody, including Mac and Windows users, can quickly create a virtual machine (VM) that runs the pipeline either on their personal computer or on the <a href="https://aws.amazon.com/ec2/">Amazon EC2 cloud</a>. We'll use VirtualBox to run the VM locally for this example; you'll need 5GB of disk space and 8GB of RAM.
+        <span class="regular">pathoSPOT</span> is designed to run on Linux; however, we provide a Vagrant configuration so that anybody, including Mac and Windows users, can quickly create a virtual machine (VM) that runs the pipeline either on their personal computer or on the <a href="https://github.com/powerpak/pathospot-compare/blob/master/README-vagrant-aws.md">Amazon EC2 cloud</a>. We'll use VirtualBox to run the VM locally for this example; you'll need 5GB of disk space and 8GB of RAM.
       </p>
       <p>
         To get started, install <a href="https://www.vagrantup.com/downloads.html">Vagrant</a> and <a href="https://www.virtualbox.org/wiki/Downloads">VirtualBox</a>. Then open your terminal program and run the following commands:
