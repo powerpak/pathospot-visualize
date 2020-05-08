@@ -88,7 +88,6 @@
             </a>
           </p>
           <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
-          <p class="secondary"><strong>Figure S#</strong> in Berbel Caban &amp; Pak, et al.</p>
         </div>
       </div>
       <div class="col">
@@ -99,7 +98,6 @@
             </a>
           </p>
           <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
-          <p class="secondary"><strong>Figure S#</strong> in Berbel Caban &amp; Pak, et al.</p>
         </div>
       </div>
       <div class="clear"></div>
