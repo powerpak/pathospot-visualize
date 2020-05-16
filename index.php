@@ -51,7 +51,7 @@
       <a id="live-demo">Try it now</a>
     </h2>
     <p class="center mid-width">
-      Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System.
+      Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System (<a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">read preprint</a>).
     </p>
     <p class="center secondary">Dates have been shifted during data anonymization.</p>
     <div class="container cols-2">
@@ -63,7 +63,9 @@
             </a>
           </p>
           <p>Clustered heatmap of related genomes reveals outbreaks over multiple wards.</p>
-          <p class="secondary"><strong>Figure 2</strong> in Berbel Caban &amp; Pak, et al.</p>
+          <p class="secondary"><strong>Figure 2</strong> in 
+            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+              Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
       <div class="col">
@@ -74,7 +76,9 @@
             </a>
           </p>
           <p>A timeline of spatiotemporal movements and overlaps of patients in the largest cluster.</p>
-          <p class="secondary"><strong>Figure 3</strong> in Berbel Caban &amp; Pak, et al.</p>
+          <p class="secondary"><strong>Figure 3</strong> in
+            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+              Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
       <div class="clear"></div>
@@ -88,6 +92,9 @@
             </a>
           </p>
           <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
+          <p class="secondary"><strong>Figure S2</strong> in
+            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+              Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
       <div class="col">
@@ -98,6 +105,9 @@
             </a>
           </p>
           <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
+          <p class="secondary"><strong>Figure S1</strong> in
+            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+              Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
       <div class="clear"></div>
@@ -108,7 +118,7 @@
     </h2>
     <div class="container cols-1">
       <p>
-        You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in Berbal Caban &amp; Pak et al. starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
+        You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">Berbal Caban &amp; Pak et al.</a> starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
       </p>
       <p>
         This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://www.sqlite.org/index.html">SQLite</a> database with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
@@ -190,7 +200,7 @@ $</pre>
         <li><a href="https://github.com/powerpak/pathospot-compare/issues">pathospot-compare</a></li>
         <li><a href="https://github.com/powerpak/pathospot-visualize/issues">pathospot-visualize</a></li>
       </ul>
-      <p><strong>How do I cite this?</strong> If you use <span class="regular">pathoSPOT</span> for your own research, we would appreciate </p>
+      <p><strong>How do I cite this?</strong> If you use <span class="regular">pathoSPOT</span> for your own research, we would appreciate if you reference:</p>
       <ul>
         <li>Berbel Caban A, Pak TR, Obla A et al. 2020. <a href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections.</a> medRxiv (preprint). doi:10.1101/2020.05.11.20098103
         </li>
