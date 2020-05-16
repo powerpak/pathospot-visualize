@@ -21,7 +21,7 @@ Apache, PHP, and Python. Could be readily hosted in a [Minerva](https://labs.ica
 
 Python is required for running the contents of `scripts/`, which some of the PHP pages will need to do for each page request. They require two 3rd party modules: NumPy and ete3.
 
-If you use Vagrant to create an environment [pathoSPOT-compare][], this software and its requirements are automatically included, and Apache will automatically serve it on port 80. However, there is no requirement to have the pipeline and the web interface on the same machine. They were designed so that the output files (listed below) can be easily moved between machines to serve the visualization from any server (localhost, your lab webserver, Amazon EC2, etc.) to any web audience you'd like.
+If you use Vagrant to create an environment for [pathoSPOT-compare][], this software and its requirements are automatically included as well, and Apache will automatically serve the website on port 80. However, there is no requirement to have the pipeline and this web interface on the same machine. They were designed so that the output files (listed below) could be easily moved to be served from a more convenient location, e.g. your lab's webserver, an Amazon EC2 instance, etc.
 
 ## Usage
 
