@@ -51,7 +51,7 @@
       <a id="live-demo">Try it now</a>
     </h2>
     <p class="center mid-width">
-      Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System (<a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">read preprint</a>).
+      Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System (<a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">preprint available</a>).
     </p>
     <p class="center secondary">Dates have been shifted during data anonymization.</p>
     <div class="container cols-2">
