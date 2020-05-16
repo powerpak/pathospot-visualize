@@ -2,13 +2,23 @@
 
 This web interface is used to explore phylogenomic evidence of outbreaks and is the visualization component of PathoSPOT, the **Patho**gen **S**equencing **P**hylogenomic **O**utbreak **T**oolkit.
 
+For a live demo, please see the [PathoSPOT website][pathospot].
+
+<p align="center"><a href="https://pathospot.org"><img src="https://pathospot.org/images/pathospot-logo.svg" width="640px"/></a></p>
+
 The [pathoSPOT-compare][] pipeline must first be used to run the analyses that supply this web interface. Typically, you will want to run the **parsnp**, **encounters**, and **epi** tasks.  Please refer to the [pathoSPOT-compare documentation][pathoSPOT-compare] to get started.
+
+If you use this software, please cite our preprint:
+
+> Berbel Caban A, Pak TR, Obla A et al. 2020. [PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections][preprint]. _medRxiv_ (preprint). doi:10.1101/2020.05.11.20098103
 
 ## Requirements
 
 Apache, PHP, and Python. Could be readily hosted in a [Minerva](https://labs.icahn.mssm.edu/minervalab/) www directory.
 
 Python is required for running the contents of `scripts/`, which some of the PHP pages will need to do for each page request. They require two 3rd party modules: NumPy and ete3.
+
+If you use Vagrant to create an environment [pathoSPOT-compare][], this software and its requirements are automatically included, and Apache will automatically serve it on port 80. However, there is no requirement to have the pipeline and the web interface on the same machine. They were designed so that the output files (listed below) can be easily moved between machines to serve the visualization from any server (localhost, your lab webserver, Amazon EC2, etc.) to any web audience you'd like.
 
 ## Usage
 
@@ -31,12 +41,14 @@ Python is required for running the contents of `scripts/`, which some of the PHP
 
 ## Visualizations
 
-### heatmap
+An `index.php` is included which by default shows the splash page from the [PathoSPOT website][pathospot], but you could replace this with whatever you like. Alternatively, you can link directly to various visualizations from your own website or internal dashboard using the URL parameters detailed below.
+
+### heatmap.php
 
 Visualizes the output of [pathoSPOT-compare][]'s `parsnp`, `heatmap`, and `epi` tasks.
 
 TODO: document further here.
 
-### dendro-timeline
+### dendro-timeline.php
 
 TODO: document further here.

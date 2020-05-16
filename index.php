@@ -190,6 +190,11 @@ $</pre>
         <li><a href="https://github.com/powerpak/pathospot-compare/issues">pathospot-compare</a></li>
         <li><a href="https://github.com/powerpak/pathospot-visualize/issues">pathospot-visualize</a></li>
       </ul>
+      <p><strong>How do I cite this?</strong> If you use <span class="regular">pathoSPOT</span> for your own research, we would appreciate </p>
+      <ul>
+        <li>Berbel Caban A, Pak TR, Obla A et al. 2020. <a href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections.</a> medRxiv (preprint). doi:10.1101/2020.05.11.20098103
+        </li>
+      </ul>
     </div>
     
   </div><!-- /div.main -->
