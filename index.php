@@ -1,4 +1,7 @@
 <?php
+  if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
+  else { require(dirname(__FILE__).'/php/example.include.php'); }
+
   $data_dir = dirname(__FILE__).'/data/';
   $mrsa_db = "out." . date("Y-m-d") . " .parsnp";
   $data_files = array_map('basename', array_reverse(glob($data_dir.'*.{snv,parsnp}.heatmap.json', GLOB_BRACE)));
@@ -19,19 +22,9 @@
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
   <script src="js/underscore-min.js"></script>
   
-  <link rel="stylesheet" href="fonts/Jost.css" type="text/css" charset="utf-8" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet" />
-  <link href="css/splash.css" rel="stylesheet" type="text/css" />
   
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-33827672-2"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-
-    gtag('config', 'UA-33827672-2');
-  </script>
+  <?php includeAfterHead(); ?>
 </head>
 <body class="pathospot-splash">
   <div class="header-links">
