@@ -27,11 +27,10 @@ If you use Vagrant to create an environment for [pathoSPOT-compare][], this soft
 
 1. Clone this repository into a web-accessible directory.
 2. Supply analysis outputted from [pathoSPOT-compare][] by placing it in `data/`. All the output files read by this package include a YYYY-MM-DD formatted date in the filename and have one of the following endings:
-    - `.snv.heatmap.json` -> produced by [pathoSPOT-compare][]'s `heatmap` task
-    - `.parsnp.heatmap.json` -> produced by [pathoSPOT-compare][] `parsnp` task
-    - `.parsnp.vcfs.npz` -> produced by [pathoSPOT-compare][] `parsnp` task
-    - `.encounters.tsv` -> produced by [pathoSPOT-compare][] `encounters` task
-    - `.epi.heatmap.json` -> produced by [pathoSPOT-compare][] `epi` task
+    - `.parsnp.heatmap.json` → produced by [pathoSPOT-compare][] `parsnp` task
+    - `.parsnp.vcfs.npz` → produced by [pathoSPOT-compare][] `parsnp` task
+    - `.encounters.tsv` → produced by [pathoSPOT-compare][] `encounters` task
+    - `.epi.heatmap.json` → produced by [pathoSPOT-compare][] `epi` task
 3. Access `heatmap.php` via a web browser.
 
 [pathoSPOT-compare]: https://github.com/powerpak/pathospot-compare
