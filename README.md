@@ -55,7 +55,9 @@ The main area is a clustered heatmap of pairwise genome-to-genome distances. Any
 
 <img src="https://pathospot.org/images/screenshot-histo.png" width="300px"/>
 
-To help empirically choose a threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars) vs the lowest distance to prior genomes from the *same patient* (black bars). The black bars represent genomes you expect to be clonal, as they are from the same colonization or infection (small distances), while the light gray bars will include the normal variation of genomes seen in the wider population. The latter is typically a bimodal distribution with the left peak covered by the black bars. A cutoff would typically be chosen between these two peaks to best separate clonal and non-clonal distances.
+To help empirically choose a threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars) vs. the lowest distance to prior genomes from the *same patient* (black bars). In general, the former is a bimodal distribution, with the leftmost peak partially covered by the latter distribution. This leftmost peak represents genomes that are either from the same infection/colonization (same-patient distances), or, if from different patients, should be suspicious for transmission. A sensible threshold attempts to separate this peak from the right-side peak, with represents the genomic variation in the greater community. You can also click on the histogram directly to change the threshold.
+
+
 
 ### dendro-timeline.php
 
