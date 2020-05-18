@@ -51,7 +51,7 @@ This visualization allows you to interactively create and explore clusters of ge
 
 <a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0" target="_blank"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
 
-The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is seen next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold. Pairs of genomes from the same patient are depicted as open squares, while the remainder are filled.
+The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is seen next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold. Pairs of genomes from the same patient are depicted as open squares, while the remainder are filled. You can hover over a square to see details in a tooltip, and if you click, links are provided including _Explore this cluster_ which takes you to the [dendro-timeline](#dendro-timelinephp).
 
 <img src="https://pathospot.org/images/screenshot-histo.png" width="300px"/>
 
@@ -83,4 +83,6 @@ You can link directly to `heatmap.php` from external tools, in which case it may
 
 ### dendro-timeline.php
 
-TODO: document further here.
+This visualization allows you to explore and compare the genetic and spatiotemporal relationships within a cluster, usually offering insight into the overlaps that facilitated transmission events.
+
+<a href="https://pathospot.org/dendro-timeline.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&assemblies=S_aureus_ER07227_3A_025296%20S_aureus_ER05786_3A_024918%20S_aureus_ER05686_3A_023855%20S_aureus_ER05682_3A_023854%20S_aureus_PS00099_3A_024679%20S_aureus_ER07103_3A_025066%20S_aureus_ER05353_3A_023850%20S_aureus_ER05508_3A_024907%20S_aureus_ER05526_3A_024910%20S_aureus_ER06446_3A_024926%20S_aureus_ER05368_3A_023852&colorNodes=collection_unit&filter=inpatient&timelineGrouping=0&isolateTests=&variantLabels=gene&variantNtOrAa=nt&showOverlaps=1&tolerance=12&sort=(%270!(%272A9-34*11-40A3-176A12.5%27~181A7-399*15-574A5-628*130%27))*!%270000000-0%27~A*0%01A-*" target="_blank"><img src="https://pathospot.org/images/screenshot-dendro-timeline.png" width="600px"/></a>
