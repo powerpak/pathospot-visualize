@@ -22,6 +22,16 @@
   <link rel="stylesheet" href="fonts/Jost.css" type="text/css" charset="utf-8" />
   <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet" />
   <link href="css/splash.css" rel="stylesheet" type="text/css" />
+  
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-33827672-2"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-33827672-2');
+  </script>
 </head>
 <body class="pathospot-splash">
   <div class="header-links">
