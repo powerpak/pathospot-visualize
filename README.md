@@ -51,13 +51,35 @@ This visualization allows you to interactively create and explore clusters of ge
 
 <a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
 
-The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is created next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold.
+The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is seen next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold. Pairs of genomes from the same patient are depicted as open squares, while the remainder are filled.
 
 <img src="https://pathospot.org/images/screenshot-histo.png" width="300px"/>
 
-To help empirically choose a threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars) vs. the lowest distance to prior genomes from the *same patient* (black bars). In general, the former is a bimodal distribution, with the leftmost peak partially covered by the latter distribution. This leftmost peak represents genomes that are either from the same infection/colonization (same-patient distances), or, if from different patients, should be suspicious for transmission. A sensible threshold attempts to separate this peak from the right-side peak, with represents the genomic variation in the greater community. You can also click on the histogram directly to change the threshold.
+To help empirically choose a threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars) vs. the lowest distance to prior genomes from the *same patient* (black bars). In general, the former is a bimodal distribution, with the leftmost peak partially covered by the latter distribution. This leftmost peak represents genomes that are either from the same infection/colonization (same-patient distances), or, if from different patients, should be suspicious for transmission. A sensible threshold attempts to separate this peak from the right-side peak, with represents the genomic variation in the greater community. You can click on the histogram directly to change the threshold.
 
+<img src="https://pathospot.org/images/screenshot-filtering.png" width="460px"/>
 
+In our example, only genomes in a cluster with a different-patient isolate are shown, while the rest are hidden. This can be adjusted by changing the _Merging & prefiltering_ settings, specifically "Only show putative transmissions." Another key setting here is "Merge similar specimens from the same patient," which can help simplify your visualization by removing open squares (which are not informative for finding transmissions).
+
+<img src="https://pathospot.org/images/screenshot-beeswarm.png" width="460px"/>
+
+To the left of the histogram is a beeswarm plot showing the distribution of sampled genomes over time. If you have decided to show them, unclustered genomes are light gray circles, while those in a cluster are shaded with that cluster's color. You can click and drag to filter the heatmap to a specific time period.
+
+<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1"><img src="https://pathospot.org/images/network.png" width="360px"/></a>
+
+As an alternative to the heatmap, you can also use the "Network map view" which takes the nodes in the beeswarm and plots them spatially on a map, with red lines to depict genetic links within the similarity threshold. This can even be animated; click the above screenshot to see an example. Underneath the node-link diagram is a density plot of overall positive culture tests supplied by the `rake epi` task.
+
+#### heatmap.php parameters
+
+You can link directly to `heatmap.php` from external tools, in which case it may useful to supply query string parameters to preconfigure the view in a particular way. The following parameters are available:
+
+- `db`: which dataset to load. This is the name of the `.parsnp.heatmap.json` file, minus the `.heatmap.json` suffix.
+- `filter`: which _Merging & prefiltering_ rules to apply. An easy way to do this is to change this interactively, and it will update in the address bar.
+- `snps`: the starting similarity threshold; should be a number from 1 to 100.
+- `order`: how to sort rows and columns of the heatmap; the default is `groupOrder` which attempts to arrange clusters along the diagonal.
+- `range`: the range of the beeswarm timeline to select; specified as two float values ranging from 0.0 to 1.0, separated by the `|` character.
+- `mode`: if set to `network`, will start the visualization in the network map view.
+- `play`: if provided, will animate the visualization in one of four modes; use an integer from 1 to 4.
 
 ### dendro-timeline.php
 
