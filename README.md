@@ -49,7 +49,7 @@ An `index.php` is included which by default shows the splash page from the [Path
 
 This visualization allows you to interactively create and explore clusters of genomes suspicious for transmission. _Click the screenshot for an interactive demo._
 
-<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
+<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0" target="_blank"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
 
 The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is seen next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold. Pairs of genomes from the same patient are depicted as open squares, while the remainder are filled.
 
@@ -65,9 +65,9 @@ In our example, only genomes in a cluster with a different-patient isolate are s
 
 To the left of the histogram is a beeswarm plot showing the distribution of sampled genomes over time. If you have decided to show them, unclustered genomes are light gray circles, while those in a cluster are shaded with that cluster's color. You can click and drag to filter the heatmap to a specific time period.
 
-<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1"><img src="https://pathospot.org/images/network.png" width="360px"/></a>
+<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1" target="_blank"><img src="https://pathospot.org/images/network.png" width="360px"/></a>
 
-As an alternative to the heatmap, you can also use the "Network map view" which takes the nodes in the beeswarm and plots them spatially on a map, with red lines to depict genetic links within the similarity threshold. This can even be animated; click the above screenshot to see an example. Underneath the node-link diagram is a density plot of overall positive culture tests supplied by the `rake epi` task.
+As an alternative to the heatmap, you can also use the "Network map view" which takes the nodes in the beeswarm and plots them spatially on a map, with red lines to depict genetic links within the similarity threshold. This can even be animated; _click the above screenshot to see an example._ Underneath the node-link diagram is a density plot of overall positive culture tests supplied by the `rake epi` task.
 
 #### heatmap.php parameters
 
