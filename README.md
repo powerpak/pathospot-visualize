@@ -83,6 +83,33 @@ You can link directly to `heatmap.php` from external tools, in which case it may
 
 ### dendro-timeline.php
 
-This visualization allows you to explore and compare the genetic and spatiotemporal relationships within a cluster, usually offering insight into the overlaps that facilitated transmission events.
+This visualization allows you to explore and compare the genetic and spatiotemporal relationships within a cluster, usually offering insight into the overlaps that facilitated transmission events. _Click the screenshot for an interactive demo._
 
 <a href="https://pathospot.org/dendro-timeline.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&assemblies=S_aureus_ER07227_3A_025296%20S_aureus_ER05786_3A_024918%20S_aureus_ER05686_3A_023855%20S_aureus_ER05682_3A_023854%20S_aureus_PS00099_3A_024679%20S_aureus_ER07103_3A_025066%20S_aureus_ER05353_3A_023850%20S_aureus_ER05508_3A_024907%20S_aureus_ER05526_3A_024910%20S_aureus_ER06446_3A_024926%20S_aureus_ER05368_3A_023852&colorNodes=collection_unit&filter=inpatient&timelineGrouping=0&isolateTests=&variantLabels=gene&variantNtOrAa=nt&showOverlaps=1&tolerance=12&sort=(%270!(%272A9-34*11-40A3-176A12.5%27~181A7-399*15-574A5-628*130%27))*!%270000000-0%27~A*0%01A-*" target="_blank"><img src="https://pathospot.org/images/screenshot-dendro-timeline.png" width="600px"/></a>
+
+Starting from the upper left, the "tree" is a dendrogram depicting genetic relationships between the genomes. (If you arrive here from the [heatmap](#heatmapphp), typically these are all of the genomes in a particular cluster, although you can add and remove isolates manually using the button in the upper left). You can change how the nodes are colored using the _Color by_ dropdown; the default uses the location of collection, and a color legend is at far left. Distances are scaled to SNPs per Mbp of reference genome.
+
+To the right of the dendrogram are details on each genome, including the date and location of collection and a diagram of SNPs that differentiate this genome from the others. You can alter the labels for these SNPs using the _Variant labels_ dropdowns, including showing them as predicted amino acids (if within an annotated open reading frame). Synonymous substitutions are in light gray, while nonsynonymous substitutions are dark blue.
+
+The bottom of the visualization is a timeline of patient movements with the genomes overplotted as filled circles. Colors correspond to either locations or times, same as for the dendrogram. You can hover over elements to see more details in a tooltip, and pan and zoom with your mouse and mousewheel (or two-finger scroll). Light red arcs show overlaps in location between different patients, within the threshold set by the slider (e.g. a patient leaving a unit X hours before the next one arrives still counts as an overlap).
+
+You can filter location data by inpatient vs outpatient using _Filter events_. If available, results for unsequenced culture tests supplied in the `.epi.heatmap.json` file can be plotted as X's and unfilled circles using _Filter culture results_. Finally, you can change the layout of the Y axis using the _Y axis_ dropdown.
+
+#### dendro-timeline.php parameters
+
+You can link directly to `dendro-timeline.php` from external tools, in which case it may useful to supply query string parameters to preconfigure the view in a particular way. The following parameters are available:
+
+- `db`: which dataset to load. This is the name of the `.parsnp.heatmap.json` file, minus the `.heatmap.json` suffix.
+- `assemblies`: which genomes to show; these are the names separated by either `+` or `%20`.
+- `colorNodes`: how to color the nodes; either `collectionUnit` for location or `ordered` for time.
+- `variantLabels` and `variantNtOrAa`: how to label the SNP diagram.\*
+- `showOverlaps`: whether to draw the red arcs for spatiotemporal overlaps (set to 1) or not (set to 0).
+- `tolerance`: the threshold for calling a spatiotemporal overlap.\*
+- `filter`: filters events in the timeline; either `inpatient`, `outpatient`, or leave blank to show both.
+- `isolateTests`: how to plot the unsequenced culture tests.\*
+- `timelineGrouping`: how to arrange the Y axis of the timeline.\*
+- `sort`: the starting Y axis sort order for the timeline, which can be manually reordered by dragging rows; supplied as JSON compressed with [JSONCrush][].\*
+
+\* For these parameters, it is likely easiest to derive your intended setting by interacting with the visualization and using the updated value in the address bar.
+
+[JSONCrush]: https://github.com/KilledByAPixel/JSONCrush
