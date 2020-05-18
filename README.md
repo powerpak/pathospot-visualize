@@ -93,7 +93,9 @@ To the right of the dendrogram are details on each genome, including the date an
 
 The bottom of the visualization is a timeline of patient movements with the genomes overplotted as filled circles. Colors correspond to either locations or times, same as for the dendrogram. You can hover over elements to see more details in a tooltip, and pan and zoom with your mouse and mousewheel (or two-finger scroll). Light red arcs show overlaps in location between different patients, within the threshold set by the slider (e.g. a patient leaving a unit X hours before the next one arrives still counts as an overlap).
 
-You can filter location data by inpatient vs outpatient using _Filter events_. If available, results for unsequenced culture tests supplied in the `.epi.heatmap.json` file can be plotted as X's and unfilled circles using _Filter culture results_. Finally, you can change the layout of the Y axis using the _Y axis_ dropdown.
+You can filter location data by inpatient vs outpatient using _Filter events_. If available, results for unsequenced culture tests supplied in the `.epi.heatmap.json` file can be plotted as X's and unfilled circles using _Filter culture results_. You can change the layout of the Y axis using the _Y axis_ dropdown.
+
+Finally, you can help correlate particular genomes across the timeline and dendrogram by changing the symbol used; to do this, click the node on either part of the visualization, and it will update on both (more clicks will cycle through the symbols). You can alt- or option-click to reset it to the default of a small filled circle.
 
 #### dendro-timeline.php parameters
 
