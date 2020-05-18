@@ -116,7 +116,7 @@
       <div class="clear"></div>
     </div>
     <p class="center mid-width">
-      <span class="regular">Interested in viruses?</span> Also see our <a href="https://www.medrxiv.org/content/10.1101/2020.05.10.20096693v1" target="_blank">preprint on influenza A</a>, where <span class="regular">PathoSPOT</span> was used during a nosocomial outbreak affecting 66 healthcare workers and inpatients to identify &ldquo;patient zero.&rdquo;
+      <span class="regular">Interested in viruses?</span> Also see our <a href="https://www.medrxiv.org/content/10.1101/2020.05.10.20096693v1" target="_blank">preprint on influenza A</a>, where <span class="regular">pathoSPOT</span> was used during a nosocomial outbreak affecting 66 healthcare workers and inpatients to identify &ldquo;patient zero.&rdquo;
     </p>
         
     <h2 class="center mid-width new-section">
