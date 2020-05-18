@@ -47,11 +47,13 @@ An `index.php` is included which by default shows the splash page from the [Path
 
 ### heatmap.php
 
-Visualizes the output of [pathoSPOT-compare][]'s `parsnp`, `heatmap`, and `epi` tasks.
+An visualization of distances among your genomes that allows you to interactively explore clusters suspicious for transmission. _Click the screenshot for an interactive demo._
 
 <a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
 
-Click the above screenshot for an interactive demo. The main view is a clustered heatmap of pairwise genome to genome distances, where any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. The assigned colors are arbitrary (a color legend is created next to *8 clusters detected*), and these represent separate clusters suspicious for transmission at your chosen threshold. 
+The main view is a clustered heatmap of pairwise genome to genome distances, where any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is created next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold.
+
+To aid in choosing a sensible threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars), and then the lowest distance to prior sampled genomes from the *same patient* (black bars). The black bars represent genomes you expect to be clonal, as they are from the same colonization or infection (small distances), while the light gray bars will include the normal variation of genomes seen in the wider population. The latter is typically a bimodal distribution with the left peak covered by the black bars. A cutoff would typically be chosen between these two peaks to best separate clonal and non-clonal distances.
 
 ### dendro-timeline.php
 
