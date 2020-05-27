@@ -127,7 +127,7 @@
         You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">Berbal Caban &amp; Pak et al.</a> starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
       </p>
       <p>
-        This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://www.sqlite.org/index.html">SQLite</a> database with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
+        This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://github.com/powerpak/pathospot-compare/blob/master/README-database.md">relational database</a> (in <a href="https://www.sqlite.org/">SQLite</a> format) with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
       </p>
       <p>
         <span class="regular">pathoSPOT</span> is designed to run on Linux; however, we provide a Vagrant configuration so that anybody, including Mac and Windows users, can quickly create a virtual machine (VM) that runs the pipeline either on their personal computer or on the <a href="https://github.com/powerpak/pathospot-compare/blob/master/README-vagrant-aws.md">Amazon EC2 cloud</a>. We'll use VirtualBox to run the VM locally for this example; you'll need 5GB of disk space and 8GB of RAM.
