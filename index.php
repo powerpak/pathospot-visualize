@@ -145,7 +145,7 @@ $ vagrant up
 $ vagrant ssh</pre>
       </div>
       <p>
-        If everything worked, you should see <code>vagrant@stretch:/vagrant$</code> which is a shell running on your brand new Linux VM. To kick off the analysis, run:
+        If everything worked, you should see <code>vagrant@stretch:/vagrant$</code> which is a shell running on your brand new Linux VM. <strong>By default</strong>, the VM is configured to download the example dataset into <code>/vagrant/example<code> and run a full analysis. To kick off this process, run:
       </p>
       <div class="code-block">
         <pre>$ rake all
