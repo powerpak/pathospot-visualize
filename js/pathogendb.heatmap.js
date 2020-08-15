@@ -788,21 +788,22 @@ $(function() {
         html += '<a href="' + snvs_url + '" target="_blank">Open SNP track</a>';
       }
       if (nodes[ixLeft].group === nodes[ixRight].group) {
-        html += ' <a href="' + $('a.cluster-' + nodes[ixLeft].group).attr('href') + '" target="_blank">Explore this cluster</a>';
+        html += ' <a href="' + $('.cluster-' + nodes[ixLeft].group).data('href') + '" target="_blank">Explore this cluster\'s timeline</a>';
       }
       html += '</span></div>';
       return html;
     }
     
     function tipHtml(d) {
-      if (d.clusterInfo) { return tipClusterInfoHtml(d); }
+      if (d.clusteringInfo) { return tipClusteringInfoHtml(d); }
+      if (d.cluster) { return tipClusterDetailsHtml(d); }
       return tipLinkHtml(d.y, d.x, d.z);
     }
     
     var tip = d3.tip()
         .attr('class', 'd3-tip')
-        .offset(function(d) { return d.clusterInfo ? [10, 0]: [-10, 0]; })
-        .direction(function(d) { return d.clusterInfo ? 's': 'n'; })
+        .offset(function(d) { return d.clusteringInfo || d.cluster ? [10, 0]: [-10, 0]; })
+        .direction(function(d) { return d.clusteringInfo || d.cluster ? 's': 'n'; })
         .html(tipHtml);
     var selectedCell = null; 
     
@@ -892,27 +893,76 @@ $(function() {
     // ******************************* CLUSTER LEGEND **************************************
     
     var clusterLegend = d3.select("#cluster-legend"),
-        clusterInfoSvg = d3.select('#cluster-info').select('svg');
+        clusterListSvg = clusterLegend.select('#cluster-list'),
+        clusteringInfoSvg = d3.select('#cluster-info').select('svg');
     
     function updateDetectedClusters(clusters) {
       clusterLegend.style('display', 'inline');
       clusterLegend.select('.num-clusters').text(clusters.length);
-      var clusterList = clusterLegend.select('#cluster-list').selectAll('a').data(clusters);
+      clusterListSvg.attr("width", clusters.length * 26).call(tip);
+      
+      var clusterList = clusterListSvg.selectAll('a').data(clusters);
       var clusterEnter = clusterList.enter().append('a');
+      
+      clusterEnter.append('rect')
+          .attr("width", 22)
+          .attr("height", 22);
+      
+      clusterEnter.append('text')
+          .attr("x", 11)
+          .attr("y", 15)
+          .attr("text-anchor", "middle");
+      
       clusterList.merge(clusterEnter)
-          .style("background-color", function(d, i) { return c(i); } )
+          .attr("transform", function(d, i) { return "translate(" + (i * 26) + ",0)"; })
           .attr("href", function(d) {
             var assemblyNames = _.map(d.index, function(leaf) { 
               return encodeURIComponent(clusterableNodes[leaf.index].name); 
             });  
             return "dendro-timeline.php?db=" + db + "&assemblies=" + assemblyNames.join('+');
           })
-          .attr("class", function(d, i) { return "cluster-" + i.toString(); })
           .attr("target", "_blank")
+          .attr("class", function(d, i) { return "cluster-" + i.toString(); })
+          .on("mouseenter", function(d, i) {
+            tip.show({cluster: d, clusterNum: i})
+          })
+          .on("mouseleave", function() {
+            tip.hide();
+          });
+      
+      clusterList.merge(clusterEnter).select('rect')
+          .style("fill", function(d, i) { return c(i); } );
+      
+      clusterList.merge(clusterEnter).select('text')
           .text(function(d) { return d.index.length; });
+      
       clusterList.exit().remove();
       
       updateClustersTSVBlob(clusters);
+    }
+    
+    function formatTipRow(value, label) {
+      if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[label]) { value = FORMAT_FOR_DISPLAY[label](value); }
+      if ((/^-+$/).test(label)) { return '<tr class="separator"><td colspan="2"></td></tr>'; }
+      var html = '<tr><td class="row-label">' + label + '</td>';
+      if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
+        value = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(value)) + '">' + value + '</a>';
+      }
+      html += '<td>' + value + '</td></tr>';
+      return html;
+    }
+    
+    function tipClusterDetailsHtml(d) {
+      var html = '<table class="link-info">',
+        tipRows = {
+          'Cluster #': d.clusterNum,
+          'Cluster size': d.cluster.index.length
+        };
+
+      _.each(tipRows, function(value, label) { html += formatTipRow(value, label); });
+      html += '</table>';
+      html += '<div class="more"><span class="instructions">Click to explore this cluster\'s timeline</span></div>';
+      return html;
     }
     
     function updateClustersTSVBlob(clusters) {
@@ -937,24 +987,14 @@ $(function() {
       $('#download-clusters').data('tsvBlob', new Blob([tsv], { type: "text/plain;" }));
     }
     
-    function tipClusterInfoHtml(d) { 
+    function tipClusteringInfoHtml(d) { 
       var html = '<table class="link-info">';
-  
-      _.each(d.clusterInfo, function(value, label) {
-        if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[label]) { value = FORMAT_FOR_DISPLAY[label](value); }
-        if ((/^-+$/).test(label)) { html += '<tr class="separator"><td colspan="2"></td></tr>'; return; }
-        html += '<tr><td class="row-label">' + label + '</td>';
-        if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
-          value = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(value)) + '">' + value + '</a>';
-        }
-        html += '<td>' + value + '</td></tr>';
-      });
-  
+      _.each(d.clusteringInfo, function(value, label) { html += formatTipRow(value, label); });
       html += '</table>';
       return html;
     }
     
-    function calculateClusterInfo(clusters) {
+    function calculateClusteringInfo(clusters) {
       var clusterNodes = _.map(clusters, function(clust) { 
           return _.map(clust.index, function(leaf) { return clusterableNodes[leaf.index]; }); 
         }),
@@ -975,15 +1015,15 @@ $(function() {
       return info;
     }
     
-    function initClusterInfoTooltip() {
-      clusterInfoSvg.call(tip);
-      var clusterInfoRect = clusterInfoSvg.append('rect')
+    function initClusteringInfoTooltip() {
+      clusteringInfoSvg.call(tip);
+      var clusteringInfoRect = clusteringInfoSvg.append('rect')
           .style('fill', 'transparent')
-          .attr('width', clusterInfoSvg.attr('width'))
-          .attr('height', clusterInfoSvg.attr('height'));
-      clusterInfoRect.on("mouseover", function() {
+          .attr('width', clusteringInfoSvg.attr('width'))
+          .attr('height', clusteringInfoSvg.attr('height'));
+      clusteringInfoRect.on("mouseover", function() {
             var clusters = clusterLegend.select('#cluster-list').selectAll('a').data();
-            tip.show({clusterInfo: calculateClusterInfo(clusters)});
+            tip.show({clusteringInfo: calculateClusteringInfo(clusters)});
           })
           .on("mouseout", function() {
             tip.hide();
@@ -991,7 +1031,7 @@ $(function() {
     }
     
     updateDetectedClusters(detectedClusters);
-    initClusterInfoTooltip();
+    initClusteringInfoTooltip();
     
     
     // ******************************* DENDROGRAM ****************************************

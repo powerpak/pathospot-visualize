@@ -25,6 +25,7 @@ $snp_threshold = 10;
 <link href="css/ionicons.min.css" rel="stylesheet" />
 <link href="css/rangeslider.css" rel="stylesheet" />
 <link href="css/select2.css" rel="stylesheet" />
+<link href="css/intro.css" rel="stylesheet" />
 <link href="css/style.css" rel="stylesheet" />
 
 <script src="js/underscore-min.js"></script>
@@ -37,6 +38,7 @@ $snp_threshold = 10;
 <script src="js/FileSaver.js" charset="utf-8"></script>
 <script src="js/utils.js"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
+<script src="js/intro.min.js" charset="utf-8"></script>
 
 <?php
 if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
@@ -113,18 +115,24 @@ foreach ($data_files as $data_file):
     <label id="cluster-legend" class="widget">
       <span class="num-clusters">N</span> clusters detected
       <a id="cluster-info"><svg height="24" width="18"></svg><i class="icon ion-md-help-circle"></i></a>
-      <span id="cluster-list"></span>
-      <a href="javascript:void(0)" id="download-clusters"><i class="icon ion-md-download"></i><span>TSV</span></a>
+      <svg id="cluster-list" height="24" width="100"></svg>
+      <a href="javascript:void(0)" id="download-clusters"
+          title="Download a TSV of the currently detected clusters"><i class="icon ion-md-download"></i><span>TSV</span></a>
     </label>
     <div class="clear"></div>
     <label class="widget"><span class="widget-label">Filter genomes by specimen order dates</span></label>
     <label class="widget" id="daterange-animate">
       <span class="widget widget-label">Animate</span>
-      <a data-action="pause" class="toggle-btn mini toggle-btn-left active pause"><i class="icon ion-md-pause"></i></a>
-      <a data-action="play" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-md-play"></i></a>
-      <a data-action="play" data-speed="0.03" class="toggle-btn mini"><i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
-      <a data-action="playexpand" data-speed="0.01" class="toggle-btn mini"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i></a>
-      <a data-action="playexpand" data-speed="0.03" class="toggle-btn mini toggle-btn-right"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
+      <a data-action="pause" class="toggle-btn mini toggle-btn-left active pause"
+          title="Pause animation"><i class="icon ion-md-pause"></i></a>
+      <a data-action="play" data-speed="0.01" class="toggle-btn mini"
+          title="Start advancing the time window"><i class="icon ion-md-play"></i></a>
+      <a data-action="play" data-speed="0.03" class="toggle-btn mini"
+          title="Start advancing the time window, 3x speed"><i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
+      <a data-action="playexpand" data-speed="0.01" class="toggle-btn mini"
+          title="Start expanding the time window"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i></a>
+      <a data-action="playexpand" data-speed="0.03" class="toggle-btn mini toggle-btn-right"
+          title="Start expanding the time window, 3x speed"><i class="icon ion-md-add"></i> <i class="icon ion-md-play"></i><i class="icon ion-md-play"></i></a>
     </label>
     <label id="histo-title">
       Histogram of

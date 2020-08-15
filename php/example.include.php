@@ -18,7 +18,7 @@ function includeBeforeBody() {
     <div class="header-links">
       <a href="index.php" class="logo"></a>
       <a href="heatmap.php"><span class="extra">Live </span>Demo</a>
-      <a href="index.php#get-started">Get Started</a>
+      <a href="index.php#get-started">Install</a>
       <a href="index.php#how-it-works">How It Works</a>
       <a href="index.php#team">Team</a>
       <span class="extra"><a href="https://github.com/powerpak/pathospot-compare" target="_blank">GitHub</a></span>

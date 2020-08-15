@@ -32,7 +32,7 @@
       
     </div>
     <a href="#live-demo"><span class="extra">Live </span>Demo</a>
-    <a href="#get-started">Get Started</a>
+    <a href="#get-started">Install</a>
     <a href="#how-it-works">How It Works</a>
     <a href="#team">Team</a>
     <span class="extra"><a href="https://github.com/powerpak/pathospot-compare">GitHub</a></span>
