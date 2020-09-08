@@ -15,6 +15,11 @@ svg {
   font: 10px "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+code {
+  font-family: 'Bitstream Vera Sans Mono', Menlo, Consolas, 'Andale Mono', Courier, monospace; 
+  font-size: 90%;
+}
+
 .units {
   color: #777;
 }
@@ -93,6 +98,60 @@ input[type="range"].range { display: none; }
   border-color: #d4dbe0;
 }
 .toggle-btn.active:hover + .toggle-btn { border-left-color: #d4dbe0; }
+
+.alert {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 6px 9px;
+}
+.alert-danger {
+  color: #721c24;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+.alert a:link {
+  font-weight: bold;
+}
+
+
+/* Loading indicator */
+.loading {
+  font-family: 'Jost', 'Gill Sans', Helvetica, sans-serif;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 30px 20px 20px;
+  background: #fcfcfc;
+  z-index: 2000; /* select2 dropdown is z-index: 1051 */
+  border-radius: 20px;
+  background: rgba(252, 252, 252, 0.8);
+  -webkit-box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.1);
+  -moz-box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.1);
+  box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.1);
+  backdrop-filter: blur(5px);
+}
+
+.loading-text {
+  color: #777;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.loading-dots {
+  background-image: url(../images/loading-dots-trans.gif);
+  display: inline-block;
+  vertical-align: middle;
+  height: 50px;
+  width: 50px;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
+/* Purple tutorial button in the header that kicks off the intro.js sequence */
 
 .tutorial-btn {
   display: inline-block;
@@ -195,6 +254,11 @@ input[type="range"].range { display: none; }
   font-weight: bold;
 }
 
+#max-cluster-size-warning {
+  margin-top: 3px;
+  margin-left: -10px;
+  display: none;
+}
 
 #histo-title {
   position: absolute;

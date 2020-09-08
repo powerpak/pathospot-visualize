@@ -16,7 +16,9 @@ $(function() {
       REDRAW_INTERVAL = 1000,
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
-      HOSPITAL_MAP = window.HOSPITAL_MAP || 'anon-hospital-gray';
+      HOSPITAL_MAP = window.HOSPITAL_MAP || 'anon-hospital-gray',
+      $LOADING_SPINNER = $('.loading'),
+      $LOADING_SPINNER_TEXT = $('.loading-text');
   
   // Specifies URL query parameters that should map to DOM element values
   //     (see `syncQueryParamsToDOM` in utils.js for more details)
@@ -36,8 +38,10 @@ $(function() {
         clusterCoverageRange: formatPercentages,
         "% patients clustered": formatPercentages,
         "% isolates clustered": formatPercentages,
-        "core genome size range": formatPercentages,
-        "cluster coverage range": formatPercentages
+        "Core genome size range": formatPercentages,
+        "Cluster coverage range": formatPercentages,
+        "Core genome": formatPercentages,
+        "Cluster coverage": formatPercentages
       };
   
   window.ANON = getURLParameter('anon');
@@ -106,6 +110,7 @@ $(function() {
         epiData = {isolates: []},
         brushAnimateStatus = null,
         nodesToTrees = {},
+        treeSizes = [],
         parsnpStats = assemblies.parsnp_stats,
         fullMatrix, visibleNodes, clusterableNodes, detectedClusters;
     
@@ -116,6 +121,7 @@ $(function() {
       var numerical = (/^\d+(\.\d+(e[+-]\d+)?)?$/),
           nodesInTree = _.reject(tree.split(/[():,;]+/), function(token) { return !token || numerical.test(token); });
       _.each(nodesInTree, function(node) { nodesToTrees[node] = i; });
+      treeSizes.push(nodesInTree.length);
     });
   
     // **************************  LOAD AND SETUP DATA STRUCTURES *****************************
@@ -136,7 +142,8 @@ $(function() {
       var matrix = [],
         samePtClusters = [],
         allClusters;
-        
+      
+      $LOADING_SPINNER_TEXT.text('reclustering genomes');
       filters = _.extend({}, filters);
     
       // Reset the nodes array and initialize the rows of the matrix, which is in matrix[y][x] orientation
@@ -259,11 +266,16 @@ $(function() {
         allClusters = _.filter(allClusters.cut(snpThreshold), function(clust) { return clust.children; });
         // Sort them by size, in descending order
         detectedClusters = _.sortBy(allClusters, function(clust) { return -clust.index.length; });
-        // then annotate the nodes with the # of the cluster they are in
+        // then annotate the nodes with the # of the cluster they are in.
+        // We also track the size of each cluster including `mergeSamePt` children in order to warn the user if this is 
+        // bumping up against the largest mash precluster size.
         _.each(detectedClusters, function(clust, i) {
-          _.each(clust.index, function(leaf) { 
+          clust.sizeIncludingSamePtChildren = 0;
+          _.each(clust.index, function(leaf) {
             clusterableNodes[leaf.index].group = i;
             clusterableNodes[leaf.index].groupSize = clust.index.length;
+            var samePtMergeParent = clusterableNodes[leaf.index].samePtMergeParent;
+            clust.sizeIncludingSamePtChildren += samePtMergeParent ? samePtMergeParent.length : 1;
           });
         });
       }
@@ -478,7 +490,8 @@ $(function() {
         .attr("height", histoHeight)
         .call(d3.drag()
             .on("start drag", function() { 
-              $('#snps').val(Math.round(histoX.invert(d3.event.x))).change();
+              $LOADING_SPINNER.show();
+              $('#snps').val(Math.round(histoX.invert(d3.event.x))).trigger("change", true);
               changeSnpThresholdDebounced();
             })
         );
@@ -777,7 +790,7 @@ $(function() {
       
       html += '</table>'
       if (leftClust || rightClust) { html += '<div class="merge-warn">For merged isolates, closest isolate is shown.</div>'; }
-      html += '<div class="more"><span class="instructions">click for links</span><span class="links">';
+      html += '<div class="more"><span class="instructions">Click for links</span><span class="links">';
       if (assemblies.out_dir) {
         snvs_url = assemblies.out_dir + '/' + nodes[ixLeft].name + '/' + nodes[ixLeft].name + '_' + nodes[ixRight].name + '.snv.bed',
         snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
@@ -788,7 +801,7 @@ $(function() {
         html += '<a href="' + snvs_url + '" target="_blank">Open SNP track</a>';
       }
       if (nodes[ixLeft].group === nodes[ixRight].group) {
-        html += ' <a href="' + $('.cluster-' + nodes[ixLeft].group).data('href') + '" target="_blank">Explore this cluster\'s timeline</a>';
+        html += ' <a href="' + $('.cluster-' + nodes[ixLeft].group).attr('href') + '" target="_blank">Explore this cluster\'s timeline</a>';
       }
       html += '</span></div>';
       return html;
@@ -938,31 +951,17 @@ $(function() {
       
       clusterList.exit().remove();
       
+      updateMaxClusterSizeWarning(clusters);
       updateClustersTSVBlob(clusters);
     }
     
-    function formatTipRow(value, label) {
-      if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[label]) { value = FORMAT_FOR_DISPLAY[label](value); }
-      if ((/^-+$/).test(label)) { return '<tr class="separator"><td colspan="2"></td></tr>'; }
-      var html = '<tr><td class="row-label">' + label + '</td>';
-      if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
-        value = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(value)) + '">' + value + '</a>';
-      }
-      html += '<td>' + value + '</td></tr>';
-      return html;
-    }
-    
-    function tipClusterDetailsHtml(d) {
-      var html = '<table class="link-info">',
-        tipRows = {
-          'Cluster #': d.clusterNum,
-          'Cluster size': d.cluster.index.length
-        };
-
-      _.each(tipRows, function(value, label) { html += formatTipRow(value, label); });
-      html += '</table>';
-      html += '<div class="more"><span class="instructions">Click to explore this cluster\'s timeline</span></div>';
-      return html;
+    function updateMaxClusterSizeWarning(clusters) {
+      var $warn = $('#max-cluster-size-warning').stop(),
+          maxTreeSize = _.max(treeSizes),
+          largestClusterSizeIncludingSamePtChildren = _.max(_.pluck(clusters, 'sizeIncludingSamePtChildren'));
+      if (largestClusterSizeIncludingSamePtChildren >= maxTreeSize) {
+        _.defer(function() { $warn.slideDown(); });
+      } else { _.defer(function() { $warn.slideUp(); }); }
     }
     
     function updateClustersTSVBlob(clusters) {
@@ -985,6 +984,41 @@ $(function() {
       });
       var tsv = _.map(rows, function(cells) { return cells.join("\t"); }).join("\n");
       $('#download-clusters').data('tsvBlob', new Blob([tsv], { type: "text/plain;" }));
+    }
+    
+    function formatTipRow(value, label) {
+      if (FORMAT_FOR_DISPLAY && FORMAT_FOR_DISPLAY[label]) { value = FORMAT_FOR_DISPLAY[label](value); }
+      if ((/^-+$/).test(label)) { return '<tr class="separator"><td colspan="2"></td></tr>'; }
+      var html = '<tr><td class="row-label">' + label + '</td>';
+      if (LINKABLE_FIELDS && (link = LINKABLE_FIELDS[label])) {
+        value = '<a target="_blank" href="' + link.replace('%s', encodeURIComponent(value)) + '">' + value + '</a>';
+      }
+      html += '<td>' + value + '</td></tr>';
+      return html;
+    }
+    
+    function tipClusterDetailsHtml(d) {
+      var html = '<table class="link-info">',
+          tipRows = {
+            'Cluster #': d.clusterNum,
+            'Cluster size': d.cluster.index.length
+          };
+      
+      if (_.any(nodes, function(node) { return !!node.coreGenomeSize; })) {
+        var clustFirstNode = clusterableNodes[d.cluster.index[0].index],
+            clustNodes = _.pick(clusterableNodes, _.pluck(d.cluster.index, 'index')),
+            clustCoreGenomeSizes = _.pluck(clustNodes, 'coreGenomeSize');
+        _.extend(tipRows, {
+          'Mash precluster #': clustFirstNode.whichTree,
+          'Core genome': _.min(clustCoreGenomeSizes),
+          'Cluster coverage': clustFirstNode.clusterCoverageRange
+        });
+      }
+          
+      _.each(tipRows, function(value, label) { html += formatTipRow(value, label); });
+      html += '</table>';
+      html += '<div class="more"><span class="instructions">Click to explore this cluster\'s timeline</span></div>';
+      return html;
     }
     
     function tipClusteringInfoHtml(d) { 
@@ -1010,8 +1044,8 @@ $(function() {
       info["# isolates total"] = _.uniq(_.compact(_.pluck(nodes, 'isolate_ID'))).length;
       info["% isolates clustered"] = info["# isolates in clusters"] / info["# isolates total"] * 100;
       info["----"] = true;
-      info["core genome size range"] = [_.min(coreGenomeSizes), _.max(coreGenomeSizes)];
-      info["cluster coverage range"] = [_.min(_.pluck(coverageRanges, 0)), _.max(_.pluck(coverageRanges, 1))];
+      info["Core genome size range"] = [_.min(coreGenomeSizes), _.max(coreGenomeSizes)];
+      info["Cluster coverage range"] = [_.min(_.pluck(coverageRanges, 0)), _.max(_.pluck(coverageRanges, 1))];
       return info;
     }
     
@@ -1290,15 +1324,18 @@ $(function() {
     $('#filter').select2({placeholder: "Click to add/remove filters"})
     $('#filter-cont .select2-selection').append(
         '<span class="select2-selection__arrow" role="presentation"><b role="presentation"></b></span>');
-    $('#filter').on('change', changeSnpThreshold);
+    $('#filter').on('change', function() { 
+      if ($LOADING_SPINNER.is(':hidden')) { $LOADING_SPINNER.fadeIn(function() { changeSnpThreshold(); }); }
+      else changeSnpThreshold();
+    });
     
     // Setup the distance threshold slider and bind it to changing the disabled input
     $('#snps').attr({value: DEFAULT_SNP_THRESHOLD, min: MIN_SNP_THRESHOLD, max: MAX_SNP_THRESHOLD}).rangeslider({ 
       polyfill: false,
-      onSlide: function(pos, value) { $('#snps-num').val(value); updateHistoCutoff(value); },
+      onSlide: function(pos, value) { $('#snps-num').val(value); $LOADING_SPINNER.show(); updateHistoCutoff(value); },
       onSlideEnd: function(pos, value) { $('#snps-num').change(); }
     });
-    $('#snps').on('change', function() { $('#snps-num').change(); });
+    $('#snps').on('change', function(e, dontPropagate) { if (!dontPropagate) { $('#snps-num').change(); } });
     // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
     $('#snps-num').on('change', changeSnpThreshold);
     
@@ -1378,6 +1415,8 @@ $(function() {
     
     // ************************** UPDATING UI FROM THE DATA **********************************
 
+    var fadeOutSpinnerDebounced = _.debounce(function() { $LOADING_SPINNER.fadeOut(); }, 300);
+
     function reorder() {    
       var filteredDomain = filterByBrush(filterByVisibleNodes(d3.range(n))), 
           cutClusters = reclusterFilteredNodes(filteredDomain)
@@ -1420,8 +1459,14 @@ $(function() {
       reorder();
       updateNodes(visibleNodes);
       updateDetectedClusters(detectedClusters);
+      fadeOutSpinnerDebounced();
     }
-    var changeSnpThresholdDebounced = _.debounce(changeSnpThreshold, 200);
+    
+    var changeSnpThresholdDebouncedInner = _.debounce(changeSnpThreshold, 200);
+    function changeSnpThresholdDebounced() {
+      $LOADING_SPINNER.show();
+      changeSnpThresholdDebouncedInner();
+    }
 
 
     // **************************** START THE VISUALIZATION ************************************
@@ -1429,6 +1474,7 @@ $(function() {
     // Syncs URL params to DOM elements that control the visualization.
     // This is also how we kick off an initial data update to perform the first draw of heatmap
     syncQueryParamsToDOM(queryParamSpec, {range: [0.7, 1.0]});
+
 
     // ************************* DOWNLOAD SPATIOTEMPORAL AND EPI DATA **************************
     

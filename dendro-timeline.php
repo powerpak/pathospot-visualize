@@ -147,6 +147,11 @@ elseif ($picking_assemblies):
 else:
 ?>
 
+<div class="loading">
+  <div class="loading-dots"></div>
+  <div class="loading-text">downloading data</div>
+</div>
+
 <div id="controls">
   <div class="toolbar">
     <label class="widget">

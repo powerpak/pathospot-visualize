@@ -2,9 +2,10 @@
 
 // COPY TO include.php AND CUSTOMIZE AS DESIRED.
 
+include('short-urls.php');
 date_default_timezone_set('America/New_York');
 $PYTHON = '/usr/bin/env python';
-  
+
 function includeAfterHead() {
 ?>
   <link href="fonts/Jost.css" rel="stylesheet" type="text/css" charset="utf-8" />
@@ -17,7 +18,7 @@ function includeBeforeBody() {
   <div class="fixed-header">
     <div class="header-links">
       <a href="index.php" class="logo"></a>
-      <a href="heatmap.php"><span class="extra">Live </span>Demo</a>
+      <a class="tutorial-btn"><span class="extra">Play </span>Tutorial</a>
       <a href="index.php#get-started">Install</a>
       <a href="index.php#how-it-works">How It Works</a>
       <a href="index.php#team">Team</a>

@@ -11,6 +11,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   var TOLERANCE_UNITS = _.times(24, function() { return "hrs"; })
       .concat(_.times(TOLERANCE_STEPS.length - 24, function() { return "days"; }));
   var TOLERANCE_DEFAULT = 12;
+  var $LOADING_SPINNER = $('.loading'),
+      $LOADING_SPINNER_TEXT = $('.loading-text');
   
   // Specifies URL query parameters that should map to DOM element values
   //     (see `syncQueryParamsToDOM` in utils.js for more details)
@@ -145,6 +147,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   var $toleranceNum = $('#tolerance-num');
   var $toleranceUnits = $('#tolerance-units');
   var $isolateTests = $('#isolate-tests');
+  
+  // Fades out the loading spinner
+  var fadeOutSpinnerDebounced = _.debounce(function() { $LOADING_SPINNER.fadeOut(); }, 300);
+  // Change the loading spinner caption since at this point all data has been downloaded for the first draw
+  $LOADING_SPINNER_TEXT.text('redrawing data');
   
   // ======================================================================================
   // = Impute locations for isolate test results (unsequenced positive/negative cultures) =
@@ -1280,7 +1287,9 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     // Finally, trigger a reordering/resize to kick off an initial draw of the timeline
     $timeline.trigger("reorderY", true);
     $timeline.trigger("resizeWidth");
-  }
+    fadeOutSpinnerDebounced();
+
+  } // /end updateTimeLine()
   
   // If there are more than three patients, initially collapse the timeline vertically to save space
   $yGrouping.val(_.pluck(isolates, 'eRAP_ID').length > 3 ? "0" : "0,1");
@@ -1290,32 +1299,56 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // = Setup callbacks for major controls that update the visualization =
   // ====================================================================
   
+  // Note, with regard to showing the $LOADING_SPINNER. In general, any UI refresh that ends up
+  // calling tree.update() or updateTimeline() should show it, as both of these functions are
+  // expensive and freeze the UI during the redraw.
+  // Other changes, e.g., only triggering CSS styles via classes, may not need a loading spinner.
+  
+  // The following helper 
+  
+  function showSpinner(andHideSpinnerAfter, during) {
+    if ($LOADING_SPINNER.stop().is(':hidden')) {
+      $LOADING_SPINNER.fadeIn(function() { 
+        during();
+        if (!!andHideSpinnerAfter) { fadeOutSpinnerDebounced(); }
+      });
+    } else {
+      during();
+      if (!!andHideSpinnerAfter) { fadeOutSpinnerDebounced(); }
+    }
+  }
+  
   // Setup the rangeslider for spatiotemporal overlap tolerance
   $tolerance.attr({min: 0, max: TOLERANCE_STEPS.length - 1, value: TOLERANCE_DEFAULT}).rangeslider({ 
     polyfill: false,
     onSlide: function(pos, value) { 
-      $toleranceNum.val(TOLERANCE_STEPS[value]); $toleranceUnits.text(TOLERANCE_UNITS[value]); 
+      $LOADING_SPINNER.show();
+      $toleranceNum.val(TOLERANCE_STEPS[value]);
+      $toleranceUnits.text(TOLERANCE_UNITS[value]); 
     },
     onSlideEnd: function(pos, value) { $toleranceNum.change(); }
   });
   $tolerance.on('change', function() { $toleranceNum.change(); });
-  // The SNP threshold input then calls the changeSnpThreshold function for updating the viz
   $toleranceNum.on('change', updateTimeline);
   
   $colorBy.change(function() {
-    tree.update();
-    updateColorLegend(tree);
-    updateTimeline();
+    showSpinner(false, function() {
+      tree.update();
+      updateColorLegend(tree);
+      updateTimeline();
+    });
   });
   
   $variantLabels.change(updateVariantLabels);
   $variantNtOrAa.change(function() {
-    updateVariantLabels();
-    tree.update();
+    showSpinner(true, function() {
+      updateVariantLabels();
+      tree.update();
+    });
   });
   
   $filter.change(function() {
-    updateTimeline();
+    showSpinner(false, function() { updateTimeline(); });
   });
   
   $isolateTests.change(function() {

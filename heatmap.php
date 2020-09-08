@@ -52,6 +52,11 @@ else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }
 <body class="pathospot-heatmap">
   
 <?php includeBeforeBody(); ?>
+
+<div class="loading">
+  <div class="loading-dots"></div>
+  <div class="loading-text">downloading data</div>
+</div>
   
 <div id="controls">
   <div class="toolbar">
@@ -118,6 +123,12 @@ foreach ($data_files as $data_file):
       <svg id="cluster-list" height="24" width="100"></svg>
       <a href="javascript:void(0)" id="download-clusters"
           title="Download a TSV of the currently detected clusters"><i class="icon ion-md-download"></i><span>TSV</span></a>
+      <div id="max-cluster-size-warning" class="alert alert-danger">
+        Your largest outbreak cluster is as big as the largest Mash precluster.
+        Consider increasing <code>MAX_CLUSTER_SIZE</code>; 
+        <a href="https://github.com/powerpak/pathospot-compare#rake-parsnp" target="_blank">see the documentation</a>
+        for more details.
+      </div>
     </label>
     <div class="clear"></div>
     <label class="widget"><span class="widget-label">Filter genomes by specimen order dates</span></label>
