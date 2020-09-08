@@ -1447,6 +1447,7 @@ $(function() {
       }
       
       syncDOMToQueryParamsDebounced(queryParamSpec);
+      fadeOutSpinnerDebounced();
     }
   
     function changeSnpThreshold() {
@@ -1459,7 +1460,6 @@ $(function() {
       reorder();
       updateNodes(visibleNodes);
       updateDetectedClusters(detectedClusters);
-      fadeOutSpinnerDebounced();
     }
     
     var changeSnpThresholdDebouncedInner = _.debounce(changeSnpThreshold, 200);
