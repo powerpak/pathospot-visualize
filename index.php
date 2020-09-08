@@ -91,12 +91,12 @@
       <div class="col">
         <div class="col-content center">
           <p>
-            <a target="_blank" href="?fig=S3">
+            <a target="_blank" href="?fig=S1">
               <img src="images/network.png" class="figure shadow"/>
             </a>
           </p>
           <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
-          <p class="secondary"><strong>Figure S3</strong> in
+          <p class="secondary"><strong>Figure S1</strong> in
             <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
@@ -104,12 +104,12 @@
       <div class="col">
         <div class="col-content center">
           <p>
-            <a target="_blank" href="?fig=S2B">
+            <a target="_blank" href="?fig=S3B">
               <img src="images/dendro-timeline.png" class="figure shadow"/>
             </a>
           </p>
           <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
-          <p class="secondary"><strong>Figure S2B</strong> in
+          <p class="secondary"><strong>Figure S3B</strong> in
             <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
