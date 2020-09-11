@@ -38,7 +38,7 @@ $snp_threshold = 10;
 <script src="js/FileSaver.js" charset="utf-8"></script>
 <script src="js/utils.js"></script>
 <script src="build/hclust.js" charset="utf-8"></script>
-<script src="js/intro.min.js" charset="utf-8"></script>
+<script src="js/intro.js" charset="utf-8"></script>
 
 <?php
 if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
@@ -82,7 +82,7 @@ foreach ($data_files as $data_file):
 <?php endforeach ?>
       </select>
     </label>
-    <label class="widget">
+    <label class="widget" id="snps-cont">
       <span class="widget-label">Similarity threshold</span>
       <input id="snps-num" name="snps_num" type="text" size="3" value="<?= $snp_threshold ?>" disabled />
       <span class="distance-unit units">parsnp SNPs</span>
@@ -175,6 +175,7 @@ foreach ($data_files as $data_file):
   </label>
 </div>
 
+<script src="js/pathogendb.intro.js" charset="utf-8"></script>
 <script src="js/pathogendb.heatmap.js"></script>
 
 <?php includeAfterBody(); ?>

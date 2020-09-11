@@ -844,6 +844,11 @@ text.axis-label {
   content: '\2713 ';
 }
 
+.select2-popover-introjs {
+  /* allows the dropdown to temporarily pop *over* the introjs-overlay layer */
+  z-index: 9999999;
+}
+
 /* ========================= */
 /* = D3-TIP CUSTOMIZATIONS = */
 /* ========================= */
@@ -949,4 +954,53 @@ text.axis-label {
   font-size: 80%;
   color: #aaa;
   margin-bottom: 0.5em;
+}
+
+
+/* =========================== */
+/* = INTRO.JS CUSTOMIZATIONS = */
+/* =========================== */
+
+.pathospot-heatmap .introjs-tooltiptext {
+  font-size: 12px;
+}
+
+.pathospot-heatmap .introjs-tooltiptext ul {
+  padding-left: 20px;
+}
+
+.pathospot-heatmap .introjs-tooltiptext ul li {
+  margin-bottom: 0.8em;
+}
+
+.pathospot-heatmap .introjs-tooltiptext .black-bars {
+  background-color: black;
+  font-weight: bold;
+  padding: 1px 4px;
+  color: white;
+}
+
+.pathospot-heatmap .introjs-tooltiptext .gray-bars {
+  background-color: #777;
+  font-weight: bold;
+  padding: 1px 4px;
+  color: white;
+}
+
+.pathospot-heatmap .introjs-tooltiptext .red-dashed {
+  color: red;
+  font-weight: bold;
+  border-right: 2px red dashed;
+  padding-right: 4px;
+  margin-right: 2px;
+}
+
+.pathospot-heatmap .introjs-transparent-helper {
+  background-color: rgba(255,255,255,.1);
+  border: 2px solid white;
+}
+
+.introjs-button:focus {
+  outline: 5px auto #5897fb;
+  outline-offset: 2px;
 }

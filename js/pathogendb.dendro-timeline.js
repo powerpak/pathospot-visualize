@@ -1,3 +1,16 @@
+// ****************************************************************************
+// ****************************************************************************
+//
+// This code is part of PathoSPOT-visualize; see https://pathospot.org/
+// This JavaScript supports the `dendro-timeline` view of the
+// PathoSPOT-visualize toolkit.
+//
+// Primary dependencies are D3.js, Underscore.js, and jQuery.
+//
+// ****************************************************************************
+// ****************************************************************************
+
+
 function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar) {
   // Global constants.
   var COLORS = ["#511EA8", "#4928B4", "#4334BF", "#4041C7", "#3F50CC", "#3F5ED0", "#416CCE", 

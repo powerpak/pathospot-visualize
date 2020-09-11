@@ -42,8 +42,8 @@ a:link:hover {
 }
 
 .regular { font-weight: 400; }
-em { font-weight: 400; font-style: italic; }
-strong { color: #666; }
+.pathospot-splash em { font-weight: 400; font-style: italic; }
+.pathospot-splash strong { color: #666; }
 
 .secondary { opacity: 0.5; font-weight: 400; font-style: italic; }
 

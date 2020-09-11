@@ -1,3 +1,15 @@
+// ****************************************************************************
+// ****************************************************************************
+//
+// This code is part of PathoSPOT-visualize; see https://pathospot.org/
+// This JavaScript supports the `heatmap` and `network map` views of 
+// the PathoSPOT-visualize toolkit.
+//
+// Primary dependencies are D3.js, Underscore.js, and jQuery.
+//
+// ****************************************************************************
+// ****************************************************************************
+
 $(function() { 
 
   // *************************** SVG/D3 SETUP *********************************
@@ -138,6 +150,7 @@ $(function() {
     //   `clustersOnly: true` will hide nodes that don't have any matching nodes above snpThreshold
     //   `mlst_subtype: ['1', '4', ...]` will show only nodes that have these `.mlst_subtype`s
     //   `hospitalAndUnit: ['MSH MICU', ...]` will show only nodes that have these `.hospitalAndUnit`s
+    
     function calculateMatrixAndNodeSubsets(nodes, links, snpThreshold, filters) {
       var matrix = [],
         samePtClusters = [],
@@ -337,10 +350,12 @@ $(function() {
     
     var orderDates = _.compact(_.pluck(nodes, "ordered"));
     
-    var sliderSvg = d3.select("#controls").append("svg")
+    var sliderG = d3.select("#controls").append("svg")
+        .attr("id", "beeswarm-slider-histogram")
         .attr("width", width + margin.left + margin.right)
         .attr("height", sliderHeight + 20)
         .append("g")
+        .attr("class", "sliderBeeswarm")
         .attr("transform", "translate(" + margin.left + ",0)");
     
     var sliderX = d3.scaleTime().domain([_.min(orderDates), _.max(orderDates)]).nice().range([0, width]);
@@ -351,12 +366,12 @@ $(function() {
         .on("brush", function(e) { return (brushAnimateStatus !== null) && brushMove(e); })
         .on("end", brushEnd);
     
-    sliderSvg.append("g")
+    sliderG.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + sliderHeight + ")")
         .call(d3.axisBottom().scale(sliderX));
     
-    sliderSvg.append("g")
+    sliderG.append("g")
         .attr("class", "beeswarm");
     
     // Applies quadratic penalties for points being laid out more than 1px horizontally from their correct
@@ -389,7 +404,7 @@ $(function() {
         if (calculateLayoutBadness(filteredNodes, sliderX, sliderHeight) < threshold) { break; }
       }
 
-      var circle = sliderSvg.select("g.beeswarm").selectAll("circle")
+      var circle = sliderG.select("g.beeswarm").selectAll("circle")
           .attr("title", function(d) { return d.order_date; })
           .data(filteredNodes, function(d) { return d.i; });
     
@@ -408,7 +423,7 @@ $(function() {
     }
     updateNodes(visibleNodes);
 
-    var brushG = sliderSvg.append("g")
+    var brushG = sliderG.append("g")
         .attr("class", "brush")
         .call(brush);
 
@@ -421,7 +436,7 @@ $(function() {
       
       interruptAllTransitions();
       reorder();
-      sliderSvg.select("g.beeswarm").selectAll("circle")
+      sliderG.select("g.beeswarm").selectAll("circle")
         .classed("selected", function(d) { return _.contains(filteredDomain, d.i); });
     }
 
@@ -453,8 +468,9 @@ $(function() {
     var histoY = d3.scaleLinear()
         .range([sliderHeight - histoMargin.top, 0]);
             
-    var histoG = sliderSvg.append("g")
-        .attr("transform", "translate(" + (width + histoMargin.left) + "," + histoMargin.top + ")");
+    var histoG = d3.select("#beeswarm-slider-histogram").append("g")
+        .attr("class", "histo")
+        .attr("transform", "translate(" + (width + margin.left + histoMargin.left) + "," + histoMargin.top + ")");
     
     var histoXAxis = histoG.append("g")
         .attr("class", "axis axis--x")
@@ -1360,6 +1376,13 @@ $(function() {
         brushAnimateStatus = null;
         brush.move(brushG, startSelection);  // Ensure animation is stopped and UI is synched
       } else {
+        // If we are trying to start an animation, and the right edge of the brush is already at the edge,
+        // automatically "rewind" or reset the brush selection to a window that allows an animation to begin
+        if (!wasRunning && startSelection[1] == width) {
+          startSelection = startSelection[0] === 0 ? [0, width * 0.15] : [0, startSelection[1] - startSelection[0]];
+          brush.move(brushG, startSelection);
+        }
+        
         brushAnimateStatus = {started: +new Date, lastRefresh: +new Date, speed: retargetSpeed, action: action};
 
         !wasRunning && animLoop(function(deltaT) {
@@ -1521,6 +1544,11 @@ $(function() {
         
         // Allow the view mode to be reflected in the current query string
         queryParamSpec.mode = function() { return $('.main-view.network').data('active') ? 'network' : ''; }
+        
+        // ************************* INITIALIZE THE INTROJS TUTORIAL **************************
+    
+        // This function adds a walkthrough to certain elements on the heatmap visualization
+        if (_.isFunction(heatmapIntroJs)) { heatmapIntroJs(); }
       });
     });
     

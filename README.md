@@ -115,3 +115,7 @@ You can link directly to `dendro-timeline.php` from external tools, in which cas
 \* For these parameters, it is likely easiest to derive your intended setting by interacting with the visualization and using the updated value in the address bar.
 
 [JSONCrush]: https://github.com/KilledByAPixel/JSONCrush
+
+## License
+
+Software in this repository (not inclusive of library dependencies or software downloaded and installed alongside it when it is executed) is licensed under the standard MIT license, a permissive free software license. See the LICENSE.txt for more details.
