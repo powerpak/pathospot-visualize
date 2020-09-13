@@ -1,8 +1,12 @@
 // d3.tip
 // Copyright (c) 2013 Justin Palmer
-// ES6 / D3 v4 Adaption Copyright (c) 2016 Constantin Gavrilete
+// ES6 / D3 v4 Adaption Copyright (c) 2016 Constantin Gavrilete (LICENSE: cc-by-4.0)
 //
 // Tooltips for d3.js SVG visualizations
+//
+// IMPORTANT: In addition to the D3 v4 adaptations, there are some specific fixes in here
+// for the way that PathoSPOT-visualize uses d3-tip, including small fixes to the API.
+
 
 var d3Select = d3.select,
     d3Selection = d3.selection,
@@ -42,6 +46,7 @@ d3.tip = function() {
   tip.show = function() {
     var args = Array.prototype.slice.call(arguments);
     if (args[args.length - 1] instanceof SVGElement) { target = args.pop(); }
+    else { target = null; }
     
     var content = html.apply(this, args),
         poffset = offset.apply(this, args),

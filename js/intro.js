@@ -1284,7 +1284,10 @@
       _placeTooltip.call(self, targetElement.element, tooltipLayer, arrowLayer, helperNumberLayer);
 
       // change the scroll of the window, if needed
-      _scrollTo.call(this, targetElement.scrollTo, targetElement, tooltipLayer);
+      // We defer this until the current stack execution completes because `.focus()`, below, can alter the scroll
+      self._lastShowElementTimer = window.setTimeout(function() {
+        _scrollTo.call(self, targetElement.scrollTo, targetElement, tooltipLayer);
+      }, 10);
 
       //end of new element if-else condition
     }
@@ -1368,7 +1371,7 @@
     nextTooltipButton.setAttribute('role', 'button');
     skipTooltipButton.setAttribute('role', 'button');
 
-    //Set focus on "next" button, so that hitting Enter always moves you onto the next step
+    // Set focus on "next" button, so that hitting Enter always moves you onto the next step
     if (typeof nextTooltipButton !== "undefined" && nextTooltipButton !== null) {
       nextTooltipButton.focus();
     }

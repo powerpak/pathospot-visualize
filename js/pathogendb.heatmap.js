@@ -7,8 +7,11 @@
 //
 // Primary dependencies are D3.js, Underscore.js, and jQuery.
 //
+// (c) 2020 Theodore Pak. MIT licensed; see LICENSE.txt 
+//
 // ****************************************************************************
 // ****************************************************************************
+
 
 $(function() { 
 
@@ -826,15 +829,16 @@ $(function() {
     function tipHtml(d) {
       if (d.clusteringInfo) { return tipClusteringInfoHtml(d); }
       if (d.cluster) { return tipClusterDetailsHtml(d); }
+      if (d.html) { return d.html; }
       return tipLinkHtml(d.y, d.x, d.z);
     }
     
     var tip = d3.tip()
         .attr('class', 'd3-tip')
-        .offset(function(d) { return d.clusteringInfo || d.cluster ? [10, 0]: [-10, 0]; })
-        .direction(function(d) { return d.clusteringInfo || d.cluster ? 's': 'n'; })
+        .offset(function(d) { return d.tipOffset ? d.tipOffset : (d.clusteringInfo || d.cluster ? [10, 0] : [-10, 0]); })
+        .direction(function(d) { return d.tipDir ? d.tipDir : (d.clusteringInfo || d.cluster ? 's': 'n'); })
         .html(tipHtml);
-    var selectedCell = null; 
+    var selectedCell = null;
     
     heatmapG.call(tip);
     heatmapG.on("click", function() { deselectCell(); tip.hide(); });
@@ -1548,7 +1552,7 @@ $(function() {
         // ************************* INITIALIZE THE INTROJS TUTORIAL **************************
     
         // This function adds a walkthrough to certain elements on the heatmap visualization
-        if (_.isFunction(heatmapIntroJs)) { heatmapIntroJs(); }
+        if (_.isFunction(heatmapIntroJs)) { heatmapIntroJs(tip); }
       });
     });
     

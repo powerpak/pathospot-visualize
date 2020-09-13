@@ -1,3 +1,17 @@
+// ****************************************************************************
+// ****************************************************************************
+//
+// This code is part of PathoSPOT-visualize; see https://pathospot.org/
+// This JavaScript supports the pick-assemblies subtask of the `dendro-timeline`
+// visualization.
+//
+// Primary dependencies are D3.js, Underscore.js, and jQuery.
+//
+// (c) 2020 Theodore Pak. MIT licensed; see LICENSE.txt 
+//
+// ****************************************************************************
+// ****************************************************************************
+
 function pickAssemblies(isolates, assemblyNames, whichTree) {
   
   var $filter = $('#filter'),

@@ -5,17 +5,35 @@
 // Cookie functions, so we can figure out if the user has ever seen these pages before
 // If not, we'll be more aggressive about suggesting a tutorial
 
-function cookieExists(key) {
-  return _.any(document.cookie.split(';'), function(v) { return v.trim().indexOf(key + '=') == 0; });
+function cookieExists(cookieName) {
+  return _.any(document.cookie.split(';'), function(v) { return v.trim().indexOf(cookieName + '=') == 0; });
 }
 
-function setCookieTrueForever(key) {
-  document.cookie = key + "=true; expires=Fri, 31 Dec 9999 23:59:59 GMT";
+function setCookieTrueForever(cookieName) {
+  document.cookie = cookieName + "=true; expires=Fri, 31 Dec 9999 23:59:59 GMT";
 }
 
 function doOnlyOnceUsingCookies(key, fn) {
-  if (!cookieExists(key)) { setCookieTrueForever(key); _.isFunction(fn) && fn(key); }
+  var cookieName = key.replace(/[^a-zA-Z0-9!#$%&'*+.^_`|~-]/g, '_');
+  if (!cookieExists(cookieName)) { setCookieTrueForever(cookieName); _.isFunction(fn) && fn(key); }
 }
+
+// Functions
+
+function suggestTutorialWithD3Tip(d3Tip, viewName) {
+  var tipHtml = '<div class="first-time"><p><strong>Welcome to PathoSPOT\'s "' + viewName + '" view!</strong></p>' +
+      '<p>Click above for an introduction to the controls and subviews.</p></div>';
+  d3Tip.show({html: tipHtml, tipDir: "s", tipOffset: [15, 10]}, $('.tutorial-btn svg').get(0));
+  $('.d3-tip').addClass('d3-tip-bouncein-up');
+  
+  function d3TipHide() { d3Tip.hide(); }
+  function d3TipFadeout() { $('.d3-tip').has('.first-time').length && $('.d3-tip').fadeOut(500, d3TipHide); }
+  
+  $(window).on('click.suggestTut scroll.suggestTut', function() { d3TipHide(); $('body').off('.suggestTut'); });
+  window.setTimeout(d3TipFadeout, 3000);
+}
+
+// Generates captions for the `heatmap` visualization, depending on the current state of the interface
 
 function writeHeatmapIntroJsCaptions() {
   var currentFilters = getFilters('#filter');
@@ -28,11 +46,11 @@ function writeHeatmapIntroJsCaptions() {
       '<p>You can further filter genomes by the time of collection using the dark gray sliders. <em>Try it now!</em></p>';
   
   if (currentFilters.clustersOnly) {
-    sliderBeeswarmIntroHtml += '<p><strong>Only putative transmissions</strong>, i.e. filled circles, are ' +
-        ' currently being displayed. We will demo how to display the non-outbreak genomes next.</p>'
+    sliderBeeswarmIntroHtml += '<p><em>Only putative transmissions</em>, i.e. filled circles, are ' +
+        ' currently being displayed. Next, we will see how to show the rest of the genomes.</p>'
   }
   
-  $('g.sliderBeeswarm').attr({"data-intro": sliderBeeswarmIntroHtml, "data-step": 1});
+  $('g.sliderBeeswarm').attr({"data-intro": sliderBeeswarmIntroHtml, "data-step": 1, "data-scrollTo": "tooltip"});
   
   var filtersIntroHtml = '<p>Genomes can be merged and filtered for display here.</p>';
 
@@ -124,8 +142,9 @@ function writeHeatmapIntroJsCaptions() {
   $('#toggle-main').attr({"data-intro": toggleViewHtml, "data-step": 8});
 }
 
-function heatmapIntroJs() {
+function heatmapIntroJs(d3Tip) {
   writeHeatmapIntroJsCaptions();
+  var viewName = $('.main-view.heatmap').data('active') ? 'heatmap' : 'network map';
   
   var intro = introJs().onbeforechange(function(targetElement) {
     if (targetElement.id == 'filter-cont') {
@@ -138,5 +157,7 @@ function heatmapIntroJs() {
   
   $('.tutorial-btn').click(function() { writeHeatmapIntroJsCaptions(); intro.start(); });
   
-  
+  doOnlyOnceUsingCookies(viewName, function(viewName) {
+    suggestTutorialWithD3Tip(d3Tip, viewName);
+  });
 }
