@@ -175,5 +175,5 @@ function writeDendroTimelineIntroJsCaptions() {
 }
 
 function dendroTimelineIntroJs(d3Tip) {
-   writeDendroTimelineIntroJsCaptions(); introJs().start();
+  //writeDendroTimelineIntroJsCaptions(); introJs().start();
 }
