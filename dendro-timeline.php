@@ -33,11 +33,12 @@ if (!$error && !$picking_assemblies) {
 
 <link rel="stylesheet" href="css/d3-tip.css" />
 <link rel="stylesheet" href="css/select2.css" />
-<link href="css/rangeslider.css" rel="stylesheet" />
+<link rel="stylesheet" href="css/rangeslider.css" />
 <link rel="stylesheet" href="css/ionicons.min.css" />
-<link rel="stylesheet" href="css/phylotree.css">
-<link rel="stylesheet" href="css/phylotree.bootstrap.css">
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/phylotree.css" />
+<link rel="stylesheet" href="css/phylotree.bootstrap.css" />
+<link rel="stylesheet" href="css/intro.css" />
+<link rel="stylesheet" href="css/style.css" />
 
 <script src="js/underscore-min.js"></script>
 <script src="js/jquery.min.js"></script>
@@ -46,6 +47,7 @@ if (!$error && !$picking_assemblies) {
 <script src="js/d3-tip.js"></script>
 <script src="js/utils.js"></script>
 <script src="js/JSONCrush.js"></script>
+<script src="js/intro.js" charset="utf-8"></script>
 
 
 <?php
@@ -166,16 +168,6 @@ else:
         <option value="ordered">Order date</option>
       </select>
     </label>
-    <!--
-    hide until we implement it
-    <label class="widget">
-      <span class="widget-label">Scale tree by</span>
-      <select id="color-nodes" name="color_nodes" disabled>
-        <option value="divergence">Divergence (SNPs per Mbp)</option>
-        <option value="time">Time</option>
-      </select>
-    </label>
-    -->
     <label class="widget pad-top">
       <span class="widget-label">Variant labels</span>
       <select id="variant-labels" name="variant_labels">
@@ -264,7 +256,9 @@ else:
 </div>
 
 <script src="js/rangeslider.min.js" charset="utf-8"></script>
+<script src="js/pathogendb.intro.js" charset="utf-8"></script>
 <script src="js/pathogendb.dendro-timeline.js"></script>
+
 <script type="text/javascript">
   var prunedTree = <?= json_encode($pruned_tree); ?>;
   var isolates = <?= json_encode($isolates); ?>;

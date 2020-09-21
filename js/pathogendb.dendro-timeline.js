@@ -1421,4 +1421,11 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
       syncDOMToQueryParamsDebounced(queryParamSpec);
     });
   });
+  
+  // ==============================
+  // = Setup the tutorial introJs =
+  // ==============================
+
+  // This function adds a walkthrough to certain elements on the visualization
+  if (_.isFunction(dendroTimelineIntroJs)) { dendroTimelineIntroJs(tip); }
 }

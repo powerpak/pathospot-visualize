@@ -1017,22 +1017,22 @@ text.axis-label {
 /* = INTRO.JS CUSTOMIZATIONS = */
 /* =========================== */
 
-.pathospot-heatmap .introjs-tooltiptext {
+.pathospot-heatmap .introjs-tooltiptext, .pathospot-dendro-timeline .introjs-tooltiptext {
   font-size: 12px;
 }
 
-.pathospot-heatmap .introjs-tooltiptext ul {
+.introjs-tooltiptext ul {
   padding-left: 12px;
   margin: 0;
   list-style-type: none;
 }
 
-.pathospot-heatmap .introjs-tooltiptext ul > li {
+.introjs-tooltiptext ul > li {
   margin-bottom: 0.8em;
   padding-left: 0;
 }
 
-.pathospot-heatmap .introjs-tooltiptext ul > li:before {
+.introjs-tooltiptext ul > li:before {
   content: "–";
   text-indent: 0;
   display: inline-block;

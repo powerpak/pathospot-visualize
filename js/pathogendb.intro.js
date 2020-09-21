@@ -3,7 +3,7 @@
  ********************************************/
 
 // Cookie functions, so we can figure out if the user has ever seen these pages before
-// If not, we'll be more aggressive about suggesting a tutorial
+// If not, we can be more aggressive about suggesting a tutorial
 
 function cookieExists(cookieName) {
   return _.any(document.cookie.split(';'), function(v) { return v.trim().indexOf(cookieName + '=') == 0; });
@@ -17,8 +17,6 @@ function doOnlyOnceUsingCookies(key, fn) {
   var cookieName = key.replace(/[^a-zA-Z0-9!#$%&'*+.^_`|~-]/g, '_');
   if (!cookieExists(cookieName)) { setCookieTrueForever(cookieName); _.isFunction(fn) && fn(key); }
 }
-
-// Functions
 
 function suggestTutorialWithD3Tip(d3Tip, viewName) {
   var tipHtml = '<div class="first-time"><p><strong>Welcome to PathoSPOT\'s "' + viewName + '" view!</strong></p>' +
@@ -157,7 +155,25 @@ function heatmapIntroJs(d3Tip) {
   
   $('.tutorial-btn').click(function() { writeHeatmapIntroJsCaptions(); intro.start(); });
   
-  doOnlyOnceUsingCookies(viewName, function(viewName) {
+  $('.tutorial-btn').length && doOnlyOnceUsingCookies(viewName, function(viewName) {
     suggestTutorialWithD3Tip(d3Tip, viewName);
   });
+}
+
+
+// Generates captions for the `dendro-timeline` visualization
+
+function writeDendroTimelineIntroJsCaptions() {
+  var dendroIntroHtml = '<p>This is a timeline of the genomes selected for display.</p>' +
+      '<ul><li>Each <strong>filled</strong> circle is a genome linked to at least one other isolate ' +
+      'from a different patient, thereby suggesting a transmission or outbreak. </li>' +
+      '<li>Each <strong>open</strong> circle is a genome that is not linked to other patients.</li></ul>' +
+      '<p>They are laid out horizontally according to the time of collection.</p>' +
+      '<p>You can further filter genomes by the time of collection using the dark gray sliders. <em>Try it now!</em></p>';
+
+  $('g.phylotree-container').attr({"data-intro": dendroIntroHtml, "data-step": 1, "data-scrollTo": "tooltip"});
+}
+
+function dendroTimelineIntroJs(d3Tip) {
+   writeDendroTimelineIntroJsCaptions(); introJs().start();
 }

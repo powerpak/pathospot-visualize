@@ -216,7 +216,7 @@ $(function() {
             if (sourceClusterIndex >= 0) {
               if (sourceClusterIndex == targetClusterIndex) { return; }
               if (targetClusterIndex >= 0) {
-                samePtClusters[sourceClusterIndex] = samePtClusters[sourceClusterIndex] + samePtClusters[targetClusterIndex];
+                samePtClusters[sourceClusterIndex] = samePtClusters[sourceClusterIndex].concat(samePtClusters[targetClusterIndex]);
                 samePtClusters.splice(targetClusterIndex, 1);
               } else {
                 samePtClusters[sourceClusterIndex].push(link.target);
@@ -1551,7 +1551,7 @@ $(function() {
         
         // ************************* INITIALIZE THE INTROJS TUTORIAL **************************
     
-        // This function adds a walkthrough to certain elements on the heatmap visualization
+        // This function adds a walkthrough to certain elements on the visualization
         if (_.isFunction(heatmapIntroJs)) { heatmapIntroJs(tip); }
       });
     });
