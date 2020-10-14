@@ -158,7 +158,7 @@ WARN: re-invoking parsnp task since the mash clusters were rebuilt</span>
 $</pre>
       </div>
       <p>
-        When it's finished, open <a href="http://localhost:8888">http://localhost:8888</a> in your browser. (It will look exactly like this website, except the <a href="#live-demo">Try it Now</a> visualizations have now been built and are being served by your own VM.)
+        When it's finished, open <a href="http://localhost:8989">http://localhost:8989</a> in your browser. (It will look exactly like this website, except the <a href="#live-demo">Try it Now</a> visualizations have now been built and are being served by your own VM.)
       </p>
     </div>
     

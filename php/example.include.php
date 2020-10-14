@@ -18,7 +18,7 @@ function includeBeforeBody() {
   <div class="fixed-header">
     <div class="header-links">
       <a href="index.php" class="logo"></a>
-      <a class="tutorial-btn"><span class="extra">Play </span>Tutorial</a>
+      <a class="tutorial-btn"><span class="extra">Play </span><svg width=0 height=0></svg>Tutorial</a>
       <a href="index.php#get-started">Install</a>
       <a href="index.php#how-it-works">How It Works</a>
       <a href="index.php#team">Team</a>
