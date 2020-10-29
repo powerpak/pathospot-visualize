@@ -1,5 +1,7 @@
 # pathoSPOT-visualize
 
+[![DOI](https://zenodo.org/badge/63728224.svg)](https://zenodo.org/badge/latestdoi/63728224)
+
 This web interface is used to explore phylogenomic evidence of outbreaks and is the visualization component of PathoSPOT, the **Patho**gen **S**equencing **P**hylogenomic **O**utbreak **T**oolkit.
 
 For a live demo, please see the [PathoSPOT website][pathospot].
