@@ -43,6 +43,9 @@ code {
 .widget.less-margin {
   margin: 3px 10px 10px 0;
 }
+.widget-group {
+  float: left;
+}
 
 .background {
   fill: #eee;
@@ -663,6 +666,15 @@ text.axis-label {
   stroke-width: 2px;
 }
 
+/* Dummy elements to help with introjs positioning */
+#dendro-timeline .dummy {
+  position: absolute;
+}
+
+/* =========================================== */
+/* = ASSEMBLY PICKING UI FOR DENDRO-TIMELINE = */
+/* =========================================== */
+
 #pick-assemblies {
   width: 900px;
   margin: 30px auto;
@@ -1071,4 +1083,21 @@ text.axis-label {
 .introjs-button:focus {
   outline: 5px auto #5897fb;
   outline-offset: 2px;
+}
+
+.pathospot-dendro-timeline .dendro-popover-introjs {
+  position: relative;
+  z-index: 9999999 !important;
+}
+
+.pathospot-dendro-timeline .introjs-tooltiptext .ref-allele {
+  color: #aaa;
+}
+.pathospot-dendro-timeline .introjs-tooltiptext .syn {
+  background-color: #999;
+  color: white;
+}
+.pathospot-dendro-timeline .introjs-tooltiptext .nonsyn {
+  background-color: #335;
+  color: white;
 }

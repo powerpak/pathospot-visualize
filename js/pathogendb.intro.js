@@ -28,7 +28,7 @@ function suggestTutorialWithD3Tip(d3Tip, viewName) {
   function d3TipFadeout() { $('.d3-tip').has('.first-time').length && $('.d3-tip').fadeOut(500, d3TipHide); }
   
   $(window).on('click.suggestTut scroll.suggestTut', function() { d3TipHide(); $('body').off('.suggestTut'); });
-  window.setTimeout(d3TipFadeout, 3000);
+  window.setTimeout(d3TipFadeout, 5000);
 }
 
 // Generates captions for the `heatmap` visualization, depending on the current state of the interface
@@ -142,9 +142,9 @@ function writeHeatmapIntroJsCaptions() {
 
 function heatmapIntroJs(d3Tip) {
   writeHeatmapIntroJsCaptions();
-  var viewName = $('.main-view.heatmap').data('active') ? 'heatmap' : 'network map';
   
-  var intro = introJs().onbeforechange(function(targetElement) {
+  var viewName = $('.main-view.heatmap').data('active') ? 'heatmap' : 'network map';
+  var intro = introJs().setOptions({skipLabel: "Exit"}).onbeforechange(function(targetElement) {
     if (targetElement.id == 'filter-cont') {
       $(targetElement).find('.select2-selection__arrow').click();
       $('.select2-dropdown').addClass('select2-popover-introjs');
@@ -164,16 +164,88 @@ function heatmapIntroJs(d3Tip) {
 // Generates captions for the `dendro-timeline` visualization
 
 function writeDendroTimelineIntroJsCaptions() {
-  var dendroIntroHtml = '<p>This is a timeline of the genomes selected for display.</p>' +
-      '<ul><li>Each <strong>filled</strong> circle is a genome linked to at least one other isolate ' +
-      'from a different patient, thereby suggesting a transmission or outbreak. </li>' +
-      '<li>Each <strong>open</strong> circle is a genome that is not linked to other patients.</li></ul>' +
-      '<p>They are laid out horizontally according to the time of collection.</p>' +
-      '<p>You can further filter genomes by the time of collection using the dark gray sliders. <em>Try it now!</em></p>';
+  var dendroIntroHtml = '<p>This is a dendrogram of the phylogenomic relationships among isolates selected for display.</p>' +
+      '<p>Horizontal distances are scaled to SNPs per Mbp of core genome (see the scale bar at top).</p>' +
+      '<p>By default, the tree is rooted to the chronologically first genome, according to collection time.</p>';
 
-  $('g.phylotree-container').attr({"data-intro": dendroIntroHtml, "data-step": 1, "data-scrollTo": "tooltip"});
+  $('#dendro-dummy').attr({"data-intro": dendroIntroHtml, "data-step": 1, "data-scrollTo": "tooltip"});
+  
+  var colorByHtml = '<p>This changes the color scheme for the isolates in all of the visualizations on this page.</p>' +
+      '<p>You can shade them either by collection time or collection location. <em>Try it now!</em></p>' +
+      '<p>Changes are immediately reflected in the color legend to the left.</p>';
+  
+  $('#color-nodes-cont').attr({"data-intro": colorByHtml, "data-step": 2})
+  
+  var variantMapHtml = '<p>The exact SNPs differentiating these isolates in the core genome alignment, and their ' +
+      'corresponding locations in the reference genome, are shown here.</p>' +
+      '<p>Note that our analysis pipeline currently picks the reference genomes randomly (without regard to chronology or the quality ' +
+      'of assembly/annotation).</p>' +
+      '<p>SNPs are shaded as follows:</p><ul>' +
+      '<li><span class="ref-allele">Reference allele</span></li>' +
+      '<li><span class="syn">Synonomyous substitution (or non-coding region)</span></li>' +
+      '<li><span class="nonsyn">Non-synonymous substitution</span></li></ul>';
+
+  $('#variant-map-dummy').attr({"data-intro": variantMapHtml, "data-step": 3});
+  
+  var variantLabelsHtml = '<p>If your reference genome was annotated with predicted genes, you can label the variant map ' +
+      'columns with the gene names or descriptions; other options are showing genomic coordinates or hiding the labels.</p>' +
+      '<p>You can also toggle between displaying nucleotide-level changes or predicted amino acid changes (within coding regions). ' +
+      '<em>Try it now!</em></p>';
+
+  $('#variant-labels-cont').attr({"data-intro": variantLabelsHtml, "data-step": 4, "data-position": "left"});
+  
+  var timelineIntroHtml = '<p>This is a timeline of patient movements with genomes/isolates overplotted as filled circles.</p>' +
+      '<p>Colors are the same as for the dendrogram.</p>' +
+      '<p>You can hover over elements to see more details in a tooltip. You can also pan and zoom with your mouse and mousewheel ' +
+      '(or two-finger scroll). <em>Try it now!</em></p>' +
+      '<p>Light red arcs show <strong>overlaps</strong> in location between different patients, within the threshold set by ' +
+      'the slider, e.g. a patient leaving a unit X hours before the next one arrives would still count as an overlap.</p>';
+  
+  $('#timeline').attr({"data-intro": timelineIntroHtml, "data-step": 5, "data-scrollTo": "tooltip"});
+  
+  var filtersContIntroHtml = '<p>Using <em>Filter events</em>, you can filter location data plotted in these timelines, e.g., inpatient ' +
+      'vs. outpatient events.</p>' +
+      '<p>If available, you can use <em>Filter culture results</em> to plot data for <strong>unsequenced</strong> culture testing as ' +
+      'X\'s and unfilled circles (for negatives and positives, respectively).</p>';
+  
+  $('#filters-cont').attr({"data-intro": filtersContIntroHtml, "data-step": 6});
+  
+  var timelineGroupingHoverHtml = '<p>The vertical layout of the timeline rows, including nested grouping that will provide ' +
+      'a "piano roll" view of locations per patient or vice versa, can be altered here. <em>Try it now!</em></p>' +
+      '<p>You can also change how events in the timeline are highlighted when hovering with the mouse.</p>';  
+  
+  $('#timeline-grouping-hover-cont').attr({"data-intro": timelineGroupingHoverHtml, "data-step": 7});
+  
+  var dendroIsolateHtml = '<p>Finally, you can correlate particular sequenced isolates across the timeline and dendrogram by changing ' +
+      'the symbol.</p>' +
+      '<p>To do this, click the nodes in either visualization, and they will switch to a new symbol (more clicks will cycle through the ' +
+      'symbols). <em>Try it now!</em></p>' +
+      '<p>You can alt- or option-click to reset it to the default of a small filled circle.</p>';
+  
+  $('#dendro-sample-node-dummy').attr({"data-intro": dendroIsolateHtml, "data-step": 8});
+  
+  var dendroIsolateHtml = '<p>Typically you arrive here by exploring clusters created in the heatmap view, which selects the isolates ' +
+      'that are loaded into this visualization.</p>' +
+      '<p>However, if you want to manually add or remove isolates from this view, use this button.</p>' +
+      '<p>This concludes the tutorial. <strong>Happy outbreak exploring!</strong> Click "Done" below to exit.</p>';
+
+  $('#add-remove-isolates-cont').attr({"data-intro": dendroIsolateHtml, "data-step": 9});
 }
 
 function dendroTimelineIntroJs(d3Tip) {
-  //writeDendroTimelineIntroJsCaptions(); introJs().start();
+  writeDendroTimelineIntroJsCaptions(); 
+  
+  var intro = introJs().setOptions({skipLabel: "Exit"}).onbeforechange(function(targetElement) {
+    if ($(targetElement).data('dummyFor') == 'dendro') {
+      $('#dendro').addClass('dendro-popover-introjs');
+    } else {
+      $('#dendro').removeClass('dendro-popover-introjs');
+    }
+  })
+  
+  $('.tutorial-btn').click(function() { writeDendroTimelineIntroJsCaptions(); intro.start(); });
+  
+  $('.tutorial-btn').length && doOnlyOnceUsingCookies("dendro-timeline", function(viewName) {
+    suggestTutorialWithD3Tip(d3Tip, viewName);
+  });
 }

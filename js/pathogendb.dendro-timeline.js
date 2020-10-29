@@ -136,6 +136,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   
   // D3 tooltip object
   function tipHtml(d) {
+    if (d.html) { return d.html; }
     if (d.referenceGenomeInfo) { return tipGenomeInfoHtml(d); }
     if (!_.isUndefined(d.assembly_ID)) { return tipIsolateHtml(d); }
     if (_.isArray(d) && d.length > 0 && d[0].test_ID) { return tipIsolateTestsHtml(d); }
@@ -145,7 +146,8 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   
   var tip = d3.tip()
       .attr("class", "d3-tip")
-      .offset([-10, 0])
+      .offset(function(d) { return d.tipOffset ? d.tipOffset : [-10, 0]; })
+      .direction(function(d) { return d.tipDir ? d.tipDir : 'n'; })
       .html(tipHtml);
   
   // jQuery objects for controls that can update the visualization
@@ -317,6 +319,30 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     }
   });
   
+  // Creates and/or repositions dummy <div>'s under the tree that allow the introJs captions to be drawn correctly.
+  function positionDummyDendroUnderlay(dummyId, selector, pad) {
+    var bbox = getMaxBBox($('#dendro').find(selector)),
+        dummyHtml = '<div id="' + dummyId + '" class="dummy" data-dummy-for="dendro"/>',
+        $dummyDendro = $('#' + dummyId),
+        dendroLeft = $('#dendro').position().left + parseInt10($('#dendro').css("margin-left"));
+        
+    pad = pad || 0;
+    if (!$dummyDendro.length) { $dummyDendro = $(dummyHtml).insertBefore('#dendro'); }
+    $dummyDendro.css({
+      left: bbox.x + dendroLeft - pad,
+      top: bbox.y - pad,
+      height: bbox.height + pad * 2,
+      width: bbox.width + pad * 2
+    });
+  }
+  
+  // Things to do every time after the tree is drawn or redrawn. 
+  function aferUpdateTree() {
+    positionDummyDendroUnderlay('dendro-dummy', '.branch, .isolate, .tree-scale-bar, .isolate-metadata');
+    positionDummyDendroUnderlay('variant-map-dummy', '.variant, .variant-map')
+    positionDummyDendroUnderlay('dendro-sample-node-dummy', '.isolate:eq(-1)', 10)
+  }
+  
   // Parse the Newick-formatted prunedTree for the specified `assemblies` in the query string
   tree(prunedTree);
   
@@ -330,6 +356,14 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   orderedScale.domain([isolates[earliestNode.name].ordered, isolates[latestNode.name].ordered]);
   tree.reroot(earliestNode);
   tree.layout();
+  aferUpdateTree();
+
+  // Helper function that both redraws the tree and then runs our post-redraw callback.
+  function updateTree() {
+    tree.update();
+    aferUpdateTree();
+  }
+  
 
   // =================================================================================
   // = Plot metadata labels, variant labels and the genome map next to the phylotree =
@@ -585,7 +619,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     iso.symbolRadius = reset ? NODE_RADIUS : NODE_RADIUS * 1.5;
     iso.symbol = reset ? 0 : (((iso.symbol || 0) - 1) + numSymbols) % numSymbols;
     $timeline.trigger("updateSymbols");
-    // Updates only the clicked node in the dendrogram -- this avoids a (slower) tree.update()
+    // Updates only the clicked node in the dendrogram -- this avoids a (slower) full updateTree()
     d3.select('#dendro').select('path.isolate-' + fixForClass(iso.name) + '.isolate')
         .attr("d", isolateSymbolPath(iso))
         .attr("transform", "translate(" + (iso.symbolRadius || NODE_RADIUS) + ',0)');
@@ -1315,7 +1349,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   // ====================================================================
   
   // Note, with regard to showing the $LOADING_SPINNER. In general, any UI refresh that ends up
-  // calling tree.update() or updateTimeline() should show it, as both of these functions are
+  // calling updateTree() or updateTimeline() should show it, as both of these functions are
   // expensive and freeze the UI during the redraw.
   // Other changes, e.g., only triggering CSS styles via classes, may not need a loading spinner.
   
@@ -1348,7 +1382,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   
   $colorBy.change(function() {
     showSpinner(false, function() {
-      tree.update();
+      updateTree();
       updateColorLegend(tree);
       updateTimeline();
     });
@@ -1358,7 +1392,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
   $variantNtOrAa.change(function() {
     showSpinner(true, function() {
       updateVariantLabels();
-      tree.update();
+      updateTree();
     });
   });
   

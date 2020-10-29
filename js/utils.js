@@ -157,6 +157,26 @@ function getBBox(elem) {
   return bbox;
 }
 
+// Given a collection of SVG elements (can be a D3 or jQuery selection), return the maximal bounding box that
+// would surround all of them (in pixel units relative to the top left corner of the containing SVG element)
+function getMaxBBox(elems) {
+  if (d3 && elems instanceof d3.selection) { elems = elems[0]; }
+  var maxBBox = {},
+    bboxes = _.map(elems, getBBox);
+    
+  _.each(bboxes, function(bbox) { 
+    bbox.x2 = bbox.x + bbox.width;
+    bbox.y2 = bbox.y + bbox.height;
+  });
+  
+  maxBBox.x = _.min(_.pluck(bboxes, "x"));
+  maxBBox.y = _.min(_.pluck(bboxes, "y"));
+  maxBBox.width = _.max(_.pluck(bboxes, "x2")) - maxBBox.x;
+  maxBBox.height = _.max(_.pluck(bboxes, "y2")) - maxBBox.y;
+  
+  return maxBBox;
+}
+
 // Helper function for performant animations with requestAnimationFrame (instead of setInterval)
 // https://hacks.mozilla.org/2011/08/animating-with-javascript-from-setinterval-to-requestanimationframe/
 // @param render: function(deltaT, now) {}  -- called every frame to render changes;

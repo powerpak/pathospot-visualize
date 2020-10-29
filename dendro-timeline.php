@@ -156,19 +156,19 @@ else:
 
 <div id="controls">
   <div class="toolbar">
-    <label class="widget">
+    <label class="widget" id="add-remove-isolates-cont">
       <a class="toggle-btn toggle-btn-both" href="<?= htmlspecialchars($pick_assemblies_url) ?>">
         Add/remove isolates...
       </a>
     </label>
-    <label class="widget pad-top">
+    <label class="widget pad-top" id="color-nodes-cont">
       <span class="widget-label">Color by</span>
       <select id="color-nodes" name="color_nodes">
         <option value="collection_unit">Collection unit</option>
         <option value="ordered">Order date</option>
       </select>
     </label>
-    <label class="widget pad-top">
+    <label class="widget pad-top" id="variant-labels-cont">
       <span class="widget-label">Variant labels</span>
       <select id="variant-labels" name="variant_labels">
         <option value="">Hide</option>
@@ -204,40 +204,44 @@ else:
       <span class="units" id="tolerance-units">hrs</span>
       <input id="tolerance" name="tolerance" class="range" type="range" />
     </label>
-    <label class="widget">
-      <span class="widget-label">Y axis </span>
-      <select id="timeline-grouping" name="timeline_grouping">
-        <option value="0,1">Group by patient, then location</option>
-        <option value="1,0">Group by location, then patient</option>
-        <option value="0">Group by patient only</option>
-        <option value="1">Group by location only</option>
-      </select>
-    </label>
-    <label class="widget">
-      <span class="widget-label">On hover </span>
-      <select id="hover" name="hover">
-        <option value="tooltip">Show tooltip</option>
-        <option value="unit" selected>Highlight same unit</option>
-        <option value="patient">Highlight same patient</option>
-        <option value="">Do nothing</option>
-      </select>
-    </label>
-    <label class="widget">
-      <span class="widget-label">Filter events</span>
-      <select id="filter" name="filter">
-        <option value="inpatient">Inpatient</option>
-        <option value="outpatient">Outpatient</option>
-        <option value="">Both</option>
-      </select>
-    </label>
-    <label class="widget">
-      <span class="widget-label">Filter culture results</span>
-      <select id="isolate-tests" name="isolateTests">
-        <option value="" selected>Sequenced only</option>
-        <option value="seq-and-same-species">Same species (+) and all (-)</option>
-        <option value="seq-and-any-species">All (+) and (-)</option>
-      </select>
-    </label>
+    <div class="widget-group" id="timeline-grouping-hover-cont">
+      <label class="widget">
+        <span class="widget-label">Y axis </span>
+        <select id="timeline-grouping" name="timeline_grouping">
+          <option value="0,1">Group by patient, then location</option>
+          <option value="1,0">Group by location, then patient</option>
+          <option value="0">Group by patient only</option>
+          <option value="1">Group by location only</option>
+        </select>
+      </label>
+      <label class="widget">
+        <span class="widget-label">On hover </span>
+        <select id="hover" name="hover">
+          <option value="tooltip">Show tooltip</option>
+          <option value="unit" selected>Highlight same unit</option>
+          <option value="patient">Highlight same patient</option>
+          <option value="">Do nothing</option>
+        </select>
+      </label>
+    </div>
+    <div class="widget-group" id="filters-cont">
+      <label class="widget">
+        <span class="widget-label">Filter events</span>
+        <select id="filter" name="filter">
+          <option value="inpatient">Inpatient</option>
+          <option value="outpatient">Outpatient</option>
+          <option value="">Both</option>
+        </select>
+      </label>
+      <label class="widget">
+        <span class="widget-label">Filter culture results</span>
+        <select id="isolate-tests" name="isolateTests">
+          <option value="" selected>Sequenced only</option>
+          <option value="seq-and-same-species">Same species (+) and all (-)</option>
+          <option value="seq-and-any-species">All (+) and (-)</option>
+        </select>
+      </label>
+    </div>
   </div>
   
   <div id="timeline-cont" class="clear">
