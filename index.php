@@ -55,7 +55,7 @@
       <a id="live-demo">Try it now</a>
     </h2>
     <p class="center mid-width">
-      Click to explore these visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over a 24 month period throughout the Mount Sinai Health System (<a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">preprint available</a>).
+      Click the images to explore visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over 24 months within the Mount Sinai Health System (full article at <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3"><em>Genome Medicine</em></a>).
     </p>
     <p class="center secondary">Dates have been shifted during data anonymization.</p>
     <div class="container cols-2">
@@ -68,7 +68,7 @@
           </p>
           <p>Clustered heatmap of related genomes reveals outbreaks over multiple wards.</p>
           <p class="secondary"><strong>Figure 2</strong> in 
-            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig2">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
@@ -81,7 +81,7 @@
           </p>
           <p>A timeline of spatiotemporal movements and overlaps of patients in the largest cluster.</p>
           <p class="secondary"><strong>Figure 3</strong> in
-            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig3">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
@@ -97,7 +97,7 @@
           </p>
           <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
           <p class="secondary"><strong>Figure S1</strong> in
-            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
@@ -110,14 +110,14 @@
           </p>
           <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
           <p class="secondary"><strong>Figure S3B</strong> in
-            <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">
+            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
               Berbel Caban &amp; Pak, et al.</a></p>
         </div>
       </div>
       <div class="clear"></div>
     </div>
     <p class="center mid-width">
-      <span class="regular">Interested in viruses?</span> Also see our <a href="https://www.medrxiv.org/content/10.1101/2020.05.10.20096693v1" target="_blank">preprint on influenza A</a>, where <span class="regular">pathoSPOT</span> characterized a nosocomial outbreak affecting 66 patients and healthcare workers and identified &ldquo;patient zero.&rdquo;
+      <span class="regular">Interested in viruses?</span> See our <a href="https://doi.org/10.1093/cid/ciaa1781" target="_blank">influenza A investigation in <em>CID</em></a>, where <span class="regular">pathoSPOT</span> characterized a nosocomial outbreak affecting 66 patients and healthcare workers and identified &ldquo;patient zero.&rdquo;
     </p>
         
     <h2 class="center mid-width new-section">
@@ -212,7 +212,12 @@ $</pre>
       </ul>
       <p><strong>How do I cite this?</strong> If you use <span class="regular">pathoSPOT</span> for your own research, we would appreciate if you reference:</p>
       <ul>
-        <li>Berbel Caban A, Pak TR, Obla A et al. 2020. <a href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections.</a> medRxiv (preprint). doi:10.1101/2020.05.11.20098103
+        <li>Berbel Caban A, Pak TR, Obla A et al. <a href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3">PathoSPOT genomic epidemiology reveals under-the-radar nosocomial outbreaks.</a> <em>Genome Med.</em> 2020 Nov 16;<span class="regular">12</span>(1):96. PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/33198787/">33198787</a> doi:10.1186/s13073-020-00798-3
+        </li>
+      </ul>
+      <p>The influenza A outbreak investigation can be cited as follows:</p>
+      <ul>
+        <li>Javaid W, Ehni J, Gonzalez-Reiche AS et al. <a href="https://doi.org/10.1093/cid/ciaa1781">Real-Time Investigation of a Large Nosocomial Influenza A Outbreak Informed by Genomic Epidemiology.</a> <em>Clin Infect Dis.</em> 2020 Nov 30;ciaa1781. PMID:<a href="https://pubmed.ncbi.nlm.nih.gov/33252647/">33252647</a> doi:10.1093/cid/ciaa1781
         </li>
       </ul>
     </div>
