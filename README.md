@@ -15,7 +15,8 @@ If you use this software, please cite:
 > Berbel Caban A, Pak TR, Obla A et al. [PathoSPOT genomic epidemiology reveals under-the-radar nosocomial outbreaks.][genomemed] _Genome Medicine_ 2020 Nov 16;**12**(1):96. PMID:[33198787][pubmed] doi:10.1186/s13073-020-00798-3
 
 [pathospot]: https://pathospot.org
-[preprint]: https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1
+[genomemed]: https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3
+[pubmed]: https://pubmed.ncbi.nlm.nih.gov/33198787/
 
 ## Requirements
 
