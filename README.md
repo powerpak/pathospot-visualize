@@ -10,9 +10,9 @@ For a live demo, please see the [PathoSPOT website][pathospot].
 
 The [pathoSPOT-compare][] pipeline must first be used to run the analyses that supply this web interface. Typically, you will want to run the **parsnp**, **encounters**, and **epi** tasks.  Please refer to the [pathoSPOT-compare documentation][pathoSPOT-compare] to get started.
 
-If you use this software, please cite our preprint:
+If you use this software, please cite:
 
-> Berbel Caban A, Pak TR, Obla A et al. 2020. [PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections][preprint]. _medRxiv_ (preprint). doi:10.1101/2020.05.11.20098103
+> Berbel Caban A, Pak TR, Obla A et al. [PathoSPOT genomic epidemiology reveals under-the-radar nosocomial outbreaks.][genomemed] _Genome Medicine_ 2020 Nov 16;**12**(1):96. PMID:[33198787][pubmed] doi:10.1186/s13073-020-00798-3
 
 [pathospot]: https://pathospot.org
 [preprint]: https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1
