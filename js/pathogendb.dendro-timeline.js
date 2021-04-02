@@ -854,8 +854,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
         yAxisSize = 250,
         paddingRight = 80,
         width = $timeline.parent().innerWidth() - paddingLeft - paddingRight,
-        oldXScale = xScale.copy(),
-        minEncDate, maxEncDate, zoomOutLimit;
+        oldXScale = xScale.copy();
     
     // If `zoom` is not provided, we are only resizing and rescaling **before** drawing any elements
     xScale.range([0, width - yAxisSize]);
@@ -866,10 +865,7 @@ function dendroTimeline(prunedTree, isolates, encounters, variants, epi, navbar)
     // This requires us reset the zooming behavior with `zoom.x()` as well as its `scaleExtent`
     xScale.domain([oldXScale.domain()[0], oldXScale.invert(width - yAxisSize)]);
     zoom.x(xScale);
-    minDate = _.min(_.pluck(encounters, 'start_time').concat(_.pluck(isolates, 'ordered'))),
-    maxDate = _.max(_.pluck(encounters, 'end_time').concat(_.pluck(isolates, 'ordered'))),
-    zoomOutLimit = (xScale.domain()[1] - xScale.domain()[0]) / (maxDate - minDate),
-    zoom.scaleExtent([zoomOutLimit, 50 / oneDayInPx(xScale)])
+    zoom.scaleExtent([0, 50 / oneDayInPx(xScale)]);
     
     $timeline.attr("width", paddingLeft + width);
     $timeline.find(".pt-dividers rect").attr("width", width);

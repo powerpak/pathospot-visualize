@@ -292,6 +292,7 @@ else:
     v.end_time = timeRegex.test(v.end_time) ? new Date(v.end_time) : null;
     v.department_name = fixUnit(getHospitalAndUnit(v, "department_name"));
     if (v.encounter_type != "Hospital Encounter") {
+      // Outpatient encounters with the same beginning and end time are arbitrarily reset to 1 day in length
       if (v.start_time && v.end_time && v.start_time.getTime() == v.end_time.getTime()) {
         v.end_time.setHours(v.end_time.getHours() + 24);
       }
