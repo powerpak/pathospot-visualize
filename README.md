@@ -6,16 +6,17 @@ This web interface is used to explore phylogenomic evidence of outbreaks and is 
 
 For a live demo, please see the [PathoSPOT website][pathospot].
 
-<p align="center"><a href="https://pathospot.org"><img src="https://pathospot.org/images/pathospot-logo.svg" width="640px"/></a></p>
+<p align="center"><a href="https://pathospot.org"><img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/pathospot-logo.svg" width="640px"/></a></p>
 
 The [pathoSPOT-compare][] pipeline must first be used to run the analyses that supply this web interface. Typically, you will want to run the **parsnp**, **encounters**, and **epi** tasks.  Please refer to the [pathoSPOT-compare documentation][pathoSPOT-compare] to get started.
 
-If you use this software, please cite our preprint:
+If you use this software, please cite:
 
-> Berbel Caban A, Pak TR, Obla A et al. 2020. [PathoSPOT genomic surveillance reveals under the radar outbreaks of methicillin resistant S. aureus bloodstream infections][preprint]. _medRxiv_ (preprint). doi:10.1101/2020.05.11.20098103
+> Berbel Caban A, Pak TR, Obla A et al. [PathoSPOT genomic epidemiology reveals under-the-radar nosocomial outbreaks.][genomemed] _Genome Medicine_ 2020 Nov 16;**12**(1):96. PMID:[33198787][pubmed] doi:10.1186/s13073-020-00798-3
 
 [pathospot]: https://pathospot.org
-[preprint]: https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1
+[genomemed]: https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3
+[pubmed]: https://pubmed.ncbi.nlm.nih.gov/33198787/
 
 ## Requirements
 
@@ -51,23 +52,23 @@ An `index.php` is included which by default shows the splash page from the [Path
 
 This visualization allows you to interactively create and explore clusters of genomes suspicious for transmission. _Click the screenshot for an interactive demo._
 
-<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0" target="_blank"><img src="https://pathospot.org/images/screenshot-heatmap.png" width="600px"/></a>
+<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=clustersOnly&snps=15&range=0.0|1.0" target="_blank"><img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/screenshot-heatmap.png" width="600px"/></a>
 
 The main area is a clustered heatmap of pairwise genome-to-genome distances. Any pairs falling underneath the *similarity threshold* (controlled by the slider at top right) light up as colored blocks along the diagonal. Colors are arbitrarily assigned (a color legend is seen next to *8 clusters detected*), and these delineate clusters suspicious for transmission at your chosen threshold. Pairs of genomes from the same patient are depicted as open squares, while the remainder are filled. You can hover over a square to see details in a tooltip, and if you click, links are provided including _Explore this cluster_ which takes you to the [dendro-timeline](#dendro-timelinephp).
 
-<img src="https://pathospot.org/images/screenshot-histo.png" width="300px"/>
+<img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/screenshot-histo.png" width="300px"/>
 
 To help empirically choose a threshold, a histogram of distances is provided above and to the right of the heatmap. These distances are separated into two categories: the lowest distance from each genome to *any* prior sampled genome (light gray bars) vs. the lowest distance to prior genomes from the *same patient* (black bars). In general, the former is a bimodal distribution, with the leftmost peak partially covered by the latter distribution. This leftmost peak represents genomes that are either from the same infection/colonization (same-patient distances), or, if from different patients, should be suspicious for transmission. A sensible threshold attempts to separate this peak from the right-side peak, with represents the genomic variation in the greater community. You can click on the histogram directly to change the threshold.
 
-<img src="https://pathospot.org/images/screenshot-filtering.png" width="460px"/>
+<img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/screenshot-filtering.png" width="460px"/>
 
 In our example, only genomes in a cluster with a different-patient isolate are shown, while the rest are hidden. This can be adjusted by changing the _Merging & prefiltering_ settings, specifically "Only show putative transmissions." Another key setting here is "Merge similar specimens from the same patient," which can help simplify your visualization by removing open squares (which are not informative for finding transmissions).
 
-<img src="https://pathospot.org/images/screenshot-beeswarm.png" width="460px"/>
+<img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/screenshot-beeswarm.png" width="460px"/>
 
 To the left of the histogram is a beeswarm plot showing the distribution of sampled genomes over time. If you have decided to show them, unclustered genomes are light gray circles, while those in a cluster are shaded with that cluster's color. You can click and drag to filter the heatmap to a specific time period.
 
-<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1" target="_blank"><img src="https://pathospot.org/images/network.png" width="360px"/></a>
+<a href="https://pathospot.org/heatmap.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&filter=mergeSamePt&snps=15&order=groupOrder&range=0%7C0.15&mode=network&play=1" target="_blank"><img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/network.png" width="360px"/></a>
 
 As an alternative to the heatmap, you can also use the "Network map view" which takes the nodes in the beeswarm and plots them spatially on a map, with red lines to depict genetic links within the similarity threshold. This can even be animated; _click the above screenshot to see an example._ Underneath the node-link diagram is a density plot of overall positive culture tests supplied by the `rake epi` task.
 
@@ -87,7 +88,7 @@ You can link directly to `heatmap.php` from external tools, in which case it may
 
 This visualization allows you to explore and compare the genetic and spatiotemporal relationships within a cluster, usually offering insight into the overlaps that facilitated transmission events. _Click the screenshot for an interactive demo._
 
-<a href="https://pathospot.org/dendro-timeline.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&assemblies=S_aureus_ER07227_3A_025296%20S_aureus_ER05786_3A_024918%20S_aureus_ER05686_3A_023855%20S_aureus_ER05682_3A_023854%20S_aureus_PS00099_3A_024679%20S_aureus_ER07103_3A_025066%20S_aureus_ER05353_3A_023850%20S_aureus_ER05508_3A_024907%20S_aureus_ER05526_3A_024910%20S_aureus_ER06446_3A_024926%20S_aureus_ER05368_3A_023852&colorNodes=collection_unit&filter=inpatient&timelineGrouping=0&isolateTests=&variantLabels=gene&variantNtOrAa=nt&showOverlaps=1&tolerance=12&sort=(%270!(%272A9-34*11-40A3-176A12.5%27~181A7-399*15-574A5-628*130%27))*!%270000000-0%27~A*0%01A-*" target="_blank"><img src="https://pathospot.org/images/screenshot-dendro-timeline.png" width="600px"/></a>
+<a href="https://pathospot.org/dendro-timeline.php?db=outbreak_MRSA-orange_deID.2019-10-20.parsnp&assemblies=S_aureus_ER07227_3A_025296%20S_aureus_ER05786_3A_024918%20S_aureus_ER05686_3A_023855%20S_aureus_ER05682_3A_023854%20S_aureus_PS00099_3A_024679%20S_aureus_ER07103_3A_025066%20S_aureus_ER05353_3A_023850%20S_aureus_ER05508_3A_024907%20S_aureus_ER05526_3A_024910%20S_aureus_ER06446_3A_024926%20S_aureus_ER05368_3A_023852&colorNodes=collection_unit&filter=inpatient&timelineGrouping=0&isolateTests=&variantLabels=gene&variantNtOrAa=nt&showOverlaps=1&tolerance=12&sort=(%270!(%272A9-34*11-40A3-176A12.5%27~181A7-399*15-574A5-628*130%27))*!%270000000-0%27~A*0%01A-*" target="_blank"><img src="https://raw.githubusercontent.com/powerpak/pathospot-visualize/master/images/screenshot-dendro-timeline.png" width="600px"/></a>
 
 Starting from the upper left, the "tree" is a dendrogram depicting genetic relationships between the genomes. (If you arrive here from the [heatmap](#heatmapphp), typically these are all of the genomes in a particular cluster, although you can add and remove isolates manually using the button in the upper left). You can change how the nodes are colored using the _Color by_ dropdown; the default uses the location of collection, and a color legend is at far left. Distances are scaled to SNPs per Mbp of reference genome.
 
