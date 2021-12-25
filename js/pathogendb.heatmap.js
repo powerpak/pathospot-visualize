@@ -14,7 +14,6 @@
 
 
 $(function() { 
-
   // *************************** SVG/D3 SETUP *********************************
 
   var margin = {top: 60, right: 400, bottom: 10, left: 80, networkTop: 30},
@@ -127,7 +126,8 @@ $(function() {
         nodesToTrees = {},
         treeSizes = [],
         parsnpStats = assemblies.parsnp_stats,
-        fullMatrix, visibleNodes, clusterableNodes, detectedClusters;
+        detectedClusters = [],
+        fullMatrix, visibleNodes, clusterableNodes;
     
     $('.distance-unit').text(assemblies.distance_unit);
     
