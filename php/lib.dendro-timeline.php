@@ -106,7 +106,7 @@ function prune_tree($newick_tree, $assembly_names) {
   $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
   $script = dirname(dirname(__FILE__)) . '/scripts/prune-newick.py';
   $process = proc_open("$PYTHON $script $assembly_args", $descriptorspec, $pipes);
-  $stderr = "Could not start the python process."
+  $stderr = "Could not start the python process.";
 
   if (is_resource($process)) {
     fwrite($pipes[0], $newick_tree);
