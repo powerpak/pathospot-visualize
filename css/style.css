@@ -116,6 +116,15 @@ input[type="range"].range { display: none; }
   font-weight: bold;
 }
 
+.error {
+  position: fixed;
+  top: 50%;
+  left: 1em;
+  right: 1em;
+  color: #a00;
+  align: center;
+}
+
 
 /* Loading indicator */
 .loading {

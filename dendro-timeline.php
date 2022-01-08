@@ -15,7 +15,9 @@ list($db, $assembly_names, $isolates, $matching_tree, $which_tree, $db_json, $er
 
 if (!$error && !$picking_assemblies) {
   if ($matching_tree) { $pruned_tree = prune_tree($matching_tree, $assembly_names); }
-  if (!$pruned_tree) { $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`?"; }
+  if ($pruned_tree[0] != '(') { 
+    $error = "Error running `scripts/prune-newick.py`; is \$PYTHON (with ete3 installed) configured in `php/include.php`? stderr was: $pruned_tree"; 
+  }
   if ($isolates) { 
     $encounters = load_encounters_for_isolates($db, $isolates);
     $variants_json = variants_for_assemblies_as_json($db, $which_tree, $assembly_names);
