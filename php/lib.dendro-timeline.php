@@ -211,7 +211,7 @@ function load_epi_for_isolates($db, $isolates, $taxonomy_ids=null) {
     $epi["isolate_test_results"] = array($epi_json["isolate_test_results"][0]);
     foreach($epi_json["isolate_test_results"] as $i => $row) {
       if ($i === 0) { continue; }
-      if ($eRAP_IDs[$row[$eRAP_ID_col]]) {
+      if (isset($eRAP_IDs[$row[$eRAP_ID_col]])) {
         array_push($epi["isolate_test_results"], $row);
       }
     }
