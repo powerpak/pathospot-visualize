@@ -114,6 +114,278 @@ a:link:hover {
   margin-top: 128px; /* 48px for the header + the margin for .main .logo below */
 }
 
+/* By default, we do not show the product splash; this can be revealed with splash.show-all.css */
+.pathospot-splash .product-splash {
+  display: none;
+}
+
+.main .logo {
+  margin: 80px auto 0;
+  height: 150px;
+  max-width: 700px;
+  background-image: url('../images/pathospot-logo.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.pathospot-splash .logo h1 { visibility: hidden; }
+
+.pathospot-splash h2 {
+  font-weight: 600;
+  color: #666;
+  line-height: 1.2em;
+  margin: 20px 0;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 22px;
+}
+.pathospot-splash h3 {
+  color: #666;
+}
+
+.available-datasets {
+  margin-bottom: 200px;
+}
+
+.available-datasets ul {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pathospot-splash .center {
+  text-align: center;
+}
+
+.pathospot-splash .mid-width {
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pathospot-splash .new-section {
+  margin-top: 80px;
+  clear: both;
+}
+
+/* Multi-column layouts */
+
+.container {
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.container.cols-1 {
+  max-width: 600px;
+}
+
+.container.cols-2, .container.cols-3 {
+  position: relative;
+  left: 1em;
+}
+.col .figure {
+  width: 100%;
+}
+.cols-2 .col {
+  width: 49.5%;
+  float: left;
+}
+.col .col-content {
+  padding: 0 2em 0 0;
+}
+.clear {
+  clear: both;
+}
+
+.shadow {
+  -webkit-box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.4);
+  -moz-box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.4);
+  box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.4);
+  transition: box-shadow 0.5s;
+}
+
+a:hover .shadow {
+  -webkit-box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.7);
+  -moz-box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.7);
+  box-shadow: 0px 6px 15px 0px rgba(0,0,0,0.7);
+  transition: box-shadow 0.5s;
+}
+
+.code-block {
+  background: #f0f0f0;
+  border-radius: 6px;
+  padding: 15px;
+  overflow-x: scroll;
+}
+
+.footer {
+  clear: both;
+  height: 100px;
+}
+
+/* Styling for the demo visualization pages */
+
+#controls, #pick-assemblies {
+  margin-top: 80px;
+}
+#pick-assemblies {
+  font-size: 80%;
+}
+
+/* ======================= */
+/* = Mobile-specific CSS = */
+/* ======================= */
+
+@media (max-width: 720px) {
+  .header-links .logo, .header-links .extra {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .main .logo {
+    background-image: url('../images/pathospot-logo-medium.svg');
+  }
+  .code-block pre {
+    white-space: pre-wrap;
+  }
+  .container.cols-2, .container.cols-3 {
+    left: 0;
+  }
+  .cols-2 .col, .cols-3 .col {
+    float: none;
+    width: 100%;
+  }
+  .col .col-content {
+    margin-top: 60px;
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 500px) {
+  .header-links a {
+    font-size: 80%;
+  }
+  .main .logo {
+    height: 80px;
+  }
+}body {
+  background: #fcfcfc;
+}
+
+body.pathospot-splash, .header-links {
+  font-family: 'Jost', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  font-size: 18px;
+  color: #333;
+  margin: 0;
+}
+
+a:link {
+  font-weight: normal;
+  color: #4848B8;
+  text-decoration: none;
+}
+a:visited {
+  color: #4848B8;
+}
+a:link:hover {
+  text-decoration: underline;
+}
+
+.pathospot-splash pre, .pathospot-splash code { 
+  font-family: 'Roboto Mono', 'Bitstream Vera Sans Mono', Courier, monospace; 
+  font-size: 80%;
+}
+.pathospot-splash pre .output {
+  opacity: 0.5;
+}
+.pathospot-splash pre { margin: 0; }
+.pathospot-splash code {
+  padding: 0.2em 0.4em;
+  background-color: #f0f0f0;
+  border-radius: 3px;
+}
+.emoji {
+  font-size: 125%;
+  line-height: 80%;
+  font-family: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", Times, Symbola, Aegyptus, Code2000, Code2001, Code2002, Musica, serif, LastResort;
+}
+
+.regular { font-weight: 400; }
+.pathospot-splash em { font-weight: 400; font-style: italic; }
+.pathospot-splash strong { color: #666; }
+
+.secondary { opacity: 0.5; font-weight: 400; font-style: italic; }
+
+/* Styles for the header */
+
+.header-links {
+  height: 30px;
+  padding: 0.5em 0.75em;
+  text-align: right;
+  background: rgba(252, 252, 252, 0.9);
+  -webkit-box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.2);
+  -moz-box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 3px 8px 0px rgba(0,0,0,0.2);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+.header-links a {
+  padding: 0 0.75em;
+}
+.header-links .logo {
+  float: left;
+  display: block;
+  margin: 0 0.75em;
+  height: 30px;
+  width: 150px;
+  background-image: url('../images/pathospot-logo-tiny.svg');
+  background-size: contain;
+  background-repeat: no-repeat;
+  opacity: 0;
+  -webkit-transition: opacity 0.5s ease-in-out;
+  -moz-transition: opacity 0.5s ease-in-out;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fixed-header .header-links {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 1;
+  z-index: 100;
+}
+.pathospot-splash.fixed-header .header-links {
+  -webkit-transform: translateY(-100%);
+  -ms-transform: translateY(-100%);
+  transform: translateY(-100%);
+  -webkit-animation: slidedown 0.5s forwards;
+  animation: slidedown 0.5s forwards;
+}
+@-webkit-keyframes slidedown{
+  100% { -webkit-transform:translateY(0); transform:translateY(0); }
+}
+@keyframes slidedown{
+  100%{ -webkit-transform: translateY(0); transform:translateY(0); }
+}
+.fixed-header .header-links .logo {
+  opacity: 1;
+}
+
+/* Styles for the main content */
+
+.main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+.fixed-header .main {
+  margin-top: 128px; /* 48px for the header + the margin for .main .logo below */
+}
+
 .main .logo {
   margin: 80px auto 0;
   height: 150px;

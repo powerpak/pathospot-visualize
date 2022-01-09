@@ -10,6 +10,8 @@ function includeAfterHead() {
 ?>
   <link href="fonts/Jost.css" rel="stylesheet" type="text/css" charset="utf-8" />
   <link href="css/splash.css" rel="stylesheet" type="text/css" />
+  <!-- Uncomment the following stylesheet to show the product splash page, as on the pathospot.org homepage -->
+  <!-- <link href="css/splash.show-all.css" rel="stylesheet" type="text/css" /> -->
 <?php
 }
   

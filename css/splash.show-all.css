@@ -1,0 +1,11 @@
+.pathospot-splash .product-splash {
+  display: block;
+}
+
+.pathospot-splash .product-splash.product-splash-inline {
+  display: inline;
+}
+
+.pathospot-splash .available-datasets {
+  display: none;
+}

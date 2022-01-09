@@ -32,7 +32,7 @@
     <div class="logo">
       
     </div>
-    <a href="#live-demo"><span class="extra">Live </span>Demo</a>
+    <a href="#live-demo" class="product-splash product-splash-inline"><span class="extra">Live </span>Demo</a>
     <a href="#get-started">Install</a>
     <a href="#how-it-works">How It Works</a>
     <a href="#team">Team</a>
@@ -44,88 +44,126 @@
       <h1>pathoSPOT</h1>
     </div>
   
-    <h2 class="center mid-width new-section">
-      <a id="about">Pathogen Sequencing<br/>Phylogenomic Outbreak Toolkit</a>
-    </h2>
-    <p class="center mid-width">
-      <span class="regular">pathoSPOT</span> is an open-source bioinformatics pipeline that turns pathogen genome sequences sampled from patients into interactive visualizations of probable transmission scenarios.
-    </p>
+    <div class="available-datasets">
+      <h2 class="center mid-width new-section">
+        <a id="available-datasets">Available Datasets</a>
+      </h2>
+
+<?php if (count($data_files) == 0): ?>
+      <p class="center mid-width">
+        There aren't any analyzed datasets in your
+        <code><?= htmlspecialchars(get_data_dir(FALSE)) ?></code>
+        directory.
+      </p>
+      <p class="center mid-width">
+        See the instructions below on how to run the <span class="regular">pathoSPOT</span>
+        pipeline on an example dataset to create your first visualization.
+      </p>
+<?php else: ?>  
+      <p class="center mid-width">
+        The following datasets were detected in your
+        <code><?= htmlspecialchars(get_data_dir(FALSE)) ?></code>
+        directory. Click the links below to open the heatmap for each dataset.
+      </p>
+
+      <ul class="center mid-width">
+        <?php foreach ($data_files as $data_file):
+          $db = preg_replace('/\\.heatmap\\.json$/', '', $data_file);
+        ?>      
+        <li><a href="heatmap.php?db=<?= htmlspecialchars($db) ?>"><?= htmlspecialchars($db) ?></a></li>
+        <?php endforeach; ?>
+      </ul>
+      <p class="center mid-width">
+        See the instructions below on how to run the <span class="regular">pathoSPOT</span>
+        pipeline to produce a new analyzed dataset.
+      </p>
+<?php endif; ?>
+    </div>
   
-    <h2 class="center mid-width new-section">
-      <a id="live-demo">Try it now</a>
-    </h2>
-    <p class="center mid-width">
-      Click the images to explore visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over 24 months within the Mount Sinai Health System (full article at <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3"><em>Genome Medicine</em></a>).
-    </p>
-    <p class="center secondary">Dates have been shifted during data anonymization.</p>
-    <div class="container cols-2">
-      <div class="col">
-        <div class="col-content center">
-          <p>
-            <a target="_blank" href="?fig=2">
-              <img src="images/heatmap.png" class="figure shadow"/>
-            </a>
-          </p>
-          <p>Clustered heatmap of related genomes reveals outbreaks over multiple wards.</p>
-          <p class="secondary"><strong>Figure 2</strong> in 
-            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig2">
-              Berbel Caban &amp; Pak, et al.</a></p>
+    <div class="product-splash">
+      <h2 class="center mid-width new-section">
+        <a id="about">Pathogen Sequencing<br/>Phylogenomic Outbreak Toolkit</a>
+      </h2>
+      <p class="center mid-width">
+        <span class="regular">pathoSPOT</span> is an open-source bioinformatics pipeline that turns pathogen genome sequences sampled from patients into interactive visualizations of probable transmission scenarios.
+      </p>
+  
+      <h2 class="center mid-width new-section">
+        <a id="live-demo">Try it now</a>
+      </h2>
+      <p class="center mid-width">
+        Click the images to explore visualizations of methicillin-resistant <em>Staphylococcus aureus</em> collected over 24 months within the Mount Sinai Health System (full article at <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3"><em>Genome Medicine</em></a>).
+      </p>
+      <p class="center secondary">Dates have been shifted during data anonymization.</p>
+      <div class="container cols-2">
+        <div class="col">
+          <div class="col-content center">
+            <p>
+              <a target="_blank" href="?fig=2">
+                <img src="images/heatmap.png" class="figure shadow"/>
+              </a>
+            </p>
+            <p>Clustered heatmap of related genomes reveals outbreaks over multiple wards.</p>
+            <p class="secondary"><strong>Figure 2</strong> in 
+              <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig2">
+                Berbel Caban &amp; Pak, et al.</a></p>
+          </div>
         </div>
-      </div>
-      <div class="col">
-        <div class="col-content center">
-          <p>
-            <a target="_blank" href="?fig=3">
-              <img src="images/timeline.png" class="figure shadow"/>
-            </a>
-          </p>
-          <p>A timeline of spatiotemporal movements and overlaps of patients in the largest cluster.</p>
-          <p class="secondary"><strong>Figure 3</strong> in
-            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig3">
-              Berbel Caban &amp; Pak, et al.</a></p>
+        <div class="col">
+          <div class="col-content center">
+            <p>
+              <a target="_blank" href="?fig=3">
+                <img src="images/timeline.png" class="figure shadow"/>
+              </a>
+            </p>
+            <p>A timeline of spatiotemporal movements and overlaps of patients in the largest cluster.</p>
+            <p class="secondary"><strong>Figure 3</strong> in
+              <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Fig3">
+                Berbel Caban &amp; Pak, et al.</a></p>
+          </div>
         </div>
+        <div class="clear"></div>
       </div>
-      <div class="clear"></div>
+      <div class="container cols-2">
+        <div class="col">
+          <div class="col-content center">
+            <p>
+              <a target="_blank" href="?fig=S1">
+                <img src="images/network.png" class="figure shadow"/>
+              </a>
+            </p>
+            <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
+            <p class="secondary"><strong>Figure S1</strong> in
+              <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
+                Berbel Caban &amp; Pak, et al.</a></p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="col-content center">
+            <p>
+              <a target="_blank" href="?fig=S3B">
+                <img src="images/dendro-timeline.png" class="figure shadow"/>
+              </a>
+            </p>
+            <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
+            <p class="secondary"><strong>Figure S3B</strong> in
+              <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
+                Berbel Caban &amp; Pak, et al.</a></p>
+          </div>
+        </div>
+        <div class="clear"></div>
+      </div>
+      <p class="center mid-width">
+        <span class="regular">Interested in viruses?</span> See our <a href="https://doi.org/10.1093/cid/ciaa1781" target="_blank">influenza A investigation in <em>CID</em></a>, where <span class="regular">pathoSPOT</span> characterized a nosocomial outbreak affecting 66 patients and healthcare workers and identified &ldquo;patient zero.&rdquo;
+      </p>
     </div>
-    <div class="container cols-2">
-      <div class="col">
-        <div class="col-content center">
-          <p>
-            <a target="_blank" href="?fig=S1">
-              <img src="images/network.png" class="figure shadow"/>
-            </a>
-          </p>
-          <p>Animated network diagram showing the spatial relationships among related genomes over time.</p>
-          <p class="secondary"><strong>Figure S1</strong> in
-            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
-              Berbel Caban &amp; Pak, et al.</a></p>
-        </div>
-      </div>
-      <div class="col">
-        <div class="col-content center">
-          <p>
-            <a target="_blank" href="?fig=S3B">
-              <img src="images/dendro-timeline.png" class="figure shadow"/>
-            </a>
-          </p>
-          <p>A 7-day overlap in inpatient ward stays precedes a transmission event detected one year later.</p>
-          <p class="secondary"><strong>Figure S3B</strong> in
-            <a target="_blank" href="https://genomemedicine.biomedcentral.com/articles/10.1186/s13073-020-00798-3#Sec15">
-              Berbel Caban &amp; Pak, et al.</a></p>
-        </div>
-      </div>
-      <div class="clear"></div>
-    </div>
-    <p class="center mid-width">
-      <span class="regular">Interested in viruses?</span> See our <a href="https://doi.org/10.1093/cid/ciaa1781" target="_blank">influenza A investigation in <em>CID</em></a>, where <span class="regular">pathoSPOT</span> characterized a nosocomial outbreak affecting 66 patients and healthcare workers and identified &ldquo;patient zero.&rdquo;
-    </p>
-        
+      
     <h2 class="center mid-width new-section">
       <a id="get-started">Get Started</a>
     </h2>
     <div class="container cols-1">
       <p>
-        You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes and create visualizations similar to the ones above. As a tutorial, we will reproduce the analysis in <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">Berbal Caban &amp; Pak et al.</a> starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
+        You can use <span class="regular">pathoSPOT</span> to analyze your own pathogen genomes<span class="product-splash product-splash-inline"> and create visualizations similar to the ones above</span>. As a tutorial, we will reproduce the analysis in <a target="_blank" href="https://www.medrxiv.org/content/10.1101/2020.05.11.20098103v1">Berbal Caban &amp; Pak et al.</a> starting from the <a href="https://pathospot.org/data/mrsa.tar.gz">raw data (tar.gz)</a>.
       </p>
       <p>
         This dataset contains FASTA sequences for 226 MRSA genomes, gene annotations in BED format, and a <a href="https://github.com/powerpak/pathospot-compare/blob/master/README-database.md">relational database</a> (in <a href="https://www.sqlite.org/">SQLite</a> format) with metadata for each genome (anonymized patient IDs, collection locations, healthcare encounters for each patient, and more).
@@ -158,10 +196,13 @@ WARN: re-invoking parsnp task since the mash clusters were rebuilt</span>
 $</pre>
       </div>
       <p>
-        When it's finished, open <a href="http://localhost:8989">http://localhost:8989</a> in your browser. (It will look exactly like this website, except the <a href="#live-demo">Try it Now</a> visualizations have now been built and are being served by your own VM.)
+        When it's finished, open <a href="http://localhost:8989">http://localhost:8989</a> in your browser. (It will look exactly like this website, except the
+        <a href="#live-demo" class="product-splash product-splash-inline">Try it Now</a>
+        <a href="#available-datasets" class="available-datasets">Try it Now</a>
+        section will be replaced by the datasets and analysis produced by your VM.)
       </p>
     </div>
-    
+  
     <h2 class="center mid-width new-section">
       <a id="how-it-works">How it works</a>
     </h2>
