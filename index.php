@@ -2,7 +2,7 @@
   if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
   else { require(dirname(__FILE__).'/php/example.include.php'); }
 
-  $data_dir = dirname(__FILE__).'/data/';
+  $data_dir = get_data_dir();
   $mrsa_db = "out." . date("Y-m-d") . " .parsnp";
   $data_files = array_map('basename', array_reverse(glob($data_dir.'*.{snv,parsnp}.heatmap.json', GLOB_BRACE)));
   foreach ($data_files as $data_file) {
@@ -12,7 +12,7 @@
       $mrsa_db = preg_replace('/\\.heatmap\\.json$/', '', $data_file); break;
     }
   }
-  redirectShortUrls($mrsa_db);
+  redirect_short_urls($mrsa_db);
 ?><!DOCTYPE html>
 <html>
 <head>

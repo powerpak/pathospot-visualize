@@ -2,7 +2,7 @@
 
 // COPY TO include.php AND CUSTOMIZE AS DESIRED.
 
-include('short-urls.php');
+include('lib.global.php');
 date_default_timezone_set('America/New_York');
 $PYTHON = '/usr/bin/env python';
 

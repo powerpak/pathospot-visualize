@@ -1,6 +1,5 @@
 <?php
 
-
 // Validation function that ensures all assembly names passed into this page are safe
 function valid_assembly_name($name) {
   return !!preg_match('/[A-Za-z0-9_-]/', $name);
@@ -56,10 +55,11 @@ function load_from_heatmap_json($REQ) {
   $isolates = null;
   $matching_tree = null;
   $error = null;
+  $data_dir = get_data_dir();
   
   if (isset($REQ['db'])) {
     $db = preg_replace('/[^\w.-]/i', '', $REQ['db']);
-    $json = json_decode(@file_get_contents(dirname(dirname(__FILE__)) . "/data/$db.heatmap.json"), true);
+    $json = json_decode(@file_get_contents($data_dir . "$db.heatmap.json"), true);
   }
   
   if (isset($json) && $json && is_array($json["trees"])) {
@@ -132,10 +132,11 @@ function load_encounters_for_isolates($db, $isolates) {
   $eRAP_IDs = array();
   $tsv_header = null;
   $encounters = array();
+  $data_dir = get_data_dir();
   
   foreach ($isolates as $isolate) { $eRAP_IDs[$isolate["eRAP_ID"]] = true; }
   
-  $fh = @fopen(dirname(dirname(__FILE__)) . "/data/" . preg_replace('/\.\w+$/', '', $db) . ".encounters.tsv", 'r');
+  $fh = @fopen($data_dir . preg_replace('/\.\w+$/', '', $db) . ".encounters.tsv", 'r');
   if ($fh === false) { return null; }
   while (($line = fgetcsv($fh, 0, "\t")) !== false) {
     if ($tsv_header === null) { 
@@ -165,9 +166,10 @@ function variants_for_assemblies_as_json($db_or_npz, $which_tree, $assembly_name
      1 => array("pipe", "w"),  // stdout is a pipe that the child will write to
      2 => array("pipe", "w")
   );
+  $data_dir = get_data_dir();
   
   $npz = preg_match('/\.vcfs\.npz$/', $db_or_npz) ? $db_or_npz : "{$db_or_npz}.vcfs.npz";
-  $npz = escapeshellarg(dirname(dirname(__FILE__)) . "/data/$npz");
+  $npz = escapeshellarg($data_dir . $npz);
   $assembly_args = implode(' ', array_map('escapeshellarg', $assembly_names));
   $script = dirname(dirname(__FILE__)) . '/scripts/vcfs-npz-to-json.py';
   $process = proc_open("$PYTHON $script $npz $which_tree $assembly_args", $descriptorspec, $pipes);
@@ -196,13 +198,14 @@ function load_epi_for_isolates($db, $isolates, $taxonomy_ids=null) {
   $eRAP_IDs = array();
   $epi_filename = preg_replace('/\.\w+$/', '', $db) . ".epi.heatmap.json";
   $epi = array("taxonomy_IDs" => array(), "isolate_test_results" => null);
+  $data_dir = get_data_dir();
   
   if (!is_array($taxonomy_ids)) { $taxonomy_ids = array(); }
   foreach ($taxonomy_ids as $taxonomy_id) { $epi["taxonomy_IDs"][strval($taxonomy_id)] = true; }
   
   foreach ($isolates as $isolate) { $eRAP_IDs[$isolate["eRAP_ID"]] = true; }
   
-  $epi_json = json_decode(@file_get_contents(dirname(dirname(__FILE__)) . "/data/$epi_filename"), true);
+  $epi_json = json_decode(@file_get_contents($data_dir . $epi_filename), true);
   if (isset($epi_json) && $epi_json && is_array($epi_json["isolate_test_results"])) {
     $eRAP_ID_col = array_search("eRAP_ID", $epi_json["isolate_test_results"][0]);
     $epi["isolate_test_results"] = array($epi_json["isolate_test_results"][0]);

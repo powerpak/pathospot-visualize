@@ -6,9 +6,9 @@ else { require(dirname(__FILE__).'/php/example.include.php'); }
 
 require(dirname(__FILE__).'/php/lib.heatmap.php');
 
-$data_dir = dirname(__FILE__).'/data/';
-$data_files = array_reverse(glob($data_dir.'*.{snv,parsnp}.heatmap.json', GLOB_BRACE));
-$epi_data_files = array_map('basename', array_reverse(glob(dirname(__FILE__).'/data/*.epi.heatmap.json')));
+$data_dir = get_data_dir();
+$data_files = array_reverse(glob($data_dir . '*.{snv,parsnp}.heatmap.json', GLOB_BRACE));
+$epi_data_files = array_map('basename', array_reverse(glob($data_dir . '*.epi.heatmap.json')));
 
 $selected_data_file = reset($data_files);
 if (isset($_GET['db']) && in_array($data_dir . $_GET['db'] . ".heatmap.json", $data_files)) {
@@ -40,6 +40,7 @@ $snp_threshold = 10;
 <script src="build/hclust.js" charset="utf-8"></script>
 <script src="js/intro.js" charset="utf-8"></script>
 
+<script>DATA_DIR = <?= json_encode($data_dir) ?>;</script>
 <?php
 if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
 else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }

@@ -31,6 +31,7 @@ $(function() {
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
       HOSPITAL_MAP = window.HOSPITAL_MAP || 'anon-hospital-gray',
+      DATA_DIR = window.DATA_DIR || 'data',
       $LOADING_SPINNER = $('.loading'),
       $LOADING_SPINNER_TEXT = $('.loading-text');
   
@@ -97,7 +98,7 @@ $(function() {
 
   // ************************** FIRST, FETCH THE DISTANCES MATRIX ****************************
 
-  d3.json("data/" + db + ".heatmap.json", function(assemblies) {
+  d3.json(DATA_DIR + "/" + db + ".heatmap.json", function(assemblies) {
 
     var nodes = assemblies.nodes,
         links = _.isArray(assemblies.links[0]) ? [] : assemblies.links,
@@ -812,7 +813,7 @@ $(function() {
       html += '<div class="more"><span class="instructions">Click for links</span><span class="links">';
       if (assemblies.out_dir) {
         snvs_url = assemblies.out_dir + '/' + nodes[ixLeft].name + '/' + nodes[ixLeft].name + '_' + nodes[ixRight].name + '.snv.bed',
-        snvs_url = (TRACKS_DIR || 'data/') + snvs_url;
+        snvs_url = (TRACKS_DIR || DATA_DIR) + snvs_url;
         if (IGB_DIR && CHROMOZOOM_URL && TRACKS_DIR) {
           snvs_url = CHROMOZOOM_URL.replace('%s', IGB_DIR + nodes[ixLeft].name) + '&customTracks=' + snvs_url;
           snvs_url += '';
@@ -1512,7 +1513,7 @@ $(function() {
       unitCoords = coords;
       
       // Download the spatiotemporal data for all isolates, if it's available
-      EPI_FILE && d3.json("data/" + EPI_FILE, function(epiFileData) { 
+      EPI_FILE && d3.json(DATA_DIR + "/" + EPI_FILE, function(epiFileData) { 
         epiData = epiFileData;
         if (epiData.isolates) {
           // compatibility shim for previous version of .epi.heatmap.json format
