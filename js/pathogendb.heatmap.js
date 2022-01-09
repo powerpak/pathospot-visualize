@@ -31,7 +31,7 @@ $(function() {
       IDEAL_LABEL_HEIGHT = 16,
       MIN_LABEL_HEIGHT = 8,
       HOSPITAL_MAP = window.HOSPITAL_MAP || 'anon-hospital-gray',
-      DATA_DIR = window.DATA_DIR || 'data',
+      DATA_DIR = (window.DATA_DIR || 'data').replace(/\/+$/, ''),
       $LOADING_SPINNER = $('.loading'),
       $LOADING_SPINNER_TEXT = $('.loading-text');
   

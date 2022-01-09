@@ -40,7 +40,7 @@ $snp_threshold = 10;
 <script src="build/hclust.js" charset="utf-8"></script>
 <script src="js/intro.js" charset="utf-8"></script>
 
-<script>DATA_DIR = <?= json_encode($data_dir) ?>;</script>
+<script>DATA_DIR = <?= json_encode(get_data_dir(FALSE)) ?>;</script>
 <?php
 if (file_exists(dirname(__FILE__).'/js/config.js')) { ?><script src="js/config.js" charset="utf-8"></script><?php }
 else { ?><script src="js/example.config.js" charset="utf-8"></script><?php }

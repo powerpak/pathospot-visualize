@@ -1,8 +1,8 @@
 <?php
 
-function get_data_dir() {
+function get_data_dir($full_path = TRUE) {
   $data_dir = isset($_SERVER['PATHOSPOT_DATA_DIR']) ? $_SERVER['PATHOSPOT_DATA_DIR'] : 'data';
-  return dirname(dirname(__FILE__)) . "/$data_dir/";
+  return ($full_path ? dirname(dirname(__FILE__)) . "/" : "") . "$data_dir/";
 }
 
 function redirect_short_urls($mrsa_db = '') {
