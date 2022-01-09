@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html>
 <?php
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
@@ -27,7 +25,9 @@ if (!$error && !$picking_assemblies) {
   $pick_assemblies_url = basename(__FILE__) . "?db={$db}&select=" . implode('+', $assembly_names);
 }
 
-?>
+?><!DOCTYPE html>
+<html>
+
 <head>
   
 <meta charset="utf-8" />

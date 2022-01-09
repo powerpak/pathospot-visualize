@@ -1,5 +1,3 @@
-<!DOCTYPE html>
-<html>
 <?php
 if (file_exists(dirname(__FILE__).'/php/include.php')) { require(dirname(__FILE__).'/php/include.php'); }
 else { require(dirname(__FILE__).'/php/example.include.php'); }
@@ -16,7 +14,8 @@ if (isset($_GET['db']) && in_array($data_dir . $_GET['db'] . ".heatmap.json", $d
 }
 $snp_threshold = 10;
 
-?>
+?><!DOCTYPE html>
+<html>
 <head>
   
 <meta charset="utf-8" />

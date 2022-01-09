@@ -166,7 +166,7 @@ input[type="range"].range { display: none; }
 
 /* Purple tutorial button in the header that kicks off the intro.js sequence */
 
-.tutorial-btn {
+.tutorial-btn, .styled-btn {
   display: inline-block;
   color: #fff;
   padding: 0.7em 1em;
@@ -181,14 +181,14 @@ input[type="range"].range { display: none; }
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 1px 2px rgba(0,0,0,0.05);
 }
 
-.tutorial-btn:hover {
+.tutorial-btn:hover, .styled-btn:hover {
   background-color: #4848B8;
   text-decoration: none;
   background-position: 0 -15px;
   transition: background-position .1s linear;
 }
 
-.tutorial-btn:active {
+.tutorial-btn:active, .styled-btn:active {
   color: #fff;
   background-color: #4848B8;
   background-image: none;
