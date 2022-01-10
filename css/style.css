@@ -885,6 +885,8 @@ text.axis-label {
 
 .link-info th, .link-info td {
   padding: 0.3em 0.5em;
+  max-width: 150px;
+  overflow-wrap: break-word;
 }
 .link-info.border-bottom, .link-info .separator {
   border-bottom: 1px solid white;
