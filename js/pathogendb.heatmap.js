@@ -168,7 +168,7 @@ $(function() {
         node.i = i;
         node.count = 0;
         node.group = null;
-        node.groupOrder = null;
+        node.groupOrder = -1; // this gets set to a non-negative integer for nodes in a group/cluster
         node.groupSize = null;
         node.samePtMergeParent = false;
         node.samePtMergeChild = false;
@@ -1447,7 +1447,7 @@ $(function() {
 
     function reorder() {    
       var filteredDomain = filterByBrush(filterByVisibleNodes(d3.range(n))), 
-          cutClusters = reclusterFilteredNodes(filteredDomain)
+          cutClusters = reclusterFilteredNodes(filteredDomain),
           filteredIsolateIds = filterByBrush(d3.range(epiData.isolates.length), epiData.isolates);
                 
       filteredDomain = calculateOrder(filteredDomain, $('#order').val());
