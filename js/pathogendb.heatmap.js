@@ -23,7 +23,7 @@ $(function() {
       sliderHeight = 80,
       dendroRight = 140,
       DEFAULT_SNP_THRESHOLD = parseInt($('#snps-num').val(), 10),
-      MAX_SNP_THRESHOLD = 100,
+      MAX_SNP_THRESHOLD = window.MAX_SNP_THRESHOLD || 100,
       MIN_SNP_THRESHOLD = 1,
       TRANSITION_DURATION = 1000,
       ANIM_TRANSITION_DURATION = 200,

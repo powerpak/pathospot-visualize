@@ -84,7 +84,7 @@ foreach ($data_files as $data_file):
     </label>
     <label class="widget" id="snps-cont">
       <span class="widget-label">Similarity threshold</span>
-      <input id="snps-num" name="snps_num" type="text" size="3" value="<?= $snp_threshold ?>" disabled />
+      <input id="snps-num" name="snps_num" type="text" size="4" value="<?= $snp_threshold ?>" disabled />
       <span class="distance-unit units">parsnp SNPs</span>
       <input id="snps" name="snps" class="range" type="range" min="1" step="1" />
     </label>

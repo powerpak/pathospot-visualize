@@ -18,15 +18,19 @@ var LINKABLE_FIELDS = {
 
 // When linking to genomes/assemblies in IGB Quickload format, use this base directory
 
-var IGB_DIR = ''
+var IGB_DIR = '';
 
 // When linking to .snv.bed files, use this base directory
 
-var TRACKS_DIR = ''
+var TRACKS_DIR = '';
 
 // What URL for ChromoZoom to use when linking to genome browser views of IGB Quickload genomes
 
-var CHROMOZOOM_URL = ''
+var CHROMOZOOM_URL = '';
+
+// Maximum SNP distance threshold to allow in the heatmap view
+
+var MAX_SNP_THRESHOLD = 100;
 
 // What map to use for the network diagram. These are stored in the maps/ directory as a .json and .png.
 
